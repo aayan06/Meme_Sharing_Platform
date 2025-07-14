@@ -30,9 +30,11 @@ const generateJokePrompt = ai.definePrompt({
   name: 'generateJokePrompt',
   input: {schema: GenerateSafeJokeInputSchema},
   output: {schema: GenerateSafeJokeOutputSchema},
-  prompt: `You are a joke generator. Generate a new, unique joke based on the following category:
+  prompt: `You are a joke generator. Generate a completely new, unique, and original joke based on the following category:
 
 Category: {{{category}}}
+
+Do not repeat jokes you have told before.
 
 {{#if safeForWork}}
 Ensure the joke is safe for work.
