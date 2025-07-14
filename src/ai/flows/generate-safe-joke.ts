@@ -43,6 +43,7 @@ The joke can be NSFW and should not have content restrictions. For dark humor, i
 {{/unless}}
 `,
   config: {
+    temperature: 1,
     safetySettings: [
       {
         category: 'HARM_CATEGORY_HATE_SPEECH',
