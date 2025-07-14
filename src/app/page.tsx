@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/generate-safe-joke";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,14 @@ export default function LaughFactoryPage() {
     const [joke, setJoke] = useState<GenerateSafeJokeOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+
+    useEffect(() => {
+        if (category === 'dark humor') {
+            setSafeForWork(false);
+        } else {
+            setSafeForWork(true);
+        }
+    }, [category]);
 
     const handleGenerateJoke = async () => {
         setIsLoading(true);
@@ -52,6 +60,10 @@ export default function LaughFactoryPage() {
         }
     };
 
+    const handleCategoryChange = (value: string) => {
+        setCategory(value);
+    };
+
     return (
         <div className="flex flex-col items-center min-h-screen p-4 sm:p-8 pt-12 sm:pt-20">
             <main className="w-full max-w-2xl mx-auto flex flex-col items-center space-y-10">
@@ -64,7 +76,7 @@ export default function LaughFactoryPage() {
                     <div className="space-y-8">
                         <div>
                             <Label className="text-xl font-semibold mb-4 block text-center sm:text-left">Choose a Category</Label>
-                            <RadioGroup value={category} onValueChange={setCategory} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <RadioGroup value={category} onValueChange={handleCategoryChange} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 {jokeCategories.map((cat) => (
                                     <div key={cat.id}>
                                         <RadioGroupItem value={cat.id} id={cat.id} className="sr-only" />
@@ -89,6 +101,7 @@ export default function LaughFactoryPage() {
                                 checked={safeForWork}
                                 onCheckedChange={setSafeForWork}
                                 aria-label="Toggle safe for work filter"
+                                disabled={category === 'dark humor'}
                             />
                         </div>
 

@@ -26,26 +26,11 @@ export async function generateSafeJoke(input: GenerateSafeJokeInput): Promise<Ge
   return generateSafeJokeFlow(input);
 }
 
-const filterJokeTool = ai.defineTool({
-  name: 'filterJoke',
-  description: 'Checks if a joke is safe for work. Returns true if it is, false otherwise.',
-  inputSchema: z.object({
-    joke: z.string().describe('The joke to check.'),
-  }),
-  outputSchema: z.boolean(),
-}, async (input) => {
-  // Placeholder implementation for joke filtering.  Replace with actual filtering logic.
-  // This is UNSAFE and should only be used with an actual implementation of a filter.
-  // In a real application, this would use an external API or a local content filter.
-  return true;
-});
-
 const generateJokePrompt = ai.definePrompt({
   name: 'generateJokePrompt',
-  tools: [filterJokeTool],
   input: {schema: GenerateSafeJokeInputSchema},
   output: {schema: GenerateSafeJokeOutputSchema},
-  prompt: `You are a joke generator. Generate a joke based on the following category:
+  prompt: `You are a joke generator. Generate a new, unique joke based on the following category:
 
 Category: {{{category}}}
 
@@ -54,9 +39,29 @@ Ensure the joke is safe for work.
 {{/if}}
 
 {{#unless safeForWork}}
-Generate the joke without any content restrictions.
+The joke can be NSFW and should not have content restrictions. For dark humor, it should be genuinely dark.
 {{/unless}}
 `,
+  config: {
+    safetySettings: [
+      {
+        category: 'HARM_CATEGORY_HATE_SPEECH',
+        threshold: 'BLOCK_ONLY_HIGH',
+      },
+      {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_NONE',
+      },
+      {
+        category: 'HARM_CATEGORY_HARASSMENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+        threshold: 'BLOCK_NONE',
+      },
+    ],
+  },
 });
 
 const generateSafeJokeFlow = ai.defineFlow(
