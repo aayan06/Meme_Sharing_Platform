@@ -9,12 +9,10 @@ import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-aud
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2 } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import Image from "next/image";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,22 +32,18 @@ const jokeCategories = [
 ];
 
 function setMeta(url: string, description: string) {
-    // Remove existing og:image and twitter:image meta tags
     document.querySelectorAll('meta[property="og:image"], meta[name="twitter:image"]').forEach(el => el.remove());
     
-    // Create and append new og:image meta tag
     const ogImage = document.createElement('meta');
     ogImage.setAttribute('property', 'og:image');
     ogImage.setAttribute('content', url);
     document.head.appendChild(ogImage);
 
-    // Create and append new twitter:image meta tag
     const twitterImage = document.createElement('meta');
     twitterImage.setAttribute('name', 'twitter:image');
     twitterImage.setAttribute('content', url);
     document.head.appendChild(twitterImage);
 
-    // Update description meta tags
     document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
     document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
 }
@@ -166,7 +160,6 @@ export default function LaughFactoryPage() {
         setAudio(null);
         setSelectedReaction(null);
         try {
-            // Determine SFW based on selected category before making the call
             const selectedCat = jokeCategories.find(cat => cat.id === category);
             const isSfw = selectedCat ? selectedCat.sfw : true;
 
@@ -207,7 +200,7 @@ export default function LaughFactoryPage() {
         if (canvas) {
             const dataUrl = canvas.toDataURL("image/png");
             const link = document.createElement("a");
-            link.download = "laugh-factory-meme.png";
+            link.download = "haha-launch-meme.png";
             link.href = dataUrl;
             link.click();
         }
@@ -217,7 +210,7 @@ export default function LaughFactoryPage() {
         const selectedCat = jokeCategories.find(cat => cat.id === value);
         if (selectedCat) {
             setCategory(value);
-            setSafeForWork(selectedCat.sfw);
+            // SFW state is now handled by the toggle directly, this just sets category
         }
     };
 
@@ -242,7 +235,7 @@ export default function LaughFactoryPage() {
                 shareUrl = `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`;
                 break;
             case 'reddit':
-                shareUrl = `https://www.reddit.com/submit?url=${encodedUrl}&title=${encodeURIComponent('Check out this joke from Laugh Factory!')}`;
+                shareUrl = `https://www.reddit.com/submit?url=${encodedUrl}&title=${encodeURIComponent('Check out this joke from HAHA LAUNCH!')}`;
                 break;
         }
         window.open(shareUrl, '_blank', 'noopener,noreferrer');
@@ -270,7 +263,7 @@ export default function LaughFactoryPage() {
     const ShareMenu = () => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Share joke">
+                <Button variant="ghost" size="icon" aria-label="Share joke" className="rounded-full">
                     <Share2 className="h-5 w-5" />
                 </Button>
             </DropdownMenuTrigger>
@@ -293,122 +286,93 @@ export default function LaughFactoryPage() {
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
-    )
+    );
+
+    const JokeCard = ({ children }: { children: React.ReactNode }) => (
+      <Card className="w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl">
+        {children}
+      </Card>
+    );
 
     return (
-        <div className="flex flex-col items-center min-h-screen p-4 sm:p-8 pt-12 sm:pt-20">
-            <main className="w-full max-w-2xl mx-auto flex flex-col items-center space-y-10">
-                <header className="text-center w-full">
-                    <h1 className="text-5xl md:text-6xl font-bold font-headline text-primary mb-2">Laugh Factory</h1>
+        <div className="flex flex-col items-center min-h-screen p-4 sm:p-8 pt-12">
+            <main className="w-full max-w-3xl mx-auto flex flex-col items-center space-y-8">
+                <header className="text-center w-full space-y-2">
+                    <h1 className="text-6xl md:text-7xl font-bold font-headline text-primary tracking-tighter">HAHA LAUNCH</h1>
                     <p className="text-lg text-muted-foreground">Your daily dose of AI-powered humor</p>
-                    <div className="flex justify-center items-center space-x-4 mt-6">
-                        <Button asChild>
-                            <Link href="/submit"><Trophy className="mr-2" /> Leaderboard</Link>
-                        </Button>
-                        <Button asChild variant="outline">
-                           <Link href="/submit"><Send className="mr-2" /> Submit Joke</Link>
-                        </Button>
-                    </div>
                 </header>
                 
-                <Card className="w-full bg-card/80 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-lg border">
-                     <CardHeader>
-                        <CardTitle className="text-2xl font-bold text-center">Top Joke of the Day</CardTitle>
-                        <CardDescription className="text-center">This joke is on fire! 🔥</CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-center">
-                        <p className="text-xl font-medium">Why don't scientists trust atoms? Because they make up everything!</p>
-                         <div className="flex justify-center items-center space-x-2 mt-4">
-                            <Button variant={'outline'} size="icon">
-                                <span role="img" aria-label="laughing emoji">😂</span>
-                            </Button>
-                            <span className="font-bold text-lg">1.2k</span>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <div className="w-full bg-card/80 backdrop-blur-sm p-6 sm:p-8 rounded-2xl shadow-lg border">
-                    <div className="space-y-8">
-                        <div>
-                            <Label className="text-xl font-semibold mb-4 block text-center sm:text-left">Choose a Category</Label>
-                            <RadioGroup value={category} onValueChange={handleCategoryChange} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                {jokeCategories.map((cat) => (
-                                    <div key={cat.id}>
-                                        <RadioGroupItem 
-                                            value={cat.id} 
-                                            id={cat.id} 
-                                            className="sr-only" 
-                                            disabled={safeForWork && !cat.sfw}
-                                        />
-                                        <Label
-                                            htmlFor={cat.id}
-                                            className="flex flex-col items-center justify-center rounded-lg border-2 p-4 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground cursor-pointer data-[state=checked]:border-primary data-[state=checked]:ring-2 data-[state=checked]:ring-primary h-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent aria-disabled:hover:text-current"
-                                            data-state={category === cat.id ? 'checked' : 'unchecked'}
-                                            aria-disabled={safeForWork && !cat.sfw}
-                                        >
-                                            {cat.label}
-                                        </Label>
-                                    </div>
-                                ))}
-                            </RadioGroup>
-                        </div>
-
-                        <div className="flex items-center justify-between p-4 rounded-lg bg-background">
-                            <Label htmlFor="sfw-switch" className="text-lg font-semibold flex-1">
-                                Safe For Work
-                            </Label>
-                            <Switch
-                                id="sfw-switch"
-                                checked={safeForWork}
-                                onCheckedChange={setSafeForWork}
-                                aria-label="Toggle safe for work filter"
-                            />
-                        </div>
-
-                        <Button onClick={handleGenerateJoke} disabled={isLoading} size="lg" className="w-full text-lg font-bold h-14">
-                            {isLoading ? (
-                                <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                            ) : (
-                                <Sparkles className="mr-2 h-6 w-6" />
-                            )}
-                            Generate
-                        </Button>
+                <section className="w-full space-y-6">
+                    <div>
+                      <Label className="text-lg font-semibold mb-4 block text-center">1. Choose a Category</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {jokeCategories.map((cat) => (
+                          <button
+                            key={cat.id}
+                            onClick={() => handleCategoryChange(cat.id)}
+                            disabled={safeForWork && !cat.sfw}
+                            data-state={category === cat.id ? 'active' : 'inactive'}
+                            className="px-4 py-3 text-sm font-semibold rounded-full transition-all duration-200 ease-out transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-muted/50 disabled:shadow-none
+                            data-[state=inactive]:bg-card data-[state=inactive]:hover:bg-card/70 data-[state=inactive]:shadow-md
+                            data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:scale-105"
+                          >
+                            {cat.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                </div>
+
+                    <div className="flex items-center justify-center p-4 rounded-full bg-card shadow-md">
+                        <Label htmlFor="sfw-switch" className="text-lg font-semibold flex-1 text-center">
+                            Safe For Work
+                        </Label>
+                        <Switch
+                            id="sfw-switch"
+                            checked={safeForWork}
+                            onCheckedChange={setSafeForWork}
+                            aria-label="Toggle safe for work filter"
+                        />
+                    </div>
+                </section>
                 
-                <div className="w-full min-h-[200px]">
+                <div className="w-full min-h-[300px] flex items-center justify-center">
                     {isLoading && (
-                         <Card className="w-full bg-card/80">
+                         <JokeCard>
                             <CardHeader>
                                 <Skeleton className="h-8 w-3/4 rounded-md" />
                             </CardHeader>
                             <CardContent className="space-y-4 pt-2">
-                                <Skeleton className="h-64 w-full rounded-md" />
+                                <Skeleton className="h-48 w-full rounded-md" />
+                                <div className="flex justify-end gap-2">
+                                  <Skeleton className="h-10 w-10 rounded-full" />
+                                  <Skeleton className="h-10 w-10 rounded-full" />
+                                  <Skeleton className="h-10 w-10 rounded-full" />
+                                </div>
                             </CardContent>
-                        </Card>
+                        </JokeCard>
                     )}
                     
                     {!isLoading && joke && category === 'crypto memes' && memeImage && (
-                        <Card className="w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/80 backdrop-blur-sm shadow-lg border rounded-2xl">
-                             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-2xl font-bold text-primary">Meme Generated!</CardTitle>
+                        <JokeCard>
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-2xl font-bold font-headline">Meme Generated!</CardTitle>
                                 <div className="flex items-center">
                                     <ShareMenu />
-                                    <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme">
+                                    <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme" className="rounded-full">
                                         <Download className="h-5 w-5" />
                                     </Button>
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <canvas ref={memeCanvasRef} className="w-full h-auto rounded-lg border" />
+                                <canvas ref={memeCanvasRef} className="w-full h-auto rounded-lg border-2" />
                             </CardContent>
-                        </Card>
+                        </JokeCard>
                     )}
 
                     {!isLoading && joke && category !== 'crypto memes' && (
-                         <Card className="w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/80 backdrop-blur-sm shadow-lg border rounded-2xl">
+                         <JokeCard>
                             <CardHeader className="flex flex-row items-start justify-between pb-2">
-                                <CardTitle className="text-2xl font-bold text-primary">Here's a good one!</CardTitle>
+                                <CardTitle className="text-2xl font-bold font-headline">Here's a good one!</CardTitle>
                                 <div className="flex items-center">
                                     <ShareMenu />
                                      <Button
@@ -417,16 +381,17 @@ export default function LaughFactoryPage() {
                                         onClick={() => handleGenerateAudio(joke.joke)}
                                         disabled={isGeneratingAudio}
                                         aria-label="Read joke aloud"
+                                        className="rounded-full"
                                     >
                                         {isGeneratingAudio ? <Loader2 className="h-5 w-5 animate-spin" /> : <Volume2 className="h-5 w-5" />}
                                     </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => handleCopyToClipboard(joke.joke)} aria-label="Copy joke">
+                                    <Button variant="ghost" size="icon" onClick={() => handleCopyToClipboard(joke.joke)} aria-label="Copy joke" className="rounded-full">
                                         <Copy className="h-5 w-5" />
                                     </Button>
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-2xl font-medium leading-relaxed">{joke.joke}</p>
+                                <p className="text-xl font-medium leading-relaxed">{joke.joke}</p>
                                  {audio?.media && (
                                     <div className="mt-4">
                                         <audio controls autoPlay className="w-full">
@@ -436,20 +401,43 @@ export default function LaughFactoryPage() {
                                     </div>
                                 )}
                                 <div className="flex justify-end items-center space-x-2 mt-6">
-                                    <Button variant={selectedReaction === 'laugh' ? 'default' : 'outline'} size="icon" onClick={() => setSelectedReaction('laugh')}>
-                                        <span role="img" aria-label="laughing emoji">😂</span>
+                                    <Button variant={selectedReaction === 'laugh' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('laugh')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
+                                        <span>😂</span>
                                     </Button>
-                                    <Button variant={selectedReaction === 'neutral' ? 'default' : 'outline'} size="icon" onClick={() => setSelectedReaction('neutral')}>
-                                        <span role="img" aria-label="neutral face emoji">😐</span>
+                                    <Button variant={selectedReaction === 'neutral' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('neutral')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
+                                        <span>😐</span>
                                     </Button>
-                                    <Button variant={selectedReaction === 'unamused' ? 'default' : 'outline'} size="icon" onClick={() => setSelectedReaction('unamused')}>
-                                        <span role="img" aria-label="unamused face emoji">🙄</span>
+                                    <Button variant={selectedReaction === 'unamused' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('unamused')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
+                                        <span>🙄</span>
                                     </Button>
                                 </div>
                             </CardContent>
-                        </Card>
+                        </JokeCard>
                     )}
                 </div>
             </main>
+
+            <footer className="sticky bottom-0 w-full flex justify-center p-4 mt-8">
+                 <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center gap-2 border">
+                    <Button onClick={handleGenerateJoke} disabled={isLoading} size="lg" className="rounded-full font-bold text-lg flex-1 shadow-md">
+                        {isLoading ? (
+                            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                        ) : (
+                            <Sparkles className="mr-2 h-6 w-6" />
+                        )}
+                        Generate Joke
+                    </Button>
+                     <Button asChild variant="outline" className="rounded-full shadow-md">
+                       <Link href="/submit"><Send className="mr-2 h-4 w-4" /> Submit</Link>
+                    </Button>
+                    <Button asChild variant="outline" className="rounded-full shadow-md">
+                        <Link href="/submit"><Trophy className="mr-2 h-4 w-4" /> Board</Link>
+                    </Button>
+                    <Button variant="outline" className="rounded-full shadow-md">
+                       <Wallet className="mr-2 h-4 w-4" /> Connect
+                    </Button>
+                 </div>
+            </footer>
         </div>
     );
+}

@@ -58,7 +58,7 @@ export default function SubmitPage() {
         <div className="flex flex-col items-center min-h-screen p-4 sm:p-8 pt-12">
             <main className="w-full max-w-4xl mx-auto flex flex-col items-center space-y-10">
                 <header className="text-center w-full relative">
-                    <Button asChild variant="ghost" className="absolute left-0 top-1/2 -translate-y-1/2">
+                    <Button asChild variant="ghost" className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full">
                        <Link href="/"><ArrowLeft className="mr-2" /> Back to Jokes</Link>
                     </Button>
                     <h1 className="text-5xl md:text-6xl font-bold font-headline text-primary">Community Hub</h1>
@@ -68,7 +68,7 @@ export default function SubmitPage() {
                 <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-12">
                     {/* Submission Form */}
                     <div className="space-y-6">
-                        <Card className="w-full bg-card/80 backdrop-blur-sm shadow-lg border">
+                        <Card className="w-full bg-card/80 backdrop-blur-sm shadow-lg border-2 rounded-2xl">
                             <CardHeader>
                                 <CardTitle className="text-2xl font-bold">Got a Banger?</CardTitle>
                                 <CardDescription>Submit your original joke for a chance to be featured!</CardDescription>
@@ -83,7 +83,7 @@ export default function SubmitPage() {
                                             value={joke}
                                             onChange={(e) => setJoke(e.target.value)}
                                             rows={4}
-                                            className="mt-2"
+                                            className="mt-2 rounded-xl"
                                         />
                                     </div>
                                     <div>
@@ -93,10 +93,10 @@ export default function SubmitPage() {
                                             placeholder="JokeSmith_2000"
                                             value={creator}
                                             onChange={(e) => setCreator(e.target.value)}
-                                            className="mt-2"
+                                            className="mt-2 rounded-xl"
                                         />
                                     </div>
-                                    <Button type="submit" size="lg" className="w-full text-lg">Submit for Glory</Button>
+                                    <Button type="submit" size="lg" className="w-full text-lg rounded-full font-bold">Submit for Glory</Button>
                                 </form>
                             </CardContent>
                         </Card>
@@ -104,7 +104,7 @@ export default function SubmitPage() {
 
                     {/* Leaderboard */}
                     <div className="space-y-6">
-                        <Card className="w-full bg-card/80 backdrop-blur-sm shadow-lg border">
+                        <Card className="w-full bg-card/80 backdrop-blur-sm shadow-lg border-2 rounded-2xl">
                             <CardHeader>
                                 <CardTitle className="text-2xl font-bold flex items-center"><Trophy className="mr-2 text-yellow-500" /> Weekly Leaderboard</CardTitle>
                                 <CardDescription>The best jokes as voted by the community.</CardDescription>
@@ -139,5 +139,3 @@ export default function SubmitPage() {
         </div>
     );
 }
-
-    
