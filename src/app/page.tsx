@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/generate-safe-joke";
+import { generateMemeImage, type GenerateMemeImageOutput } from "@/ai/flows/generate-meme-image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import Image from "next/image";
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -26,9 +28,11 @@ export default function LaughFactoryPage() {
     const [category, setCategory] = useState(jokeCategories[0].id);
     const [safeForWork, setSafeForWork] = useState(true);
     const [joke, setJoke] = useState<GenerateSafeJokeOutput | null>(null);
+    const [memeImage, setMemeImage] = useState<GenerateMemeImageOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
     const { toast } = useToast();
+    const memeCanvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
         const selectedCat = jokeCategories.find(cat => cat.id === category);
@@ -37,18 +41,106 @@ export default function LaughFactoryPage() {
         }
     }, [category]);
 
+    const drawMeme = () => {
+        const canvas = memeCanvasRef.current;
+        const jokeText = joke?.joke;
+        const imageUri = memeImage?.imageDataUri;
+
+        if (canvas && jokeText && imageUri) {
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return;
+
+            const img = new window.Image();
+            img.crossOrigin = "anonymous";
+            img.src = imageUri;
+            img.onload = () => {
+                // Set canvas to image dimensions
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                // Draw image
+                ctx.drawImage(img, 0, 0);
+
+                // Style text
+                ctx.fillStyle = "white";
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = Math.max(1, img.width / 200); // Dynamic stroke width
+                ctx.textAlign = "center";
+                
+                // Set font size relative to image width
+                const fontSize = Math.max(20, img.width / 12);
+                ctx.font = `bold ${fontSize}px 'Impact', sans-serif`;
+                
+                // Text position
+                const x = canvas.width / 2;
+                const y = canvas.height * 0.9; // Position text at 90% from the top
+
+                // Function to wrap text
+                const wrapText = (context: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) => {
+                    const words = text.split(' ');
+                    let line = '';
+                    const lines = [];
+
+                    for(let n = 0; n < words.length; n++) {
+                        const testLine = line + words[n] + ' ';
+                        const metrics = context.measureText(testLine);
+                        const testWidth = metrics.width;
+                        if (testWidth > maxWidth && n > 0) {
+                            lines.push(line);
+                            line = words[n] + ' ';
+                        } else {
+                            line = testLine;
+                        }
+                    }
+                    lines.push(line);
+
+                    let currentY = y - (lines.length - 1) * lineHeight;
+
+                    for (let i = 0; i < lines.length; i++) {
+                         context.strokeText(lines[i], x, currentY);
+                         context.fillText(lines[i], x, currentY);
+                         currentY += lineHeight;
+                    }
+                }
+                
+                const maxWidth = canvas.width * 0.9;
+                const lineHeight = fontSize * 1.2;
+
+                // Draw wrapped text
+                wrapText(ctx, jokeText.toUpperCase(), x, y, maxWidth, lineHeight);
+            };
+        }
+    };
+
+    useEffect(() => {
+        if (category === 'crypto memes' && joke && memeImage) {
+            drawMeme();
+        }
+    }, [joke, memeImage, category]);
+
     const handleGenerateJoke = async () => {
         setIsLoading(true);
         setJoke(null);
+        setMemeImage(null);
         setSelectedReaction(null);
         try {
-            const result = await generateSafeJoke({ category, safeForWork });
-            setJoke(result);
+            const jokePromise = generateSafeJoke({ category, safeForWork });
+            const memePromise = category === 'crypto memes' 
+                ? generateMemeImage() 
+                : Promise.resolve(null);
+
+            const [jokeResult, memeResult] = await Promise.all([jokePromise, memePromise]);
+            
+            setJoke(jokeResult);
+            if (memeResult) {
+                setMemeImage(memeResult);
+            }
+
         } catch (error) {
-            console.error("Failed to generate joke:", error);
+            console.error("Failed to generate joke/meme:", error);
             toast({
                 title: "Error",
-                description: "Oops! Something went wrong while telling a joke. Please try again.",
+                description: "Oops! Something went wrong. Please try again.",
                 variant: "destructive",
             });
         } finally {
@@ -63,6 +155,17 @@ export default function LaughFactoryPage() {
                 title: "Copied!",
                 description: "The joke has been copied to your clipboard.",
             });
+        }
+    };
+    
+    const handleDownloadMeme = () => {
+        const canvas = memeCanvasRef.current;
+        if (canvas) {
+            const dataUrl = canvas.toDataURL("image/png");
+            const link = document.createElement("a");
+            link.download = "laugh-factory-meme.png";
+            link.href = dataUrl;
+            link.click();
         }
     };
 
@@ -124,18 +227,31 @@ export default function LaughFactoryPage() {
                 
                 <div className="w-full min-h-[200px]">
                     {isLoading && (
-                        <Card className="w-full animate-pulse bg-card/80">
+                         <Card className="w-full bg-card/80">
                             <CardHeader>
                                 <Skeleton className="h-8 w-3/4 rounded-md" />
                             </CardHeader>
                             <CardContent className="space-y-4 pt-2">
-                                <Skeleton className="h-6 w-full rounded-md" />
-                                <Skeleton className="h-6 w-5/6 rounded-md" />
+                                <Skeleton className="h-64 w-full rounded-md" />
                             </CardContent>
                         </Card>
                     )}
                     
-                    {joke && !isLoading && (
+                    {!isLoading && joke && category === 'crypto memes' && memeImage && (
+                        <Card className="w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/80 backdrop-blur-sm shadow-lg border">
+                             <CardHeader className="flex flex-row items-start justify-between pb-2">
+                                <CardTitle className="text-2xl font-bold text-primary">Meme Generated!</CardTitle>
+                                <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme">
+                                    <Download className="h-5 w-5" />
+                                </Button>
+                            </CardHeader>
+                            <CardContent>
+                                <canvas ref={memeCanvasRef} className="w-full h-auto rounded-lg border" />
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {!isLoading && joke && category !== 'crypto memes' && (
                          <Card className="w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/80 backdrop-blur-sm shadow-lg border">
                             <CardHeader className="flex flex-row items-start justify-between pb-2">
                                 <CardTitle className="text-2xl font-bold text-primary">Here's a good one!</CardTitle>
