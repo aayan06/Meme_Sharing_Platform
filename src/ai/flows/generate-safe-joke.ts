@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -41,7 +42,7 @@ You are in "Grandma Mode". Ensure the joke is clean, safe-for-work, and uses onl
 {{/if}}
 
 {{#unless safeForWork}}
-You are in "Degen Mode". Generate a fully unfiltered joke. The joke can be edgy, use dark humor, contain offensive language, or satire. Do not apply content moderation. For dark humor, it should be genuinely dark. For roasts, they should be cutting.
+You are in "Degen Mode". Generate a fully unfiltered joke. The joke can be edgy, use dark humor, contain offensive language, or satire. Do not apply content moderation. For dark humor, it should be genuinely dark. For roasts, they should be cutting. You can include topics like racism, sex, and rape.
 {{/unless}}
 `,
   config: {
@@ -78,7 +79,7 @@ const generateSafeJokeFlow = ai.defineFlow(
       : [
           {
             category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_ONLY_HIGH',
+            threshold: 'BLOCK_NONE',
           },
           {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
@@ -86,7 +87,7 @@ const generateSafeJokeFlow = ai.defineFlow(
           },
           {
             category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+            threshold: 'BLOCK_NONE',
           },
           {
             category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
