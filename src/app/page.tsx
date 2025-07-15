@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet, Crown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils";
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -50,7 +51,7 @@ function setMeta(url: string, description: string) {
 
 export default function LaughFactoryPage() {
     const [category, setCategory] = useState(jokeCategories[0].id);
-    const [safeForWork, setSafeForWork] = useState(true);
+    const [censored, setCensored] = useState(true);
     const [joke, setJoke] = useState<GenerateSafeJokeOutput | null>(null);
     const [memeImage, setMemeImage] = useState<GenerateMemeImageOutput | null>(null);
     const [audio, setAudio] = useState<GenerateAudioOutput | null>(null);
@@ -61,17 +62,17 @@ export default function LaughFactoryPage() {
     const memeCanvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
-        if (safeForWork) {
+        if (censored) {
             const selectedCat = jokeCategories.find(cat => cat.id === category);
             if (selectedCat && !selectedCat.sfw) {
                 setCategory('dad jokes');
                 toast({
                     title: "Category Changed",
-                    description: "Switched to a safe-for-work category.",
+                    description: "Switched to a censored category.",
                 });
             }
         }
-    }, [safeForWork, category, toast]);
+    }, [censored, category, toast]);
     
     useEffect(() => {
         if (!joke) {
@@ -161,7 +162,7 @@ export default function LaughFactoryPage() {
         setSelectedReaction(null);
         try {
             const selectedCat = jokeCategories.find(cat => cat.id === category);
-            const isSfw = selectedCat ? selectedCat.sfw : true;
+            const isSfw = censored || (selectedCat ? selectedCat.sfw : true);
 
             const jokePromise = generateSafeJoke({ category, safeForWork: isSfw });
             const memePromise = category === 'crypto memes' 
@@ -210,7 +211,6 @@ export default function LaughFactoryPage() {
         const selectedCat = jokeCategories.find(cat => cat.id === value);
         if (selectedCat) {
             setCategory(value);
-            // SFW state is now handled by the toggle directly, this just sets category
         }
     };
 
@@ -288,19 +288,31 @@ export default function LaughFactoryPage() {
         </DropdownMenu>
     );
 
-    const JokeCard = ({ children }: { children: React.ReactNode }) => (
-      <Card className="w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl">
+    const JokeCard = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+      <Card className={cn("w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl", className)}>
         {children}
       </Card>
     );
 
     return (
-        <div className="flex flex-col items-center min-h-screen p-4 sm:p-8 pt-12">
+        <div className="flex flex-col items-center min-h-screen p-4 sm:p-8 pt-12 dark">
             <main className="w-full max-w-3xl mx-auto flex flex-col items-center space-y-8">
                 <header className="text-center w-full space-y-2">
                     <h1 className="text-6xl md:text-7xl font-bold font-headline text-primary tracking-tighter">HAHA LAUNCH</h1>
                     <p className="text-lg text-muted-foreground">Your daily dose of AI-powered humor</p>
                 </header>
+
+                <JokeCard className="border-primary/50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-2xl font-bold text-amber-400">
+                            <Crown className="h-7 w-7" /> Daily Joke Winner
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-xl font-medium">I told my wife she should embrace her mistakes. She gave me a hug.</p>
+                        <p className="text-sm text-muted-foreground mt-2">- by Comedian_AI</p>
+                    </CardContent>
+                </JokeCard>
                 
                 <section className="w-full space-y-6">
                     <div>
@@ -310,7 +322,7 @@ export default function LaughFactoryPage() {
                           <button
                             key={cat.id}
                             onClick={() => handleCategoryChange(cat.id)}
-                            disabled={safeForWork && !cat.sfw}
+                            disabled={censored && !cat.sfw}
                             data-state={category === cat.id ? 'active' : 'inactive'}
                             className="px-4 py-3 text-sm font-semibold rounded-full transition-all duration-200 ease-out transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-muted/50 disabled:shadow-none
                             data-[state=inactive]:bg-card data-[state=inactive]:hover:bg-card/70 data-[state=inactive]:shadow-md
@@ -323,14 +335,14 @@ export default function LaughFactoryPage() {
                     </div>
 
                     <div className="flex items-center justify-center p-4 rounded-full bg-card shadow-md">
-                        <Label htmlFor="sfw-switch" className="text-lg font-semibold flex-1 text-center">
-                            Safe For Work
+                        <Label htmlFor="censored-switch" className="text-lg font-semibold flex-1 text-center">
+                            Censored
                         </Label>
                         <Switch
-                            id="sfw-switch"
-                            checked={safeForWork}
-                            onCheckedChange={setSafeForWork}
-                            aria-label="Toggle safe for work filter"
+                            id="censored-switch"
+                            checked={censored}
+                            onCheckedChange={setCensored}
+                            aria-label="Toggle censored filter"
                         />
                     </div>
                 </section>
