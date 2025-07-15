@@ -5,13 +5,14 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/generate-safe-joke";
 import { generateMemeImage, type GenerateMemeImageOutput } from "@/ai/flows/generate-meme-image";
+import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-audio";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 import {
@@ -58,7 +59,9 @@ export default function LaughFactoryPage() {
     const [safeForWork, setSafeForWork] = useState(true);
     const [joke, setJoke] = useState<GenerateSafeJokeOutput | null>(null);
     const [memeImage, setMemeImage] = useState<GenerateMemeImageOutput | null>(null);
+    const [audio, setAudio] = useState<GenerateAudioOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
     const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
     const { toast } = useToast();
     const memeCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -160,6 +163,7 @@ export default function LaughFactoryPage() {
         setIsLoading(true);
         setJoke(null);
         setMemeImage(null);
+        setAudio(null);
         setSelectedReaction(null);
         try {
             // Determine SFW based on selected category before making the call
@@ -243,6 +247,25 @@ export default function LaughFactoryPage() {
         }
         window.open(shareUrl, '_blank', 'noopener,noreferrer');
     }
+
+    const handleGenerateAudio = async (text: string) => {
+        if (!text) return;
+        setIsGeneratingAudio(true);
+        setAudio(null);
+        try {
+            const audioResult = await generateAudio(text);
+            setAudio(audioResult);
+        } catch (error) {
+            console.error("Failed to generate audio:", error);
+            toast({
+                title: "Audio Error",
+                description: "Couldn't generate audio for this joke.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsGeneratingAudio(false);
+        }
+    };
 
     const ShareMenu = () => (
         <DropdownMenu>
@@ -388,6 +411,15 @@ export default function LaughFactoryPage() {
                                 <CardTitle className="text-2xl font-bold text-primary">Here's a good one!</CardTitle>
                                 <div className="flex items-center">
                                     <ShareMenu />
+                                     <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleGenerateAudio(joke.joke)}
+                                        disabled={isGeneratingAudio}
+                                        aria-label="Read joke aloud"
+                                    >
+                                        {isGeneratingAudio ? <Loader2 className="h-5 w-5 animate-spin" /> : <Volume2 className="h-5 w-5" />}
+                                    </Button>
                                     <Button variant="ghost" size="icon" onClick={() => handleCopyToClipboard(joke.joke)} aria-label="Copy joke">
                                         <Copy className="h-5 w-5" />
                                     </Button>
@@ -395,6 +427,14 @@ export default function LaughFactoryPage() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-2xl font-medium leading-relaxed">{joke.joke}</p>
+                                 {audio?.media && (
+                                    <div className="mt-4">
+                                        <audio controls autoPlay className="w-full">
+                                            <source src={audio.media} type="audio/wav" />
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    </div>
+                                )}
                                 <div className="flex justify-end items-center space-x-2 mt-6">
                                     <Button variant={selectedReaction === 'laugh' ? 'default' : 'outline'} size="icon" onClick={() => setSelectedReaction('laugh')}>
                                         <span role="img" aria-label="laughing emoji">😂</span>
@@ -413,5 +453,3 @@ export default function LaughFactoryPage() {
             </main>
         </div>
     );
-
-    

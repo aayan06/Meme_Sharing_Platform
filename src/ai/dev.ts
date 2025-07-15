@@ -3,3 +3,4 @@ config();
 
 import '@/ai/flows/generate-safe-joke.ts';
 import '@/ai/flows/generate-meme-image.ts';
+import '@/ai/flows/generate-audio.ts';
