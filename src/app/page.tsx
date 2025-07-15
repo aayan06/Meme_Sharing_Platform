@@ -299,6 +299,11 @@ export default function LaughFactoryPage() {
 
     const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
 
+    const dailyJoke = censored 
+        ? { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 }
+        : { joke: "My grief counselor died. He was so good, I don’t even care.", creator: "DarkHumor_Fan", likes: 666 };
+
+
     return (
         <div className="flex flex-col items-center min-h-screen p-4 sm:p-8 pt-12 dark">
             <main className="w-full max-w-3xl mx-auto flex flex-col items-center space-y-8">
@@ -314,12 +319,12 @@ export default function LaughFactoryPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-xl font-medium">I told my wife she should embrace her mistakes. She gave me a hug.</p>
+                        <p className="text-xl font-medium">{dailyJoke.joke}</p>
                         <div className="flex items-center gap-4 mt-4">
-                            <p className="text-sm text-muted-foreground">- by Comedian_AI</p>
+                            <p className="text-sm text-muted-foreground">- by {dailyJoke.creator}</p>
                             <div className="flex items-center gap-1 text-lg font-bold text-green-400">
                                <span>😂</span>
-                               <span>1,337</span>
+                               <span>{dailyJoke.likes}</span>
                             </div>
                         </div>
                     </CardContent>
@@ -346,7 +351,7 @@ export default function LaughFactoryPage() {
                     </div>
 
                     <div className="flex items-center justify-center p-4 rounded-full bg-card shadow-md">
-                        <Label htmlFor="censored-switch" className="text-lg font-semibold flex-1 text-center">
+                        <Label htmlFor="censored-switch" className="text-lg font-semibold flex-1 text-center text-foreground mr-4">
                             Censored
                         </Label>
                         <Switch
@@ -450,18 +455,20 @@ export default function LaughFactoryPage() {
                         )}
                         Generate Joke
                     </Button>
-                     <Button asChild variant="outline" className="rounded-full shadow-md">
+                     <Button asChild variant="secondary" className="rounded-full shadow-md text-secondary-foreground hover:bg-secondary/80">
                        <Link href="/submit"><Send className="mr-2 h-4 w-4" /> Submit</Link>
                     </Button>
-                    <Button asChild variant="outline" className="rounded-full shadow-md">
+                    <Button asChild variant="secondary" className="rounded-full shadow-md text-secondary-foreground hover:bg-secondary/80">
                         <Link href="/submit"><Trophy className="mr-2 h-4 w-4" /> Board</Link>
                     </Button>
-                    <Button variant="outline" className="rounded-full shadow-md">
+                    <Button variant="secondary" className="rounded-full shadow-md text-secondary-foreground hover:bg-secondary/80">
                        <Wallet className="mr-2 h-4 w-4" /> Connect
                     </Button>
                  </div>
             </footer>
         </div>
     );
+}
+    
 
     
