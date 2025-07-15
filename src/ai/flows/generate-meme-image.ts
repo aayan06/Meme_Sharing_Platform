@@ -20,7 +20,7 @@ const GenerateMemeImageOutputSchema = z.object({
 });
 export type GenerateMemeImageOutput = z.infer<typeof GenerateMemeImageOutputSchema>;
 
-export async function generateMemeImage(input: Pick<GenerateSafeJokeInput, 'category' | 'safeForWork'>): Promise<GenerateMemeImageOutput> {
+export async function generateMemeImage(input: Pick<GenerateSafeJokeInput, 'category' | 'safeForWork' | 'joke'>): Promise<GenerateMemeImageOutput> {
   return generateMemeImageFlow(input);
 }
 
@@ -30,17 +30,39 @@ const generateMemeImageFlow = ai.defineFlow(
     inputSchema: z.object({
       category: z.string(),
       safeForWork: z.boolean(),
+      joke: z.string(),
     }),
     outputSchema: GenerateMemeImageOutputSchema,
   },
   async (input) => {
     let prompt = '';
+
+    const baseInstructions = `
+      You are a meme generation expert. Your task is to generate a high-quality background image for a meme based on a provided joke punchline.
+
+      **CRITICAL RULES:**
+      1.  **Image Content**: The generated image MUST be a clean background template with NO pre-existing text. It should have a clear subject or scene.
+      2.  **Visual Matching**: The background image's theme MUST visually match the tone and topic of the joke: "${input.joke}". For example, a joke about crashing prices should have a bear market chart background.
+      3.  **Avoid Clutter**: DO NOT use random, cluttered, or abstract backgrounds that clash with the joke. The image should support the text, not overpower it.
+    `;
+
     if (input.category === 'crypto memes') {
-      prompt = `Generate a background image for a cryptocurrency meme. Use a rotating, random pool of crypto-themed templates like "Buy the dip", "Rugpull", "HODL", Satoshi Wojak, Elon Musk memes, or NFT fails. Vary the styles: chart memes, deep-fried memes, surreal edits, vaporwave, pixelated, rage comics.
-      ${input.safeForWork ? 'The meme must be safe-for-work and use only light humor.' : 'You are in Degen Mode. The meme can be edgy or satirical.'}`;
+      prompt = `
+        ${baseInstructions}
+        **Category**: Cryptocurrency Memes
+        **Joke**: "${input.joke}"
+        **Template Pool**: Use a random, rotating selection of high-quality, crypto-themed templates. Examples include: "Buy the dip," "Rugpull," "HODL," Satoshi, Wojak, Pepe traders, Elon Musk, or NFT-related scenes.
+        **Image Styles**: Vary the visual style. Consider chart memes, surreal edits, vaporwave aesthetics, or pixel art.
+        ${input.safeForWork ? 'The meme must be safe-for-work and use only light humor.' : 'You are in Degen Mode. The meme can be edgy or satirical.'}
+      `;
     } else if (input.category === 'edgy memes') {
-      prompt = `Generate a background image for a popular, currently trending edgy internet meme. Use templates like Wojak variants, Chad vs Virgin, Gru's Plan, etc. Do not reuse images from the crypto category.
-      ${input.safeForWork ? 'The meme must be safe-for-work. Use templates tagged as "sfw" or "family".' : 'You are in Degen Mode. Pull from an "edgy", "dark", or "nsfw-memes" template pool. The template can include profanity or sensitive topics.'}`;
+      prompt = `
+        ${baseInstructions}
+        **Category**: Edgy Internet Memes
+        **Joke**: "${input.joke}"
+        **Template Pool**: Use popular, currently trending internet meme templates. Examples: Wojak variants (e.g., Soyjak, Trad-wife), Chad vs. Virgin, Gru's Plan, Distracted Boyfriend. DO NOT reuse images from the crypto category.
+        ${input.safeForWork ? 'The meme must be safe-for-work. Use templates tagged as "sfw" or "family".' : 'You are in Degen Mode. The template can include profanity or sensitive topics.'}
+      `;
     }
 
     const {media} = await ai.generate({

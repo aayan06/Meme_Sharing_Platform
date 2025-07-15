@@ -144,7 +144,24 @@ export default function LaughFactoryPage() {
                 
                 const maxWidth = canvas.width * 0.9;
                 const lineHeight = fontSize * 1.2;
-                wrapText(ctx, jokeText.toUpperCase(), x, y, maxWidth, lineHeight);
+                
+                // Super simple top/bottom text split for now
+                const jokeLines = jokeText.toUpperCase().split('. ');
+                const topText = jokeLines.slice(0, jokeLines.length / 2).join('. ');
+                const bottomText = jokeLines.slice(jokeLines.length / 2).join('. ');
+
+                if (bottomText) {
+                    wrapText(ctx, bottomText, x, y, maxWidth, lineHeight);
+                }
+                
+                if (topText) {
+                    const topY = canvas.height * 0.1 + lineHeight;
+                     wrapText(ctx, topText, x, topY, maxWidth, lineHeight);
+                } else if (!bottomText) {
+                    // if no split, just center it at the bottom
+                    wrapText(ctx, jokeText.toUpperCase(), x, y, maxWidth, lineHeight);
+                }
+
             };
         }
     };
@@ -166,15 +183,11 @@ export default function LaughFactoryPage() {
             const isSfw = censored;
             const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
 
-            const jokePromise = generateSafeJoke({ category, safeForWork: isSfw });
-            const memePromise = isMemeCategory 
-                ? generateMemeImage({ category, safeForWork: isSfw })
-                : Promise.resolve(null);
-
-            const [jokeResult, memeResult] = await Promise.all([jokePromise, memePromise]);
-            
+            const jokeResult = await generateSafeJoke({ category, safeForWork: isSfw });
             setJoke(jokeResult);
-            if (memeResult) {
+
+            if (isMemeCategory) {
+                const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
                 setMemeImage(memeResult);
             }
 
