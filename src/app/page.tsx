@@ -64,11 +64,17 @@ export default function LaughFactoryPage() {
     const memeCanvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
-        const selectedCat = jokeCategories.find(cat => cat.id === category);
-        if (selectedCat) {
-            setSafeForWork(selectedCat.sfw);
+        if (safeForWork) {
+            const selectedCat = jokeCategories.find(cat => cat.id === category);
+            if (selectedCat && !selectedCat.sfw) {
+                setCategory('dad jokes');
+                toast({
+                    title: "Category Changed",
+                    description: "Switched to a safe-for-work category.",
+                });
+            }
         }
-    }, [category]);
+    }, [safeForWork, category, toast]);
     
     useEffect(() => {
         if (!joke) {
@@ -156,7 +162,11 @@ export default function LaughFactoryPage() {
         setMemeImage(null);
         setSelectedReaction(null);
         try {
-            const jokePromise = generateSafeJoke({ category, safeForWork });
+            // Determine SFW based on selected category before making the call
+            const selectedCat = jokeCategories.find(cat => cat.id === category);
+            const isSfw = selectedCat ? selectedCat.sfw : true;
+
+            const jokePromise = generateSafeJoke({ category, safeForWork: isSfw });
             const memePromise = category === 'crypto memes' 
                 ? generateMemeImage() 
                 : Promise.resolve(null);
@@ -200,7 +210,11 @@ export default function LaughFactoryPage() {
     };
 
     const handleCategoryChange = (value: string) => {
-        setCategory(value);
+        const selectedCat = jokeCategories.find(cat => cat.id === value);
+        if (selectedCat) {
+            setCategory(value);
+            setSafeForWork(selectedCat.sfw);
+        }
     };
 
     const handleShare = (platform: 'twitter' | 'telegram' | 'reddit' | 'copy') => {
@@ -297,11 +311,17 @@ export default function LaughFactoryPage() {
                             <RadioGroup value={category} onValueChange={handleCategoryChange} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                 {jokeCategories.map((cat) => (
                                     <div key={cat.id}>
-                                        <RadioGroupItem value={cat.id} id={cat.id} className="sr-only" />
+                                        <RadioGroupItem 
+                                            value={cat.id} 
+                                            id={cat.id} 
+                                            className="sr-only" 
+                                            disabled={safeForWork && !cat.sfw}
+                                        />
                                         <Label
                                             htmlFor={cat.id}
-                                            className="flex flex-col items-center justify-center rounded-lg border-2 p-4 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground cursor-pointer data-[state=checked]:border-primary data-[state=checked]:ring-2 data-[state=checked]:ring-primary h-full"
+                                            className="flex flex-col items-center justify-center rounded-lg border-2 p-4 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground cursor-pointer data-[state=checked]:border-primary data-[state=checked]:ring-2 data-[state=checked]:ring-primary h-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent aria-disabled:hover:text-current"
                                             data-state={category === cat.id ? 'checked' : 'unchecked'}
+                                            aria-disabled={safeForWork && !cat.sfw}
                                         >
                                             {cat.label}
                                         </Label>
@@ -319,7 +339,6 @@ export default function LaughFactoryPage() {
                                 checked={safeForWork}
                                 onCheckedChange={setSafeForWork}
                                 aria-label="Toggle safe for work filter"
-                                disabled
                             />
                         </div>
 
@@ -394,4 +413,5 @@ export default function LaughFactoryPage() {
             </main>
         </div>
     );
-}
+
+    
