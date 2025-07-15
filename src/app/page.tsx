@@ -12,9 +12,14 @@ import { Copy, Loader2, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const jokeCategories = [
-    { id: "dad jokes", label: "Dad Jokes" },
-    { id: "dark humor", label: "Dark Humor" },
-    { id: "pick-up lines", label: "Pick-up Lines" },
+    { id: "dad jokes", label: "Dad Jokes", sfw: true },
+    { id: "dark humor", label: "Dark Humor", sfw: false },
+    { id: "pick-up lines", label: "Pick-up Lines", sfw: true },
+    { id: "crypto memes", label: "Crypto Memes", sfw: true },
+    { id: "roasts", label: "Roasts", sfw: false },
+    { id: "wholesome jokes", label: "Wholesome Jokes", sfw: true },
+    { id: "ai jokes", label: "AI Jokes", sfw: true },
+    { id: "edgy memes", label: "Edgy Memes", sfw: false },
 ];
 
 export default function LaughFactoryPage() {
@@ -22,19 +27,20 @@ export default function LaughFactoryPage() {
     const [safeForWork, setSafeForWork] = useState(true);
     const [joke, setJoke] = useState<GenerateSafeJokeOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
     const { toast } = useToast();
 
     useEffect(() => {
-        if (category === 'dark humor') {
-            setSafeForWork(false);
-        } else {
-            setSafeForWork(true);
+        const selectedCat = jokeCategories.find(cat => cat.id === category);
+        if (selectedCat) {
+            setSafeForWork(selectedCat.sfw);
         }
     }, [category]);
 
     const handleGenerateJoke = async () => {
         setIsLoading(true);
         setJoke(null);
+        setSelectedReaction(null);
         try {
             const result = await generateSafeJoke({ category, safeForWork });
             setJoke(result);
@@ -76,7 +82,7 @@ export default function LaughFactoryPage() {
                     <div className="space-y-8">
                         <div>
                             <Label className="text-xl font-semibold mb-4 block text-center sm:text-left">Choose a Category</Label>
-                            <RadioGroup value={category} onValueChange={handleCategoryChange} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <RadioGroup value={category} onValueChange={handleCategoryChange} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                 {jokeCategories.map((cat) => (
                                     <div key={cat.id}>
                                         <RadioGroupItem value={cat.id} id={cat.id} className="sr-only" />
@@ -101,7 +107,7 @@ export default function LaughFactoryPage() {
                                 checked={safeForWork}
                                 onCheckedChange={setSafeForWork}
                                 aria-label="Toggle safe for work filter"
-                                disabled={category === 'dark humor'}
+                                disabled
                             />
                         </div>
 
@@ -139,6 +145,17 @@ export default function LaughFactoryPage() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-2xl font-medium leading-relaxed">{joke.joke}</p>
+                                <div className="flex justify-end items-center space-x-2 mt-4">
+                                    <Button variant={selectedReaction === 'laugh' ? 'default' : 'outline'} size="icon" onClick={() => setSelectedReaction('laugh')}>
+                                        <span role="img" aria-label="laughing emoji">😂</span>
+                                    </Button>
+                                    <Button variant={selectedReaction === 'neutral' ? 'default' : 'outline'} size="icon" onClick={() => setSelectedReaction('neutral')}>
+                                        <span role="img" aria-label="neutral face emoji">😐</span>
+                                    </Button>
+                                    <Button variant={selectedReaction === 'unamused' ? 'default' : 'outline'} size="icon" onClick={() => setSelectedReaction('unamused')}>
+                                        <span role="img" aria-label="unamused face emoji">😒</span>
+                                    </Button>
+                                </div>
                             </CardContent>
                         </Card>
                     )}
