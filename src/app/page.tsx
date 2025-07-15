@@ -75,12 +75,13 @@ export default function LaughFactoryPage() {
     }, [censored, category, toast]);
     
     useEffect(() => {
+        const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
         if (!joke) {
             setMeta('https://placehold.co/1200x630.png', 'Your daily dose of AI-powered humor');
             return;
         }
 
-        if (category === 'crypto memes' && memeImage?.imageDataUri) {
+        if (isMemeCategory && memeImage?.imageDataUri) {
             setMeta(memeImage.imageDataUri, joke.joke);
         } else {
              setMeta('https://placehold.co/1200x630.png', joke.joke);
@@ -149,7 +150,8 @@ export default function LaughFactoryPage() {
     };
 
     useEffect(() => {
-        if (category === 'crypto memes' && joke && memeImage) {
+        const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
+        if (isMemeCategory && joke && memeImage) {
             drawMeme();
         }
     }, [joke, memeImage, category]);
@@ -163,9 +165,10 @@ export default function LaughFactoryPage() {
         try {
             const selectedCat = jokeCategories.find(cat => cat.id === category);
             const isSfw = censored || (selectedCat ? selectedCat.sfw : true);
+            const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
 
             const jokePromise = generateSafeJoke({ category, safeForWork: isSfw });
-            const memePromise = category === 'crypto memes' 
+            const memePromise = isMemeCategory 
                 ? generateMemeImage() 
                 : Promise.resolve(null);
 
@@ -294,6 +297,8 @@ export default function LaughFactoryPage() {
       </Card>
     );
 
+    const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
+
     return (
         <div className="flex flex-col items-center min-h-screen p-4 sm:p-8 pt-12 dark">
             <main className="w-full max-w-3xl mx-auto flex flex-col items-center space-y-8">
@@ -310,7 +315,13 @@ export default function LaughFactoryPage() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-xl font-medium">I told my wife she should embrace her mistakes. She gave me a hug.</p>
-                        <p className="text-sm text-muted-foreground mt-2">- by Comedian_AI</p>
+                        <div className="flex items-center gap-4 mt-4">
+                            <p className="text-sm text-muted-foreground">- by Comedian_AI</p>
+                            <div className="flex items-center gap-1 text-lg font-bold text-green-400">
+                               <span>😂</span>
+                               <span>1,337</span>
+                            </div>
+                        </div>
                     </CardContent>
                 </JokeCard>
                 
@@ -325,7 +336,7 @@ export default function LaughFactoryPage() {
                             disabled={censored && !cat.sfw}
                             data-state={category === cat.id ? 'active' : 'inactive'}
                             className="px-4 py-3 text-sm font-semibold rounded-full transition-all duration-200 ease-out transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-muted/50 disabled:shadow-none
-                            data-[state=inactive]:bg-card data-[state=inactive]:hover:bg-card/70 data-[state=inactive]:shadow-md
+                            data-[state=inactive]:bg-card data-[state=inactive]:text-foreground data-[state=inactive]:hover:bg-card/70 data-[state=inactive]:shadow-md
                             data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:scale-105"
                           >
                             {cat.label}
@@ -364,7 +375,7 @@ export default function LaughFactoryPage() {
                         </JokeCard>
                     )}
                     
-                    {!isLoading && joke && category === 'crypto memes' && memeImage && (
+                    {!isLoading && joke && isMemeCategory && memeImage && (
                         <JokeCard>
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-2xl font-bold font-headline">Meme Generated!</CardTitle>
@@ -381,7 +392,7 @@ export default function LaughFactoryPage() {
                         </JokeCard>
                     )}
 
-                    {!isLoading && joke && category !== 'crypto memes' && (
+                    {!isLoading && joke && !isMemeCategory && (
                          <JokeCard>
                             <CardHeader className="flex flex-row items-start justify-between pb-2">
                                 <CardTitle className="text-2xl font-bold font-headline">Here's a good one!</CardTitle>
@@ -452,4 +463,5 @@ export default function LaughFactoryPage() {
             </footer>
         </div>
     );
-}
+
+    
