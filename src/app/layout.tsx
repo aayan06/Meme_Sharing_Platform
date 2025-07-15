@@ -2,10 +2,24 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
-export const metadata: Metadata = {
+const defaultMetadata = {
   title: 'Laugh Factory',
   description: 'Your daily dose of AI-powered humor',
+  openGraph: {
+    title: 'Laugh Factory',
+    description: 'Your daily dose of AI-powered humor',
+    images: [`https://placehold.co/1200x630.png`],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Laugh Factory',
+    description: 'Your daily dose of AI-powered humor',
+    images: [`https://placehold.co/1200x630.png`],
+  },
 };
+
+export const metadata: Metadata = defaultMetadata;
 
 export default function RootLayout({
   children,

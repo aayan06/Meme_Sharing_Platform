@@ -11,9 +11,15 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -25,6 +31,27 @@ const jokeCategories = [
     { id: "ai jokes", label: "AI Jokes", sfw: true },
     { id: "edgy memes", label: "Edgy Memes", sfw: false },
 ];
+
+function setMeta(url: string, description: string) {
+    // Remove existing og:image and twitter:image meta tags
+    document.querySelectorAll('meta[property="og:image"], meta[name="twitter:image"]').forEach(el => el.remove());
+    
+    // Create and append new og:image meta tag
+    const ogImage = document.createElement('meta');
+    ogImage.setAttribute('property', 'og:image');
+    ogImage.setAttribute('content', url);
+    document.head.appendChild(ogImage);
+
+    // Create and append new twitter:image meta tag
+    const twitterImage = document.createElement('meta');
+    twitterImage.setAttribute('name', 'twitter:image');
+    twitterImage.setAttribute('content', url);
+    document.head.appendChild(twitterImage);
+
+    // Update description meta tags
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
+    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
+}
 
 export default function LaughFactoryPage() {
     const [category, setCategory] = useState(jokeCategories[0].id);
@@ -42,6 +69,19 @@ export default function LaughFactoryPage() {
             setSafeForWork(selectedCat.sfw);
         }
     }, [category]);
+    
+    useEffect(() => {
+        if (!joke) {
+            setMeta('https://placehold.co/1200x630.png', 'Your daily dose of AI-powered humor');
+            return;
+        }
+
+        if (category === 'crypto memes' && memeImage?.imageDataUri) {
+            setMeta(memeImage.imageDataUri, joke.joke);
+        } else {
+             setMeta('https://placehold.co/1200x630.png', joke.joke);
+        }
+    }, [joke, memeImage, category]);
 
     const drawMeme = () => {
         const canvas = memeCanvasRef.current;
@@ -140,14 +180,12 @@ export default function LaughFactoryPage() {
         }
     };
 
-    const handleCopyToClipboard = () => {
-        if (joke?.joke) {
-            navigator.clipboard.writeText(joke.joke);
-            toast({
-                title: "Copied!",
-                description: "The joke has been copied to your clipboard.",
-            });
-        }
+    const handleCopyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast({
+            title: "Copied!",
+            description: "The joke has been copied to your clipboard.",
+        });
     };
     
     const handleDownloadMeme = () => {
@@ -164,6 +202,61 @@ export default function LaughFactoryPage() {
     const handleCategoryChange = (value: string) => {
         setCategory(value);
     };
+
+    const handleShare = (platform: 'twitter' | 'telegram' | 'reddit' | 'copy') => {
+        const jokeText = joke?.joke || '';
+        const pageUrl = window.location.href;
+        const encodedText = encodeURIComponent(jokeText);
+        const encodedUrl = encodeURIComponent(pageUrl);
+
+        if (platform === 'copy') {
+             navigator.clipboard.writeText(pageUrl);
+             toast({ title: "Link Copied!", description: "The link has been copied to your clipboard." });
+             return;
+        }
+
+        let shareUrl = '';
+        switch(platform) {
+            case 'twitter':
+                shareUrl = `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`;
+                break;
+            case 'telegram':
+                shareUrl = `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`;
+                break;
+            case 'reddit':
+                shareUrl = `https://www.reddit.com/submit?url=${encodedUrl}&title=${encodeURIComponent('Check out this joke from Laugh Factory!')}`;
+                break;
+        }
+        window.open(shareUrl, '_blank', 'noopener,noreferrer');
+    }
+
+    const ShareMenu = () => (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Share joke">
+                    <Share2 className="h-5 w-5" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                 <DropdownMenuItem onClick={() => handleShare('twitter')}>
+                    <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
+                    <span>Twitter</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleShare('telegram')}>
+                     <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.17.9-.502 1.201-1.233 1.201-.859 0-1.31-.362-1.826-.856-1.024-.985-1.59-1.59-2.545-2.522-.984-.958-.352-1.488.24-2.203.11-.129.21-.264.315-.405.471-.624.942-1.248 1.408-1.868.087-.113.174-.227.26-.339.09-.121.018-.216-.109-.192-.15.03-.43.14-.735.33-.428.27-.84.54-1.22.81-.79.55-1.58.9-2.37.64-.87-.3-1.53-.94-2.19-1.58-.6-.58-1.17-1.44-.98-2.31.2-.95.83-1.84 1.4-2.31.57-.47 1.27-.75 2.1-.86 1.05-.13 2.07.16 2.9.62.24.13.48.27.72.4.1.06.2.12.28.18.09.06.18.03.21-.07.03-.11.05-.22.05-.33z"></path></svg>
+                    <span>Telegram</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleShare('reddit')}>
+                    <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87s-7.004-2.176-7.004-4.87c0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.34.34 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12.422a1.223 1.223 0 0 1-1.223-1.223 1.223 1.223 0 0 1 1.223-1.223c.675 0 1.223.548 1.223 1.223a1.223 1.223 0 0 1-1.223 1.223zm5.5 0a1.223 1.223 0 0 1-1.223-1.223 1.223 1.223 0 0 1 1.223-1.223c.675 0 1.223.548 1.223 1.223a1.223 1.223 0 0 1-1.223 1.223zm.822 5.023c-.382.383-1.041.5-1.564.5s-1.182-.117-1.565-.5c-.387-.387-.502-1.044-.502-1.637 0-.593.115-1.25.502-1.637.382-.382 1.04-.5 1.565-.5s1.183.118 1.565.5c.386.386.502 1.044.502 1.637 0 .593-.116 1.25-.502 1.637z"></path></svg>
+                    <span>Reddit</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleShare('copy')}>
+                   <LinkIcon className="h-4 w-4 mr-2" />
+                   <span>Copy Link</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
 
     return (
         <div className="flex flex-col items-center min-h-screen p-4 sm:p-8 pt-12 sm:pt-20">
@@ -255,11 +348,14 @@ export default function LaughFactoryPage() {
                     
                     {!isLoading && joke && category === 'crypto memes' && memeImage && (
                         <Card className="w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/80 backdrop-blur-sm shadow-lg border rounded-2xl">
-                             <CardHeader className="flex flex-row items-start justify-between pb-2">
+                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-2xl font-bold text-primary">Meme Generated!</CardTitle>
-                                <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme">
-                                    <Download className="h-5 w-5" />
-                                </Button>
+                                <div className="flex items-center">
+                                    <ShareMenu />
+                                    <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme">
+                                        <Download className="h-5 w-5" />
+                                    </Button>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <canvas ref={memeCanvasRef} className="w-full h-auto rounded-lg border" />
@@ -271,9 +367,12 @@ export default function LaughFactoryPage() {
                          <Card className="w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/80 backdrop-blur-sm shadow-lg border rounded-2xl">
                             <CardHeader className="flex flex-row items-start justify-between pb-2">
                                 <CardTitle className="text-2xl font-bold text-primary">Here's a good one!</CardTitle>
-                                <Button variant="ghost" size="icon" onClick={handleCopyToClipboard} aria-label="Copy joke">
-                                    <Copy className="h-5 w-5" />
-                                </Button>
+                                <div className="flex items-center">
+                                    <ShareMenu />
+                                    <Button variant="ghost" size="icon" onClick={() => handleCopyToClipboard(joke.joke)} aria-label="Copy joke">
+                                        <Copy className="h-5 w-5" />
+                                    </Button>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-2xl font-medium leading-relaxed">{joke.joke}</p>
@@ -296,5 +395,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
