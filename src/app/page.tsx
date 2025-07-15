@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/generate-safe-joke";
 import { generateMemeImage, type GenerateMemeImageOutput } from "@/ai/flows/generate-meme-image";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 
@@ -167,9 +168,17 @@ export default function LaughFactoryPage() {
     return (
         <div className="flex flex-col items-center min-h-screen p-4 sm:p-8 pt-12 sm:pt-20">
             <main className="w-full max-w-2xl mx-auto flex flex-col items-center space-y-10">
-                <header className="text-center">
+                <header className="text-center w-full">
                     <h1 className="text-5xl md:text-6xl font-bold font-headline text-primary mb-2">Laugh Factory</h1>
                     <p className="text-lg text-muted-foreground">Your daily dose of AI-powered humor</p>
+                    <div className="flex justify-center items-center space-x-4 mt-6">
+                        <Button asChild>
+                            <Link href="/submit"><Trophy className="mr-2" /> Leaderboard</Link>
+                        </Button>
+                        <Button asChild variant="outline">
+                           <Link href="/submit"><Send className="mr-2" /> Submit Joke</Link>
+                        </Button>
+                    </div>
                 </header>
                 
                 <Card className="w-full bg-card/80 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-lg border">
