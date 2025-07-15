@@ -37,33 +37,15 @@ Category: {{{category}}}
 Do not repeat jokes you have told before.
 
 {{#if safeForWork}}
-Ensure the joke is safe for work.
+You are in "Grandma Mode". Ensure the joke is clean, safe-for-work, and uses only light humor. Avoid any profanity, dark, or controversial topics.
 {{/if}}
 
 {{#unless safeForWork}}
-The joke can be NSFW and should not have content restrictions. For dark humor, it should be genuinely dark.
+You are in "Degen Mode". Generate a fully unfiltered joke. The joke can be edgy, use dark humor, contain offensive language, or satire. Do not apply content moderation. For dark humor, it should be genuinely dark. For roasts, they should be cutting.
 {{/unless}}
 `,
   config: {
     temperature: 1,
-    safetySettings: [
-      {
-        category: 'HARM_CATEGORY_HATE_SPEECH',
-        threshold: 'BLOCK_ONLY_HIGH',
-      },
-      {
-        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-        threshold: 'BLOCK_NONE',
-      },
-      {
-        category: 'HARM_CATEGORY_HARASSMENT',
-        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-      },
-      {
-        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-        threshold: 'BLOCK_NONE',
-      },
-    ],
   },
 });
 
@@ -73,8 +55,48 @@ const generateSafeJokeFlow = ai.defineFlow(
     inputSchema: GenerateSafeJokeInputSchema,
     outputSchema: GenerateSafeJokeOutputSchema,
   },
-  async input => {
-    const {output} = await generateJokePrompt(input);
+  async (input) => {
+    const safetySettings = input.safeForWork
+      ? [
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_LOW_AND_ABOVE',
+          },
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_LOW_AND_ABOVE',
+          },
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_LOW_AND_ABOVE',
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_LOW_AND_ABOVE',
+          },
+        ]
+      : [
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_ONLY_HIGH',
+          },
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+          },
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_NONE',
+          },
+        ];
+
+    const {output} = await generateJokePrompt(input, {
+      config: { safetySettings },
+    });
     return output!;
   }
 );

@@ -163,13 +163,12 @@ export default function LaughFactoryPage() {
         setAudio(null);
         setSelectedReaction(null);
         try {
-            const selectedCat = jokeCategories.find(cat => cat.id === category);
-            const isSfw = censored || (selectedCat ? selectedCat.sfw : true);
+            const isSfw = censored;
             const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
 
             const jokePromise = generateSafeJoke({ category, safeForWork: isSfw });
             const memePromise = isMemeCategory 
-                ? generateMemeImage() 
+                ? generateMemeImage({ category, safeForWork: isSfw })
                 : Promise.resolve(null);
 
             const [jokeResult, memeResult] = await Promise.all([jokePromise, memePromise]);
@@ -455,13 +454,13 @@ export default function LaughFactoryPage() {
                         )}
                         Generate Joke
                     </Button>
-                     <Button asChild variant="secondary" className="rounded-full shadow-md text-secondary-foreground hover:bg-secondary/80">
+                     <Button asChild variant="secondary" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600">
                        <Link href="/submit"><Send className="mr-2 h-4 w-4" /> Submit</Link>
                     </Button>
-                    <Button asChild variant="secondary" className="rounded-full shadow-md text-secondary-foreground hover:bg-secondary/80">
+                    <Button asChild variant="secondary" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600">
                         <Link href="/submit"><Trophy className="mr-2 h-4 w-4" /> Board</Link>
                     </Button>
-                    <Button variant="secondary" className="rounded-full shadow-md text-secondary-foreground hover:bg-secondary/80">
+                    <Button variant="secondary" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600">
                        <Wallet className="mr-2 h-4 w-4" /> Connect
                     </Button>
                  </div>
