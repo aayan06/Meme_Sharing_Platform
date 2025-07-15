@@ -1,15 +1,16 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/generate-safe-joke";
 import { generateMemeImage, type GenerateMemeImageOutput } from "@/ai/flows/generate-meme-image";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 
@@ -54,28 +55,20 @@ export default function LaughFactoryPage() {
             img.crossOrigin = "anonymous";
             img.src = imageUri;
             img.onload = () => {
-                // Set canvas to image dimensions
                 canvas.width = img.width;
                 canvas.height = img.height;
-
-                // Draw image
                 ctx.drawImage(img, 0, 0);
-
-                // Style text
                 ctx.fillStyle = "white";
                 ctx.strokeStyle = "black";
-                ctx.lineWidth = Math.max(1, img.width / 200); // Dynamic stroke width
+                ctx.lineWidth = Math.max(1, img.width / 200);
                 ctx.textAlign = "center";
                 
-                // Set font size relative to image width
                 const fontSize = Math.max(20, img.width / 12);
                 ctx.font = `bold ${fontSize}px 'Impact', sans-serif`;
                 
-                // Text position
                 const x = canvas.width / 2;
-                const y = canvas.height * 0.9; // Position text at 90% from the top
+                const y = canvas.height * 0.9;
 
-                // Function to wrap text
                 const wrapText = (context: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) => {
                     const words = text.split(' ');
                     let line = '';
@@ -105,8 +98,6 @@ export default function LaughFactoryPage() {
                 
                 const maxWidth = canvas.width * 0.9;
                 const lineHeight = fontSize * 1.2;
-
-                // Draw wrapped text
                 wrapText(ctx, jokeText.toUpperCase(), x, y, maxWidth, lineHeight);
             };
         }
@@ -180,6 +171,22 @@ export default function LaughFactoryPage() {
                     <h1 className="text-5xl md:text-6xl font-bold font-headline text-primary mb-2">Laugh Factory</h1>
                     <p className="text-lg text-muted-foreground">Your daily dose of AI-powered humor</p>
                 </header>
+                
+                <Card className="w-full bg-card/80 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-lg border">
+                     <CardHeader>
+                        <CardTitle className="text-2xl font-bold text-center">Top Joke of the Day</CardTitle>
+                        <CardDescription className="text-center">This joke is on fire! 🔥</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-center">
+                        <p className="text-xl font-medium">Why don't scientists trust atoms? Because they make up everything!</p>
+                         <div className="flex justify-center items-center space-x-2 mt-4">
+                            <Button variant={'outline'} size="icon">
+                                <span role="img" aria-label="laughing emoji">😂</span>
+                            </Button>
+                            <span className="font-bold text-lg">1.2k</span>
+                        </div>
+                    </CardContent>
+                </Card>
 
                 <div className="w-full bg-card/80 backdrop-blur-sm p-6 sm:p-8 rounded-2xl shadow-lg border">
                     <div className="space-y-8">
@@ -191,7 +198,7 @@ export default function LaughFactoryPage() {
                                         <RadioGroupItem value={cat.id} id={cat.id} className="sr-only" />
                                         <Label
                                             htmlFor={cat.id}
-                                            className="flex flex-col items-center justify-center rounded-lg border-2 p-4 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground cursor-pointer data-[state=checked]:border-primary data-[state=checked]:ring-2 data-[state=checked]:ring-primary"
+                                            className="flex flex-col items-center justify-center rounded-lg border-2 p-4 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground cursor-pointer data-[state=checked]:border-primary data-[state=checked]:ring-2 data-[state=checked]:ring-primary h-full"
                                             data-state={category === cat.id ? 'checked' : 'unchecked'}
                                         >
                                             {cat.label}
@@ -214,13 +221,13 @@ export default function LaughFactoryPage() {
                             />
                         </div>
 
-                        <Button onClick={handleGenerateJoke} disabled={isLoading} size="lg" className="w-full text-lg font-bold">
+                        <Button onClick={handleGenerateJoke} disabled={isLoading} size="lg" className="w-full text-lg font-bold h-14">
                             {isLoading ? (
                                 <Loader2 className="mr-2 h-6 w-6 animate-spin" />
                             ) : (
                                 <Sparkles className="mr-2 h-6 w-6" />
                             )}
-                            Generate Joke
+                            Generate
                         </Button>
                     </div>
                 </div>
@@ -238,7 +245,7 @@ export default function LaughFactoryPage() {
                     )}
                     
                     {!isLoading && joke && category === 'crypto memes' && memeImage && (
-                        <Card className="w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/80 backdrop-blur-sm shadow-lg border">
+                        <Card className="w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/80 backdrop-blur-sm shadow-lg border rounded-2xl">
                              <CardHeader className="flex flex-row items-start justify-between pb-2">
                                 <CardTitle className="text-2xl font-bold text-primary">Meme Generated!</CardTitle>
                                 <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme">
@@ -252,7 +259,7 @@ export default function LaughFactoryPage() {
                     )}
 
                     {!isLoading && joke && category !== 'crypto memes' && (
-                         <Card className="w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/80 backdrop-blur-sm shadow-lg border">
+                         <Card className="w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/80 backdrop-blur-sm shadow-lg border rounded-2xl">
                             <CardHeader className="flex flex-row items-start justify-between pb-2">
                                 <CardTitle className="text-2xl font-bold text-primary">Here's a good one!</CardTitle>
                                 <Button variant="ghost" size="icon" onClick={handleCopyToClipboard} aria-label="Copy joke">
@@ -261,7 +268,7 @@ export default function LaughFactoryPage() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-2xl font-medium leading-relaxed">{joke.joke}</p>
-                                <div className="flex justify-end items-center space-x-2 mt-4">
+                                <div className="flex justify-end items-center space-x-2 mt-6">
                                     <Button variant={selectedReaction === 'laugh' ? 'default' : 'outline'} size="icon" onClick={() => setSelectedReaction('laugh')}>
                                         <span role="img" aria-label="laughing emoji">😂</span>
                                     </Button>
@@ -269,7 +276,7 @@ export default function LaughFactoryPage() {
                                         <span role="img" aria-label="neutral face emoji">😐</span>
                                     </Button>
                                     <Button variant={selectedReaction === 'unamused' ? 'default' : 'outline'} size="icon" onClick={() => setSelectedReaction('unamused')}>
-                                        <span role="img" aria-label="unamused face emoji">😒</span>
+                                        <span role="img" aria-label="unamused face emoji">🙄</span>
                                     </Button>
                                 </div>
                             </CardContent>
@@ -280,3 +287,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
