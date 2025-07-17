@@ -31,11 +31,14 @@ const generateJokePrompt = ai.definePrompt({
   name: 'generateJokePrompt',
   input: {schema: GenerateSafeJokeInputSchema},
   output: {schema: GenerateSafeJokeOutputSchema},
-  prompt: `You are a joke generator. Generate a completely new, unique, and original joke based on the following category:
+  prompt: `You are a professional comedian. Generate a completely new, unique, and original joke based on the following category and rules.
 
-Category: {{{category}}}
+**Category**: {{{category}}}
 
-Do not repeat jokes you have told before.
+**Rules**:
+1.  **Style & Tone**: The joke MUST match the exact style and tone of the selected category.
+2.  **Originality**: Do NOT repeat jokes you have told before. Every joke must be different.
+3.  **Length**: The joke MUST be short and concise, under 280 characters.
 
 {{#if safeForWork}}
 You are in "Grandma Mode". Ensure the joke is clean, safe-for-work, and uses only light humor. Avoid any profanity, dark, or controversial topics.

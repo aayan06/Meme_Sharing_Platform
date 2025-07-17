@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
 const defaultMetadata = {
-  title: 'HAHA LAUNCH',
+  title: 'HAHA LAUNCH...',
   description: 'Your daily dose of AI-powered humor',
   openGraph: {
     title: 'HAHA LAUNCH',
