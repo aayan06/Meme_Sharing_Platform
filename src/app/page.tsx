@@ -53,6 +53,7 @@ export default function LaughFactoryPage() {
     const [category, setCategory] = useState(jokeCategories[0].id);
     const [censored, setCensored] = useState(true);
     const [joke, setJoke] = useState<GenerateSafeJokeOutput | null>(null);
+    const [usedJokes, setUsedJokes] = useState<string[]>([]);
     const [memeImage, setMemeImage] = useState<GenerateMemeImageOutput | null>(null);
     const [audio, setAudio] = useState<GenerateAudioOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -183,8 +184,10 @@ export default function LaughFactoryPage() {
             const isSfw = censored;
             const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
 
-            const jokeResult = await generateSafeJoke({ category, safeForWork: isSfw });
+            const jokeResult = await generateSafeJoke({ category, safeForWork: isSfw, usedJokes });
             setJoke(jokeResult);
+            setUsedJokes(prev => [...prev, jokeResult.joke]);
+
 
             if (isMemeCategory) {
                 const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
@@ -481,6 +484,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-    
-
-    

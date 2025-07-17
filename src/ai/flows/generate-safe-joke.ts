@@ -15,6 +15,7 @@ import {z} from 'genkit';
 const GenerateSafeJokeInputSchema = z.object({
   category: z.string().describe('The category of joke to generate (e.g., dad jokes, dark humor, pick-up lines).'),
   safeForWork: z.boolean().default(true).describe('Whether the joke should be safe for work. Defaults to true.'),
+  usedJokes: z.array(z.string()).optional().describe('A list of jokes that have already been generated to avoid repetition.'),
 });
 export type GenerateSafeJokeInput = z.infer<typeof GenerateSafeJokeInputSchema>;
 
@@ -39,6 +40,15 @@ const generateJokePrompt = ai.definePrompt({
 1.  **Style & Tone**: The joke MUST match the exact style and tone of the selected category.
 2.  **Originality**: Do NOT repeat jokes you have told before. Every joke must be different.
 3.  **Length**: The joke MUST be short and concise, under 280 characters.
+
+**IMPORTANT**: Do NOT repeat or regenerate any of the following jokes. These jokes have already been used:
+{{#if usedJokes}}
+{{#each usedJokes}}
+- {{{this}}}
+{{/each}}
+{{else}}
+None yet.
+{{/if}}
 
 {{#if safeForWork}}
 You are in "Grandma Mode". Ensure the joke is clean, safe-for-work, and uses only light humor. Avoid any profanity, dark, or controversial topics.
