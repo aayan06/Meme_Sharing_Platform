@@ -39,13 +39,19 @@ const generateMemeImageFlow = ai.defineFlow(
     let prompt = '';
 
     const baseInstructions = `
-      You are a meme generation expert. Your task is to generate a high-quality background image for a meme based on a provided joke.
+      You are a meme generation expert. Your task is to generate a high-quality meme image based on a provided joke.
+
+      **STRATEGY**:
+      You have two options:
+      1.  **Find a Pre-existing Meme**: Search for a popular, existing meme online that perfectly fits the joke.
+      2.  **Create a New Meme**: Find a high-resolution image with NO pre-existing text or watermarks and use it as a clean background template for the joke.
+
+      Choose the best strategy to create the funniest and most relevant meme.
 
       **CRITICAL RULES:**
-      1.  **Image Content**: The generated image MUST be a clean, high-resolution background template. It must have NO pre-existing text, captions, or watermarks. The image should be a blank canvas for the joke.
-      2.  **Visual Matching**: The background image's theme MUST visually match the tone and topic of the joke: "${input.joke}". For example, a joke about crashing prices should have a bear market chart background.
-      3.  **Avoid Clutter**: DO NOT use random, cluttered, or abstract backgrounds. The image should support the text, not overpower it.
-      4.  **Single Caption**: The final meme should only contain the single joke/caption provided. Do not add any other text.
+      1.  **Visual Matching**: The meme's theme MUST visually match the tone and topic of the joke: "${input.joke}".
+      2.  **No Text Clutter**: If creating a new meme, the background image must be a clean, high-resolution template with NO pre-existing text or watermarks. The text you add should be the only text.
+      3.  **Clarity**: Avoid random, cluttered, or abstract backgrounds. The image must support the text, not overpower it.
     `;
 
     if (input.category === 'crypto memes') {
