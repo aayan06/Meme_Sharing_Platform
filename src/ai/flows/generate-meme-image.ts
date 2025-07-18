@@ -41,16 +41,9 @@ const generateMemeImageFlow = ai.defineFlow(
     const baseInstructions = `
       You are a meme generation expert. Your task is to generate a high-quality meme image based on a provided joke.
 
-      **STRATEGY**:
-      You have two options:
-      1.  **Find a Pre-existing Meme**: Search for a popular, existing meme online that perfectly fits the joke.
-      2.  **Create a New Meme**: Find a high-resolution image with NO pre-existing text or watermarks and use it as a clean background template for the joke.
-
-      Choose the best strategy to create the funniest and most relevant meme.
-
       **CRITICAL RULES:**
-      1.  **Visual Matching**: The meme's theme MUST visually match the tone and topic of the joke: "${input.joke}".
-      2.  **No Text Clutter**: If creating a new meme, the background image must be a clean, high-resolution template with NO pre-existing text or watermarks. The text you add should be the only text.
+      1.  **NO PRE-EXISTING TEXT**: The background image you select MUST be a clean, high-resolution template. It must NOT contain any pre-existing text, captions, or watermarks. The joke text you add will be the ONLY text on the image.
+      2.  **Visual Matching**: The meme's theme MUST visually match the tone and topic of the joke: "${input.joke}". For example, use a "bear market" chart for a joke about crashing coins.
       3.  **Clarity**: Avoid random, cluttered, or abstract backgrounds. The image must support the text, not overpower it.
     `;
 
