@@ -60,6 +60,7 @@ export default function LaughFactoryPage() {
     const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
     const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
     const { toast } = useToast();
+    const memeCardRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (censored) {
@@ -82,11 +83,34 @@ export default function LaughFactoryPage() {
         }
 
         if (isMemeCategory && memeImage?.imageDataUri) {
-            setMeta(memeImage.imageDataUri, joke.joke);
+            // Delay screenshot for social media sharing until image is loaded
+            setTimeout(() => takeMemeScreenshot(setMeta), 100);
         } else {
              setMeta('https://placehold.co/1200x630.png', joke.joke);
         }
     }, [joke, memeImage, category]);
+
+    const takeMemeScreenshot = async (callback: (dataUrl: string, description: string) => void) => {
+        const element = memeCardRef.current;
+        if (!element) return;
+
+        try {
+            const { default: html2canvas } = await import('html2canvas');
+            const canvas = await html2canvas(element, { 
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null, 
+            });
+            const dataUrl = canvas.toDataURL('image/png');
+            if(callback) callback(dataUrl, joke?.joke || '');
+            return dataUrl;
+        } catch (error) {
+            console.error("Failed to capture meme screenshot:", error);
+            // Fallback to the raw image if screenshot fails
+            if(callback) callback(memeImage?.imageDataUri || '', joke?.joke || '');
+            return memeImage?.imageDataUri;
+        }
+    };
 
     const handleGenerateJoke = async () => {
         setIsLoading(true);
@@ -128,8 +152,8 @@ export default function LaughFactoryPage() {
         });
     };
     
-    const handleDownloadMeme = () => {
-        const imageUri = memeImage?.imageDataUri;
+    const handleDownloadMeme = async () => {
+        const imageUri = await takeMemeScreenshot(() => {});
         if (imageUri) {
             const link = document.createElement("a");
             link.download = "haha-launch-meme.png";
@@ -219,8 +243,8 @@ export default function LaughFactoryPage() {
         </DropdownMenu>
     );
 
-    const JokeCard = ({ children, className }: { children: React.ReactNode, className?: string }) => (
-      <Card className={cn("w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl", className)}>
+    const JokeCard = ({ children, className, innerRef }: { children: React.ReactNode, className?: string, innerRef?: React.Ref<HTMLDivElement> }) => (
+      <Card ref={innerRef} className={cn("w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl", className)}>
         {children}
       </Card>
     );
@@ -309,9 +333,9 @@ export default function LaughFactoryPage() {
                     )}
                     
                     {!isLoading && joke && isMemeCategory && memeImage && (
-                        <JokeCard>
-                            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-2xl font-bold font-headline">Meme Found!</CardTitle>
+                        <JokeCard innerRef={memeCardRef}>
+                             <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-2xl font-bold font-headline">Meme Generated!</CardTitle>
                                 <div className="flex items-center">
                                     <ShareMenu />
                                     <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme" className="rounded-full">
@@ -319,9 +343,18 @@ export default function LaughFactoryPage() {
                                     </Button>
                                 </div>
                             </CardHeader>
-                            <CardContent>
-                                <img src={memeImage.imageDataUri} alt="Generated Meme" className="w-full h-auto rounded-lg border-2" />
-                                <p className="text-center text-lg mt-4 font-medium">{joke.joke}</p>
+                            <CardContent className="relative">
+                                <img src={memeImage.imageDataUri} alt="Generated Meme background" className="w-full h-auto rounded-lg border-2" />
+                                <div className="absolute inset-0 flex items-center justify-center p-4">
+                                    <p 
+                                      className="text-center text-xl md:text-2xl font-bold text-white break-words"
+                                      style={{
+                                        textShadow: '2px 2px 4px #000, -2px -2px 4px #000, 2px -2px 4px #000, -2px 2px 4px #000'
+                                      }}
+                                    >
+                                        {joke.joke}
+                                    </p>
+                                </div>
                             </CardContent>
                         </JokeCard>
                     )}

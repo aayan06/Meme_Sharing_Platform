@@ -2,9 +2,9 @@
 'use server';
 
 /**
- * @fileOverview An AI agent that finds a relevant, existing crypto-themed meme image online.
+ * @fileOverview An AI agent that generates a background image for a meme based on a joke.
  *
- * - generateMemeImage - A function that finds a background image for a crypto meme.
+ * - generateMemeImage - A function that generates a background image for a meme.
  * - GenerateMemeImageOutput - The return type for the generateMemeImage function.
  */
 
@@ -16,7 +16,7 @@ const GenerateMemeImageOutputSchema = z.object({
   imageDataUri: z
     .string()
     .describe(
-      "The found crypto meme image as a data URI."
+      "The generated meme background image as a data URI."
     ),
 });
 export type GenerateMemeImageOutput = z.infer<typeof GenerateMemeImageOutputSchema>;
@@ -39,13 +39,14 @@ const generateMemeImageFlow = ai.defineFlow(
     let prompt = '';
 
     const baseInstructions = `
-      You are a Meme Curator AI. Your task is to find a popular, high-quality, existing meme from the web that is a perfect visual match for the provided joke.
+      You are a Meme Background Generator AI. Your task is to generate a single, high-quality background image for a meme. The image should visually represent the provided joke.
 
       **CRITICAL RULES:**
-      1.  **Find, Don't Create**: You MUST find a real, well-known meme image. Do NOT generate a new image or add any text yourself.
-      2.  **Relevance is Key**: The meme's content, characters, and emotion MUST directly relate to the topic and tone of the joke: "${input.joke}".
-      3.  **High Quality**: The image must be clear and high-resolution. Avoid blurry, pixelated, or heavily watermarked images.
-      4.  **Single Image**: The output must be a single, complete meme image.
+      1.  **Generate, Don't Find**: You MUST generate a new image.
+      2.  **NO TEXT**: The generated image MUST be completely clean and contain NO text, captions, subtitles, watermarks, or writing of any kind. It should be a blank template.
+      3.  **Relevance is Key**: The image's content, characters, and emotion MUST directly relate to the topic and tone of the joke: "${input.joke}".
+      4.  **High Quality**: The image must be clear and high-resolution.
+      5.  **Single Image**: The output must be a single, complete image.
     `;
 
     if (input.category === 'crypto memes') {
@@ -53,16 +54,16 @@ const generateMemeImageFlow = ai.defineFlow(
         ${baseInstructions}
         **Category**: Cryptocurrency Memes
         **Joke Context**: "${input.joke}"
-        **Meme Examples to Look For**: "Buy the dip," "Rugpull," "HODL," Satoshi, Wojak, Pepe traders, Elon Musk, or NFT-related scenes. Find a meme that visually represents the joke's punchline.
-        ${input.safeForWork ? 'The meme must be safe-for-work.' : 'You are in Degen Mode. The meme can be edgy or satirical.'}
+        **Visual Ideas**: A rocket going to the moon, a person looking at a crashing stock chart, a Dogecoin, a Pepe the Frog character in a trading setup.
+        ${input.safeForWork ? 'The image must be safe-for-work.' : 'The image can be edgy or satirical.'}
       `;
     } else if (input.category === 'edgy memes') {
       prompt = `
         ${baseInstructions}
         **Category**: Edgy Internet Memes
         **Joke Context**: "${input.joke}"
-        **Meme Examples to Look For**: Look for popular, trending internet meme formats like Wojak variants (e.g., Soyjak, Trad-wife), Chad vs. Virgin, Gru's Plan, Distracted Boyfriend, etc.
-        ${input.safeForWork ? 'The meme must be safe-for-work.' : 'You are in Degen Mode. The template can include profanity or sensitive topics.'}
+        **Visual Ideas**: Generate an image inspired by popular meme formats like Wojak variants (e.g., Soyjak, Chad), or scenes that evoke emotions from formats like Distracted Boyfriend or Gru's Plan, but without any characters from those actual memes.
+        ${input.safeForWork ? 'The image must be safe-for-work.' : 'The image can be edgy, dark, or satirical.'}
       `;
     }
 
