@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet, Crown, FileUp, Palette, PenSquare, Laugh } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet, Crown, FileUp, Palette, PenSquare, Laugh, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -115,7 +115,7 @@ export default function LaughFactoryPage() {
             if (mode === 'create') {
                 const result = await createCustomMeme({
                     topic: customMemeText,
-                    imageDataUri: uploadedImage
+                    imageDataUri: uploadedImage || undefined
                 });
                 setJoke({ joke: result.joke });
                 setMemeImage({ imageDataUri: result.imageDataUri });
@@ -325,7 +325,7 @@ export default function LaughFactoryPage() {
                 <div className="w-full flex justify-center gap-2 sm:gap-4 p-2 bg-card/80 backdrop-blur-lg rounded-full shadow-lg border">
                     <Button
                         onClick={() => setMode('generate')}
-                        variant={mode === 'generate' ? 'primary' : 'ghost'}
+                        variant={mode === 'generate' ? 'default' : 'ghost'}
                         className="flex-1 rounded-full text-base font-semibold"
                         size="lg"
                     >
@@ -334,7 +334,7 @@ export default function LaughFactoryPage() {
                     </Button>
                     <Button
                         onClick={() => setMode('create')}
-                        variant={mode === 'create' ? 'primary' : 'ghost'}
+                        variant={mode === 'create' ? 'default' : 'ghost'}
                         className="flex-1 rounded-full text-base font-semibold"
                         size="lg"
                     >
@@ -405,7 +405,7 @@ export default function LaughFactoryPage() {
                                     rows={3}
                                 />
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center justify-between gap-4">
                                 <Button onClick={() => fileInputRef.current?.click()} className="flex-1">
                                     <FileUp className="mr-2 h-5 w-5" />
                                     Upload Image (Optional)
@@ -418,8 +418,16 @@ export default function LaughFactoryPage() {
                                     accept="image/*"
                                 />
                                  {uploadedImage && (
-                                    <div className="w-24 h-24 rounded-md overflow-hidden border-2 border-primary">
+                                    <div className="relative w-24 h-24 rounded-md overflow-hidden border-2 border-primary">
                                         <img src={uploadedImage} alt="Uploaded preview" className="w-full h-full object-cover" />
+                                        <Button
+                                            variant="destructive"
+                                            size="icon"
+                                            className="absolute top-0 right-0 h-6 w-6 rounded-full"
+                                            onClick={() => setUploadedImage(null)}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                 )}
                             </div>
@@ -543,3 +551,6 @@ export default function LaughFactoryPage() {
             </footer>
         </div>
     );
+}
+
+    
