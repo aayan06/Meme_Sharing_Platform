@@ -21,8 +21,13 @@ const GenerateMemeImageOutputSchema = z.object({
 });
 export type GenerateMemeImageOutput = z.infer<typeof GenerateMemeImageOutputSchema>;
 
-export async function generateMemeImage(input: Pick<GenerateSafeJokeInput, 'category' | 'safeForWork' | 'joke'>): Promise<GenerateMemeImageOutput> {
-  return generateMemeImageFlow(input);
+export async function generateMemeImage(input: Pick<GenerateSafeJokeInput, 'category' | 'safeForWork' | 'joke'>): Promise<GenerateMemeImageOutput | null> {
+  try {
+    return await generateMemeImageFlow(input);
+  } catch (error) {
+    console.error("Meme image generation flow failed:", error);
+    return null;
+  }
 }
 
 const generateMemeImageFlow = ai.defineFlow(
@@ -37,34 +42,27 @@ const generateMemeImageFlow = ai.defineFlow(
   },
   async (input) => {
     let prompt = '';
-
+    
     const baseInstructions = `
-      You are a Meme Background Generator AI. Your task is to generate a single, high-quality background image for a meme. The image should visually represent the provided joke.
-
+      Generate a single, high-quality background image for a meme based on this joke: "${input.joke}".
+      
       **CRITICAL RULES:**
-      1.  **Generate, Don't Find**: You MUST generate a new image.
-      2.  **NO TEXT**: The generated image MUST be completely clean and contain NO text, captions, subtitles, watermarks, or writing of any kind. It should be a blank template.
-      3.  **Relevance is Key**: The image's content, characters, and emotion MUST directly relate to the topic and tone of the joke: "${input.joke}".
-      4.  **High Quality**: The image must be clear and high-resolution.
-      5.  **Single Image**: The output must be a single, complete image.
-      6.  **Spelling and Grammar**: Ensure any implied text concepts are spelled correctly.
+      1.  **NO TEXT**: The image MUST be a clean background with NO text, captions, or watermarks.
+      2.  **RELEVANCE**: The image content and emotion MUST directly relate to the joke.
+      3.  **HIGH QUALITY**: The image must be clear and high-resolution.
     `;
 
     if (input.category === 'crypto memes') {
       prompt = `
         ${baseInstructions}
-        **Category**: Cryptocurrency Memes
-        **Joke Context**: "${input.joke}"
-        **Visual Theme**: The image MUST be related to cryptocurrency. Think rockets, charts (going up or down), coins like Bitcoin or Dogecoin, or characters like Pepe the Frog in a trading setup. The visuals should capture the volatile and high-energy spirit of crypto culture.
-        ${input.safeForWork ? 'The image must be safe-for-work.' : 'The image can be edgy or satirical.'}
+        **Theme**: Cryptocurrency. Think charts, popular crypto symbols, or characters representing traders. The visuals should capture the high-energy, volatile spirit of crypto culture.
+        ${input.safeForWork ? 'The image must be safe-for-work.' : ''}
       `;
     } else if (input.category === 'edgy memes') {
       prompt = `
         ${baseInstructions}
-        **Category**: Edgy Internet Memes & Dark Humor
-        **Joke Context**: "${input.joke}"
-        **Visual Theme**: The image MUST reflect dark humor or edgy, surreal situations. Generate an image inspired by popular dark meme formats (like Wojak variants, uncanny valley characters, or absurd scenarios) but without copying characters directly. The tone should be satirical, ironic, or grimly humorous.
-        ${input.safeForWork ? 'The image must be safe-for-work.' : 'The image can be edgy, dark, or satirical.'}
+        **Theme**: Edgy Internet Humor & Dark Humor. Reflect dark, surreal, or ironic situations. The tone should be satirical or grimly humorous.
+        ${input.safeForWork ? 'The image must be safe-for-work.' : ''}
       `;
     }
 
@@ -77,7 +75,7 @@ const generateMemeImageFlow = ai.defineFlow(
     });
 
     if (!media) {
-      throw new Error('Image generation failed.');
+      throw new Error('Image generation failed: No media object returned.');
     }
     
     return {imageDataUri: media.url};

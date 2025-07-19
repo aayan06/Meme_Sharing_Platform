@@ -375,7 +375,7 @@ export default function LaughFactoryPage() {
                         </JokeCard>
                     )}
 
-                    {!isLoading && joke && !isMemeCategory && (
+                    {!isLoading && joke && (!isMemeCategory || (isMemeCategory && !memeImage)) && (
                          <JokeCard>
                             <CardHeader className="flex flex-row items-start justify-between pb-2">
                                 <CardTitle className="text-2xl font-bold font-headline">Here's a good one!</CardTitle>
@@ -447,5 +447,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
