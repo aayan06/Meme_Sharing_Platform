@@ -410,27 +410,27 @@ export default function LaughFactoryPage() {
 
             <footer className="fixed bottom-0 left-0 right-0 w-full flex justify-center p-2 sm:p-4 z-10">
                  <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-md md:max-w-lg">
-                    <Button onClick={handleGenerateJoke} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
+                    <Button onClick={handleGenerateJoke} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12">
                         {isLoading ? (
-                            <Loader2 className="mr-2 h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         ) : (
-                            <Sparkles className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
+                            <Sparkles className="mr-2 h-5 w-5" />
                         )}
                         Generate
                     </Button>
-                     <Button asChild variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 sm:w-auto sm:px-4 h-12 sm:h-14">
+                     <Button asChild variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:w-auto sm:px-4">
                        <Link href="/submit">
                          <Send className="h-5 w-5 sm:mr-2" />
                          <span className="hidden sm:inline">Submit</span>
                        </Link>
                     </Button>
-                    <Button asChild variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 sm:w-auto sm:px-4 h-12 sm:h-14">
+                    <Button asChild variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:w-auto sm:px-4">
                         <Link href="/submit">
                           <Trophy className="h-5 w-5 sm:mr-2" />
                           <span className="hidden sm:inline">Board</span>
                         </Link>
                     </Button>
-                    <Button variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 sm:w-auto sm:px-4 h-12 sm:h-14">
+                    <Button variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:w-auto sm:px-4">
                        <Wallet className="h-5 w-5 sm:mr-2" />
                        <span className="hidden sm:inline">Connect</span>
                     </Button>
