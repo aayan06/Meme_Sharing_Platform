@@ -46,6 +46,7 @@ const generateMemeImageFlow = ai.defineFlow(
       2.  **Visual Matching**: The image's theme MUST visually match the tone and topic of the joke: "${input.joke}". For example, use a "bear market" chart for a joke about crashing coins.
       3.  **Clarity**: Avoid random, cluttered, or abstract backgrounds. The image must support the text, not overpower it.
       4.  **Single Image**: The output should be a single, complete image. Do not generate text separately.
+      5.  **Text Accuracy**: Before rendering, check for proper spelling and punctuation. Ensure correct capitalization and grammar.
     `;
 
     if (input.category === 'crypto memes') {
