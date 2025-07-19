@@ -47,6 +47,7 @@ const generateMemeImageFlow = ai.defineFlow(
       3.  **Relevance is Key**: The image's content, characters, and emotion MUST directly relate to the topic and tone of the joke: "${input.joke}".
       4.  **High Quality**: The image must be clear and high-resolution.
       5.  **Single Image**: The output must be a single, complete image.
+      6.  **Spelling and Grammar**: Ensure any implied text concepts are spelled correctly.
     `;
 
     if (input.category === 'crypto memes') {
@@ -54,15 +55,15 @@ const generateMemeImageFlow = ai.defineFlow(
         ${baseInstructions}
         **Category**: Cryptocurrency Memes
         **Joke Context**: "${input.joke}"
-        **Visual Ideas**: A rocket going to the moon, a person looking at a crashing stock chart, a Dogecoin, a Pepe the Frog character in a trading setup.
+        **Visual Theme**: The image MUST be related to cryptocurrency. Think rockets, charts (going up or down), coins like Bitcoin or Dogecoin, or characters like Pepe the Frog in a trading setup. The visuals should capture the volatile and high-energy spirit of crypto culture.
         ${input.safeForWork ? 'The image must be safe-for-work.' : 'The image can be edgy or satirical.'}
       `;
     } else if (input.category === 'edgy memes') {
       prompt = `
         ${baseInstructions}
-        **Category**: Edgy Internet Memes
+        **Category**: Edgy Internet Memes & Dark Humor
         **Joke Context**: "${input.joke}"
-        **Visual Ideas**: Generate an image inspired by popular meme formats like Wojak variants (e.g., Soyjak, Chad), or scenes that evoke emotions from formats like Distracted Boyfriend or Gru's Plan, but without any characters from those actual memes.
+        **Visual Theme**: The image MUST reflect dark humor or edgy, surreal situations. Generate an image inspired by popular dark meme formats (like Wojak variants, uncanny valley characters, or absurd scenarios) but without copying characters directly. The tone should be satirical, ironic, or grimly humorous.
         ${input.safeForWork ? 'The image must be safe-for-work.' : 'The image can be edgy, dark, or satirical.'}
       `;
     }
