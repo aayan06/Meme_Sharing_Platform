@@ -40,13 +40,12 @@ const generateMemeImageFlow = ai.defineFlow(
 
     const baseInstructions = `
       You are a meme generation expert. Your task is to generate a high-quality meme image based on a provided joke.
-      You have two options:
-      1. Generate a NEW meme: Find a high-quality, clean image with NO pre-existing text. The image must visually match the joke's theme.
-      2. Find an EXISTING meme: If a popular, well-known meme perfectly fits the joke, you can use that.
 
       **CRITICAL RULES:**
-      1.  **Visual Matching**: The meme's theme MUST visually match the tone and topic of the joke: "${input.joke}". For example, use a "bear market" chart for a joke about crashing coins.
-      2.  **Clarity**: Avoid random, cluttered, or abstract backgrounds if generating a new meme. The image must support the text, not overpower it.
+      1.  **No Existing Text**: You MUST NOT use any background images that already contain text, captions, watermarks, subtitles, or signs. Only use clean, high-resolution images with NO existing text, so the new meme text is clearly readable. The image should be a blank template suitable for adding meme captions.
+      2.  **Visual Matching**: The image's theme MUST visually match the tone and topic of the joke: "${input.joke}". For example, use a "bear market" chart for a joke about crashing coins.
+      3.  **Clarity**: Avoid random, cluttered, or abstract backgrounds. The image must support the text, not overpower it.
+      4.  **Single Image**: The output should be a single, complete image. Do not generate text separately.
     `;
 
     if (input.category === 'crypto memes') {
@@ -54,7 +53,7 @@ const generateMemeImageFlow = ai.defineFlow(
         ${baseInstructions}
         **Category**: Cryptocurrency Memes
         **Joke**: "${input.joke}"
-        **Template Pool**: Use a random, rotating selection of high-quality, crypto-themed templates or existing memes. Examples include: "Buy the dip," "Rugpull," "HODL," Satoshi, Wojak, Pepe traders, Elon Musk, or NFT-related scenes.
+        **Template Pool**: Use a random, rotating selection of high-quality, crypto-themed templates. Examples include: "Buy the dip," "Rugpull," "HODL," Satoshi, Wojak, Pepe traders, Elon Musk, or NFT-related scenes.
         **Image Styles**: Vary the visual style. Consider chart memes, surreal edits, vaporwave aesthetics, or pixel art.
         ${input.safeForWork ? 'The meme must be safe-for-work and use only light humor.' : 'You are in Degen Mode. The meme can be edgy or satirical.'}
       `;
@@ -63,7 +62,7 @@ const generateMemeImageFlow = ai.defineFlow(
         ${baseInstructions}
         **Category**: Edgy Internet Memes
         **Joke**: "${input.joke}"
-        **Template Pool**: Use popular, currently trending internet meme templates or existing memes. Examples: Wojak variants (e.g., Soyjak, Trad-wife), Chad vs. Virgin, Gru's Plan, Distracted Boyfriend. DO NOT reuse images from the crypto category.
+        **Template Pool**: Use popular, currently trending internet meme templates. Examples: Wojak variants (e.g., Soyjak, Trad-wife), Chad vs. Virgin, Gru's Plan, Distracted Boyfriend. DO NOT reuse images from the crypto category.
         ${input.safeForWork ? 'The meme must be safe-for-work. Use templates tagged as "sfw" or "family".' : 'You are in Degen Mode. The template can include profanity or sensitive topics.'}
       `;
     }
