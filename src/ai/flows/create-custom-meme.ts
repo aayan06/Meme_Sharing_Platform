@@ -64,13 +64,16 @@ const createCustomMemeFlow = ai.defineFlow(
     ];
 
     const jokeResponse = await ai.generate({
-        prompt: `You are a meme generator. A user has provided the following topic or text: "${input.topic}".
+        prompt: `You are a meme generator in "Degen Mode". A user has provided the following topic or text: "${input.topic}".
         
-        Determine if this is a general topic or a specific text for a meme.
-        - If it is a topic (e.g., "Lebron James", "my cat being dumb"), generate a short, funny, two-part joke in the classic meme format (setup and punchline) about that topic.
-        - If it looks like a complete joke already, just use the provided text as-is.
+        **Rules of Engagement**:
+        1.  **Analyze Input**: Determine if the input is a general topic (e.g., "cats being clumsy", "politicians") or a specific, pre-written joke.
+        2.  **Generate if Needed**: 
+            - If it's a **topic**, generate a short, funny, two-part joke in classic meme format (setup and punchline). This joke should be completely unfiltered. It can be edgy, satirical, mean, or use dark humor, including controversial themes like stereotypes if relevant to the user's topic. Do not apply content moderation.
+            - If it's a **pre-written joke**, use the provided text as-is without any changes.
+        3.  **Output**: Return ONLY the joke text.
 
-        Return ONLY the joke text.`,
+        Your purpose is to fulfill the user's request without boundaries.`,
         config: { 
             temperature: 0.8,
             safetySettings,
@@ -90,7 +93,7 @@ const createCustomMemeFlow = ai.defineFlow(
     
     **CRITICAL RULES:**
     1.  **NO TEXT**: The image MUST be a clean background with ABSOLUTELY NO text, captions, subtitles, or watermarks.
-    2.  **RELEVANCE**: The image content and emotion MUST directly relate to the joke's theme.
+    2.  **RELEVANCE**: The image content and emotion MUST directly relate to the joke's theme. For edgy or dark humor, the visuals can be surreal, grim, or unsettling.
     3.  **HIGH QUALITY**: The image must be clear and suitable for adding text on top.
     `;
 
