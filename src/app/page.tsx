@@ -322,11 +322,11 @@ export default function LaughFactoryPage() {
                     <p className="text-base sm:text-lg text-muted-foreground">Your daily dose of AI-powered humor</p>
                 </header>
                 
-                <div className="w-full flex justify-center gap-2 sm:gap-4 p-2 bg-card/80 backdrop-blur-lg rounded-full shadow-lg border">
+                <div className="w-full flex justify-center gap-2 p-1 sm:p-2 bg-card/80 backdrop-blur-lg rounded-full shadow-lg border">
                     <Button
                         onClick={() => setMode('generate')}
                         variant={mode === 'generate' ? 'default' : 'ghost'}
-                        className="flex-1 rounded-full text-base font-semibold"
+                        className="flex-1 rounded-full text-sm sm:text-base font-semibold"
                         size="lg"
                     >
                         <Laugh className="mr-2 h-5 w-5"/>
@@ -335,7 +335,7 @@ export default function LaughFactoryPage() {
                     <Button
                         onClick={() => setMode('create')}
                         variant={mode === 'create' ? 'default' : 'ghost'}
-                        className="flex-1 rounded-full text-base font-semibold"
+                        className="flex-1 rounded-full text-sm sm:text-base font-semibold"
                         size="lg"
                     >
                         <PenSquare className="mr-2 h-5 w-5"/>
@@ -522,7 +522,7 @@ export default function LaughFactoryPage() {
             </main>
 
             <footer className="fixed bottom-0 left-0 right-0 w-full flex justify-center p-2 sm:p-4 z-10">
-                 <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-md sm:max-w-lg md:max-w-2xl">
+                 <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-2xl">
                     <Button onClick={handleGenerateJoke} disabled={isLoading || (mode === 'create' && !customMemeText)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                         {isLoading ? (
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -552,5 +552,7 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
 
     
