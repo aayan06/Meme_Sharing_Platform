@@ -9,8 +9,10 @@ import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-aud
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet, Crown } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet, Crown, FileUp, Palette } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -57,11 +59,14 @@ export default function LaughFactoryPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
     const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
+    const [customMemeText, setCustomMemeText] = useState("");
+    const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const { toast } = useToast();
     const memeCardRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
+        const isMemeCategory = category === 'crypto memes' || category === 'edgy memes' || (uploadedImage && customMemeText);
         if (!joke) {
             setMeta('https://placehold.co/1200x630.png', 'Your daily dose of AI-powered humor');
             return;
@@ -73,7 +78,7 @@ export default function LaughFactoryPage() {
         } else {
              setMeta('https://placehold.co/1200x630.png', joke.joke);
         }
-    }, [joke, memeImage, category]);
+    }, [joke, memeImage, category, uploadedImage, customMemeText]);
 
     const takeMemeScreenshot = async (callback: (dataUrl: string, description: string) => void) => {
         const element = memeCardRef.current;
@@ -104,6 +109,14 @@ export default function LaughFactoryPage() {
         setAudio(null);
         setSelectedReaction(null);
         try {
+            // Custom meme generation
+            if (uploadedImage && customMemeText) {
+                setJoke({ joke: customMemeText });
+                setMemeImage({ imageDataUri: uploadedImage });
+                setIsLoading(false);
+                return;
+            }
+
             const selectedCategory = jokeCategories.find(cat => cat.id === category);
             if (!selectedCategory) {
                 throw new Error("Category not found");
@@ -119,7 +132,9 @@ export default function LaughFactoryPage() {
 
             if (isMemeCategory) {
                 const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
-                setMemeImage(memeResult);
+                if (memeResult) {
+                    setMemeImage(memeResult);
+                }
             }
 
         } catch (error) {
@@ -156,6 +171,29 @@ export default function LaughFactoryPage() {
         const selectedCat = jokeCategories.find(cat => cat.id === value);
         if (selectedCat) {
             setCategory(value);
+            setUploadedImage(null);
+            setCustomMemeText("");
+        }
+    };
+    
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file && file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setUploadedImage(reader.result as string);
+                setJoke(null); // Clear previous joke
+                setMemeImage(null);
+                // Clear category selection when uploading an image
+                setCategory(''); 
+            };
+            reader.readAsDataURL(file);
+        } else {
+            toast({
+                title: "Invalid File",
+                description: "Please upload a valid image file.",
+                variant: "destructive"
+            });
         }
     };
 
@@ -270,7 +308,7 @@ export default function LaughFactoryPage() {
       </Card>
     );
 
-    const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
+    const isMemeCategory = category === 'crypto memes' || category === 'edgy memes' || (uploadedImage && customMemeText);
     const { top, bottom } = splitJoke(joke?.joke || '');
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
@@ -321,6 +359,46 @@ export default function LaughFactoryPage() {
                       </div>
                     </div>
                 </section>
+
+                <Card className="w-full bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold">
+                           <Palette className="h-7 w-7" /> 2. Create Your Own
+                        </CardTitle>
+                        <CardDescription>Upload an image and add your own text to make a meme.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                         <div>
+                            <Label htmlFor="custom-text" className="font-semibold">Meme Text</Label>
+                            <Textarea
+                                id="custom-text"
+                                placeholder="Top Text... Bottom Text..."
+                                value={customMemeText}
+                                onChange={(e) => setCustomMemeText(e.target.value)}
+                                className="mt-2"
+                                rows={3}
+                            />
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <Button onClick={() => fileInputRef.current?.click()} className="flex-1">
+                                <FileUp className="mr-2 h-5 w-5" />
+                                Upload Image
+                            </Button>
+                            <Input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleImageUpload}
+                                className="hidden"
+                                accept="image/*"
+                            />
+                             {uploadedImage && (
+                                <div className="w-24 h-24 rounded-md overflow-hidden border-2 border-primary">
+                                    <img src={uploadedImage} alt="Uploaded preview" className="w-full h-full object-cover" />
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
                 
                 <div className="w-full min-h-[300px] flex items-center justify-center">
                     {isLoading && (
@@ -439,3 +517,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
