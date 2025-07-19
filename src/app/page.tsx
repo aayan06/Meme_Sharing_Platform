@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet, Crown, FileUp, Palette } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet, Crown, FileUp, Palette, PenSquare, Laugh } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -51,6 +51,7 @@ function setMeta(url: string, description: string) {
 }
 
 export default function LaughFactoryPage() {
+    const [mode, setMode] = useState<'generate' | 'create'>('generate');
     const [category, setCategory] = useState(jokeCategories[0].id);
     const [joke, setJoke] = useState<GenerateSafeJokeOutput | null>(null);
     const [usedJokes, setUsedJokes] = useState<string[]>([]);
@@ -66,7 +67,7 @@ export default function LaughFactoryPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        const isMemeCategory = category === 'crypto memes' || category === 'edgy memes' || (uploadedImage && customMemeText);
+        const isMemeCategory = category === 'crypto memes' || category === 'edgy memes' || (mode === 'create' && uploadedImage && customMemeText);
         if (!joke) {
             setMeta('https://placehold.co/1200x630.png', 'Your daily dose of AI-powered humor');
             return;
@@ -78,7 +79,7 @@ export default function LaughFactoryPage() {
         } else {
              setMeta('https://placehold.co/1200x630.png', joke.joke);
         }
-    }, [joke, memeImage, category, uploadedImage, customMemeText]);
+    }, [joke, memeImage, category, uploadedImage, customMemeText, mode]);
 
     const takeMemeScreenshot = async (callback: (dataUrl: string, description: string) => void) => {
         const element = memeCardRef.current;
@@ -110,7 +111,7 @@ export default function LaughFactoryPage() {
         setSelectedReaction(null);
         try {
             // Custom meme generation
-            if (uploadedImage && customMemeText) {
+            if (mode === 'create' && uploadedImage && customMemeText) {
                 setJoke({ joke: customMemeText });
                 setMemeImage({ imageDataUri: uploadedImage });
                 setIsLoading(false);
@@ -171,8 +172,6 @@ export default function LaughFactoryPage() {
         const selectedCat = jokeCategories.find(cat => cat.id === value);
         if (selectedCat) {
             setCategory(value);
-            setUploadedImage(null);
-            setCustomMemeText("");
         }
     };
     
@@ -184,8 +183,6 @@ export default function LaughFactoryPage() {
                 setUploadedImage(reader.result as string);
                 setJoke(null); // Clear previous joke
                 setMemeImage(null);
-                // Clear category selection when uploading an image
-                setCategory(''); 
             };
             reader.readAsDataURL(file);
         } else {
@@ -308,7 +305,7 @@ export default function LaughFactoryPage() {
       </Card>
     );
 
-    const isMemeCategory = category === 'crypto memes' || category === 'edgy memes' || (uploadedImage && customMemeText);
+    const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes')) || (mode === 'create' && uploadedImage && customMemeText);
     const { top, bottom } = splitJoke(joke?.joke || '');
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
@@ -321,84 +318,111 @@ export default function LaughFactoryPage() {
                     <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold font-headline text-primary tracking-tighter">HAHA LAUNCH</h1>
                     <p className="text-base sm:text-lg text-muted-foreground">Your daily dose of AI-powered humor</p>
                 </header>
-
-                <JokeCard className="border-primary/50">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold text-amber-400">
-                            <Crown className="h-7 w-7" /> Daily Joke Winner
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-lg sm:text-xl font-medium">{dailyJoke.joke}</p>
-                        <div className="flex items-center gap-4 mt-4">
-                            <p className="text-sm text-muted-foreground">- by {dailyJoke.creator}</p>
-                            <div className="flex items-center gap-1 text-lg font-bold text-green-400">
-                               <span>😂</span>
-                               <span>{dailyJoke.likes}</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </JokeCard>
                 
-                <section className="w-full space-y-6">
-                    <div>
-                      <Label className="text-lg font-semibold mb-4 block text-center">1. Choose a Category</Label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
-                        {jokeCategories.map((cat) => (
-                          <button
-                            key={cat.id}
-                            onClick={() => handleCategoryChange(cat.id)}
-                            data-state={category === cat.id ? 'active' : 'inactive'}
-                            className="px-3 py-3 sm:px-4 text-sm font-semibold rounded-full transition-all duration-200 ease-out transform active:scale-95
-                            data-[state=inactive]:bg-card data-[state=inactive]:text-foreground data-[state=inactive]:hover:bg-card/70 data-[state=inactive]:shadow-md
-                            data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:scale-105"
-                          >
-                            {cat.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                </section>
+                <div className="w-full flex justify-center gap-2 sm:gap-4 p-2 bg-card/80 backdrop-blur-lg rounded-full shadow-lg border">
+                    <Button
+                        onClick={() => setMode('generate')}
+                        variant={mode === 'generate' ? 'primary' : 'ghost'}
+                        className="flex-1 rounded-full text-base font-semibold"
+                        size="lg"
+                    >
+                        <Laugh className="mr-2 h-5 w-5"/>
+                        Generate Joke
+                    </Button>
+                    <Button
+                        onClick={() => setMode('create')}
+                        variant={mode === 'create' ? 'primary' : 'ghost'}
+                        className="flex-1 rounded-full text-base font-semibold"
+                        size="lg"
+                    >
+                        <PenSquare className="mr-2 h-5 w-5"/>
+                        Create Your Own
+                    </Button>
+                </div>
 
-                <Card className="w-full bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold">
-                           <Palette className="h-7 w-7" /> 2. Create Your Own
-                        </CardTitle>
-                        <CardDescription>Upload an image and add your own text to make a meme.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                         <div>
-                            <Label htmlFor="custom-text" className="font-semibold">Meme Text</Label>
-                            <Textarea
-                                id="custom-text"
-                                placeholder="Top Text... Bottom Text..."
-                                value={customMemeText}
-                                onChange={(e) => setCustomMemeText(e.target.value)}
-                                className="mt-2"
-                                rows={3}
-                            />
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <Button onClick={() => fileInputRef.current?.click()} className="flex-1">
-                                <FileUp className="mr-2 h-5 w-5" />
-                                Upload Image
-                            </Button>
-                            <Input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleImageUpload}
-                                className="hidden"
-                                accept="image/*"
-                            />
-                             {uploadedImage && (
-                                <div className="w-24 h-24 rounded-md overflow-hidden border-2 border-primary">
-                                    <img src={uploadedImage} alt="Uploaded preview" className="w-full h-full object-cover" />
+                {mode === 'generate' && (
+                    <JokeCard className="border-primary/50 w-full animate-in fade-in-0 zoom-in-95 duration-300">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold text-amber-400">
+                                <Crown className="h-7 w-7" /> Daily Joke Winner
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-lg sm:text-xl font-medium">{dailyJoke.joke}</p>
+                            <div className="flex items-center gap-4 mt-4">
+                                <p className="text-sm text-muted-foreground">- by {dailyJoke.creator}</p>
+                                <div className="flex items-center gap-1 text-lg font-bold text-green-400">
+                                   <span>😂</span>
+                                   <span>{dailyJoke.likes}</span>
                                 </div>
-                            )}
+                            </div>
+                        </CardContent>
+                    </JokeCard>
+                )}
+
+                {mode === 'generate' && (
+                    <section className="w-full space-y-6 animate-in fade-in-0 zoom-in-95 duration-300">
+                        <div>
+                          <Label className="text-lg font-semibold mb-4 block text-center">1. Choose a Category</Label>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+                            {jokeCategories.map((cat) => (
+                              <button
+                                key={cat.id}
+                                onClick={() => handleCategoryChange(cat.id)}
+                                data-state={category === cat.id ? 'active' : 'inactive'}
+                                className="px-3 py-3 sm:px-4 text-sm font-semibold rounded-full transition-all duration-200 ease-out transform active:scale-95
+                                data-[state=inactive]:bg-card data-[state=inactive]:text-foreground data-[state=inactive]:hover:bg-card/70 data-[state=inactive]:shadow-md
+                                data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:scale-105"
+                              >
+                                {cat.label}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </section>
+                )}
+
+                {mode === 'create' && (
+                     <Card className="w-full bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl animate-in fade-in-0 zoom-in-95 duration-300">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold">
+                               <Palette className="h-7 w-7" /> 2. Create Your Own
+                            </CardTitle>
+                            <CardDescription>Upload an image and add your own text to make a meme.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                             <div>
+                                <Label htmlFor="custom-text" className="font-semibold">Meme Text</Label>
+                                <Textarea
+                                    id="custom-text"
+                                    placeholder="Top Text... Bottom Text..."
+                                    value={customMemeText}
+                                    onChange={(e) => setCustomMemeText(e.target.value)}
+                                    className="mt-2"
+                                    rows={3}
+                                />
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <Button onClick={() => fileInputRef.current?.click()} className="flex-1">
+                                    <FileUp className="mr-2 h-5 w-5" />
+                                    Upload Image
+                                </Button>
+                                <Input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleImageUpload}
+                                    className="hidden"
+                                    accept="image/*"
+                                />
+                                 {uploadedImage && (
+                                    <div className="w-24 h-24 rounded-md overflow-hidden border-2 border-primary">
+                                        <img src={uploadedImage} alt="Uploaded preview" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
                 
                 <div className="w-full min-h-[300px] flex items-center justify-center">
                     {isLoading && (
@@ -488,7 +512,7 @@ export default function LaughFactoryPage() {
 
             <footer className="fixed bottom-0 left-0 right-0 w-full flex justify-center p-2 sm:p-4 z-10">
                  <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-md sm:max-w-lg md:max-w-2xl">
-                    <Button onClick={handleGenerateJoke} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
+                    <Button onClick={handleGenerateJoke} disabled={isLoading || (mode === 'create' && (!uploadedImage || !customMemeText))} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                         {isLoading ? (
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         ) : (
@@ -516,6 +540,5 @@ export default function LaughFactoryPage() {
             </footer>
         </div>
     );
-}
 
     
