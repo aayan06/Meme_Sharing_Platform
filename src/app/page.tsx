@@ -409,8 +409,8 @@ export default function LaughFactoryPage() {
             </main>
 
             <footer className="fixed bottom-0 left-0 right-0 w-full flex justify-center p-2 sm:p-4 z-10">
-                 <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-md md:max-w-lg">
-                    <Button onClick={handleGenerateJoke} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12">
+                 <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-md sm:max-w-lg md:max-w-2xl">
+                    <Button onClick={handleGenerateJoke} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                         {isLoading ? (
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         ) : (
@@ -418,19 +418,19 @@ export default function LaughFactoryPage() {
                         )}
                         Generate
                     </Button>
-                     <Button asChild variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:w-auto sm:px-4">
+                     <Button asChild variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:h-14 sm:w-auto sm:px-6">
                        <Link href="/submit">
                          <Send className="h-5 w-5 sm:mr-2" />
                          <span className="hidden sm:inline">Submit</span>
                        </Link>
                     </Button>
-                    <Button asChild variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:w-auto sm:px-4">
+                    <Button asChild variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:h-14 sm:w-auto sm:px-6">
                         <Link href="/submit">
                           <Trophy className="h-5 w-5 sm:mr-2" />
                           <span className="hidden sm:inline">Board</span>
                         </Link>
                     </Button>
-                    <Button variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:w-auto sm:px-4">
+                    <Button variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:h-14 sm:w-auto sm:px-6">
                        <Wallet className="h-5 w-5 sm:mr-2" />
                        <span className="hidden sm:inline">Connect</span>
                     </Button>
@@ -439,5 +439,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
