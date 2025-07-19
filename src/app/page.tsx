@@ -438,5 +438,4 @@ export default function LaughFactoryPage() {
             </footer>
         </div>
     );
-
-    
+}
