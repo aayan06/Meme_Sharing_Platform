@@ -1,0 +1,92 @@
+
+'use server';
+
+/**
+ * @fileOverview An AI agent that creates a custom meme from a user's topic and optional image.
+ *
+ * - createCustomMeme - A function that handles the custom meme creation process.
+ * - CreateCustomMemeInput - The input type for the createCustomMeme function.
+ * - CreateCustomMemeOutput - The return type for the createCustomMeme function.
+ */
+
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
+
+const CreateCustomMemeInputSchema = z.object({
+  topic: z.string().describe("The user's description of the meme idea or the exact text for the meme."),
+  imageDataUri: z.string().optional().describe(
+    "An optional user-uploaded image as a data URI. Format: 'data:<mimetype>;base64,<encoded_data>'."
+  ),
+});
+export type CreateCustomMemeInput = z.infer<typeof CreateCustomMemeInputSchema>;
+
+const CreateCustomMemeOutputSchema = z.object({
+  joke: z.string().describe('The generated joke or the original text.'),
+  imageDataUri: z
+    .string()
+    .describe(
+      "The generated or provided meme image as a data URI."
+    ),
+});
+export type CreateCustomMemeOutput = z.infer<typeof CreateCustomMemeOutputSchema>;
+
+
+export async function createCustomMeme(input: CreateCustomMemeInput): Promise<CreateCustomMemeOutput> {
+    return createCustomMemeFlow(input);
+}
+
+
+const createCustomMemeFlow = ai.defineFlow(
+  {
+    name: 'createCustomMemeFlow',
+    inputSchema: CreateCustomMemeInputSchema,
+    outputSchema: CreateCustomMemeOutputSchema,
+  },
+  async (input) => {
+
+    const jokeResponse = await ai.generate({
+        prompt: `You are a meme generator. A user has provided the following topic or text: "${input.topic}".
+        
+        Determine if this is a general topic or a specific text for a meme.
+        - If it is a topic (e.g., "Lebron James", "my cat being dumb"), generate a short, funny, two-part joke in the classic meme format (setup and punchline) about that topic.
+        - If it looks like a complete joke already, just use the provided text as-is.
+
+        Return ONLY the joke text.`,
+        config: { temperature: 0.8 },
+    });
+    
+    const joke = jokeResponse.text;
+
+    if (input.imageDataUri) {
+        return {
+            joke,
+            imageDataUri: input.imageDataUri,
+        }
+    }
+
+    const imageGenPrompt = `Generate a high-quality, photo-realistic background image for a meme. The meme's text is: "${joke}".
+    
+    **CRITICAL RULES:**
+    1.  **NO TEXT**: The image MUST be a clean background with ABSOLUTELY NO text, captions, subtitles, or watermarks.
+    2.  **RELEVANCE**: The image content and emotion MUST directly relate to the joke's theme.
+    3.  **HIGH QUALITY**: The image must be clear and suitable for adding text on top.
+    `;
+
+    const {media} = await ai.generate({
+      model: 'googleai/gemini-2.0-flash-preview-image-generation',
+      prompt: imageGenPrompt,
+      config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+      },
+    });
+
+    if (!media) {
+      throw new Error('Image generation failed: No media object returned.');
+    }
+    
+    return {
+        joke,
+        imageDataUri: media.url
+    };
+  }
+);

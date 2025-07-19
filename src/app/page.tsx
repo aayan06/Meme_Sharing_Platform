@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/generate-safe-joke";
 import { generateMemeImage, type GenerateMemeImageOutput } from "@/ai/flows/generate-meme-image";
+import { createCustomMeme } from "@/ai/flows/create-custom-meme";
 import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-audio";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -67,13 +68,13 @@ export default function LaughFactoryPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        const isMemeCategory = category === 'crypto memes' || category === 'edgy memes' || (mode === 'create' && uploadedImage && customMemeText);
+        const isMemeCategory = category === 'crypto memes' || category === 'edgy memes' || (mode === 'create' && (uploadedImage || memeImage) && joke);
         if (!joke) {
             setMeta('https://placehold.co/1200x630.png', 'Your daily dose of AI-powered humor');
             return;
         }
 
-        if (isMemeCategory && memeImage?.imageDataUri) {
+        if (isMemeCategory && (memeImage?.imageDataUri || uploadedImage)) {
             // Delay screenshot for social media sharing until image is loaded
             setTimeout(() => takeMemeScreenshot(setMeta), 100);
         } else {
@@ -98,8 +99,9 @@ export default function LaughFactoryPage() {
         } catch (error) {
             console.error("Failed to capture meme screenshot:", error);
             // Fallback to the raw image if screenshot fails
-            if(callback) callback(memeImage?.imageDataUri || '', joke?.joke || '');
-            return memeImage?.imageDataUri;
+            const fallbackImage = uploadedImage || memeImage?.imageDataUri || '';
+            if(callback) callback(fallbackImage, joke?.joke || '');
+            return fallbackImage;
         }
     };
 
@@ -110,31 +112,32 @@ export default function LaughFactoryPage() {
         setAudio(null);
         setSelectedReaction(null);
         try {
-            // Custom meme generation
-            if (mode === 'create' && uploadedImage && customMemeText) {
-                setJoke({ joke: customMemeText });
-                setMemeImage({ imageDataUri: uploadedImage });
-                setIsLoading(false);
-                return;
-            }
+            if (mode === 'create') {
+                const result = await createCustomMeme({
+                    topic: customMemeText,
+                    imageDataUri: uploadedImage
+                });
+                setJoke({ joke: result.joke });
+                setMemeImage({ imageDataUri: result.imageDataUri });
+            } else {
+                const selectedCategory = jokeCategories.find(cat => cat.id === category);
+                if (!selectedCategory) {
+                    throw new Error("Category not found");
+                }
 
-            const selectedCategory = jokeCategories.find(cat => cat.id === category);
-            if (!selectedCategory) {
-                throw new Error("Category not found");
-            }
+                const isSfw = selectedCategory.sfw;
+                const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
 
-            const isSfw = selectedCategory.sfw;
-            const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
-
-            const jokeResult = await generateSafeJoke({ category, safeForWork: isSfw, usedJokes });
-            setJoke(jokeResult);
-            setUsedJokes(prev => [...prev, jokeResult.joke]);
+                const jokeResult = await generateSafeJoke({ category, safeForWork: isSfw, usedJokes });
+                setJoke(jokeResult);
+                setUsedJokes(prev => [...prev, jokeResult.joke]);
 
 
-            if (isMemeCategory) {
-                const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
-                if (memeResult) {
-                    setMemeImage(memeResult);
+                if (isMemeCategory) {
+                    const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
+                    if (memeResult) {
+                        setMemeImage(memeResult);
+                    }
                 }
             }
 
@@ -305,7 +308,7 @@ export default function LaughFactoryPage() {
       </Card>
     );
 
-    const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes')) || (mode === 'create' && uploadedImage && customMemeText);
+    const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes')) || (mode === 'create' && (uploadedImage || memeImage?.imageDataUri) && customMemeText);
     const { top, bottom } = splitJoke(joke?.joke || '');
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
@@ -388,14 +391,14 @@ export default function LaughFactoryPage() {
                             <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold">
                                <Palette className="h-7 w-7" /> 2. Create Your Own
                             </CardTitle>
-                            <CardDescription>Upload an image and add your own text to make a meme.</CardDescription>
+                            <CardDescription>Upload an image and describe your meme idea.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                              <div>
-                                <Label htmlFor="custom-text" className="font-semibold">Meme Text</Label>
+                                <Label htmlFor="custom-text" className="font-semibold">Meme Idea</Label>
                                 <Textarea
                                     id="custom-text"
-                                    placeholder="Top Text... Bottom Text..."
+                                    placeholder="What do you want your meme to be about?"
                                     value={customMemeText}
                                     onChange={(e) => setCustomMemeText(e.target.value)}
                                     className="mt-2"
@@ -405,7 +408,7 @@ export default function LaughFactoryPage() {
                             <div className="flex items-center gap-4">
                                 <Button onClick={() => fileInputRef.current?.click()} className="flex-1">
                                     <FileUp className="mr-2 h-5 w-5" />
-                                    Upload Image
+                                    Upload Image (Optional)
                                 </Button>
                                 <Input
                                     type="file"
@@ -441,7 +444,7 @@ export default function LaughFactoryPage() {
                         </JokeCard>
                     )}
                     
-                    {!isLoading && joke && isMemeCategory && memeImage && (
+                    {!isLoading && joke && isMemeCategory && (memeImage?.imageDataUri || uploadedImage) && (
                         <JokeCard innerRef={memeCardRef}>
                              <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-xl sm:text-2xl font-bold font-headline">Meme Generated!</CardTitle>
@@ -453,7 +456,7 @@ export default function LaughFactoryPage() {
                                 </div>
                             </CardHeader>
                             <CardContent className="relative">
-                                <img src={memeImage.imageDataUri} alt="Generated Meme background" className="w-full h-auto rounded-lg border-2" />
+                                <img src={uploadedImage || memeImage!.imageDataUri} alt="Generated Meme background" className="w-full h-auto rounded-lg border-2" />
                                 <div className="absolute inset-0 flex flex-col justify-between p-2 sm:p-4">
                                   <MemeText text={top} />
                                   <MemeText text={bottom} />
@@ -462,7 +465,7 @@ export default function LaughFactoryPage() {
                         </JokeCard>
                     )}
 
-                    {!isLoading && joke && (!isMemeCategory || (isMemeCategory && !memeImage)) && (
+                    {!isLoading && joke && (!isMemeCategory || !(memeImage?.imageDataUri || uploadedImage)) && (
                          <JokeCard>
                             <CardHeader className="flex flex-row items-start justify-between pb-2">
                                 <CardTitle className="text-xl sm:text-2xl font-bold font-headline">Here's a good one!</CardTitle>
@@ -512,7 +515,7 @@ export default function LaughFactoryPage() {
 
             <footer className="fixed bottom-0 left-0 right-0 w-full flex justify-center p-2 sm:p-4 z-10">
                  <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-md sm:max-w-lg md:max-w-2xl">
-                    <Button onClick={handleGenerateJoke} disabled={isLoading || (mode === 'create' && (!uploadedImage || !customMemeText))} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
+                    <Button onClick={handleGenerateJoke} disabled={isLoading || (mode === 'create' && !customMemeText)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                         {isLoading ? (
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         ) : (
@@ -540,5 +543,3 @@ export default function LaughFactoryPage() {
             </footer>
         </div>
     );
-
-    
