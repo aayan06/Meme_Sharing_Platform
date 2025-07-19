@@ -215,6 +215,27 @@ export default function LaughFactoryPage() {
         }
     };
 
+    const splitJoke = (text: string): { top: string; bottom: string } => {
+        if (!text) return { top: '', bottom: '' };
+        const words = text.split(' ');
+        if (words.length === 1) return { top: text, bottom: '' };
+        const middleIndex = Math.ceil(words.length / 2);
+        const top = words.slice(0, middleIndex).join(' ');
+        const bottom = words.slice(middleIndex).join(' ');
+        return { top, bottom };
+    };
+
+    const MemeText = ({ text }: { text: string }) => (
+        <p
+          className="w-full text-center text-2xl md:text-4xl font-bold uppercase text-white break-words px-2"
+          style={{
+            textShadow: '3px 3px 6px #000, -3px -3px 6px #000, 3px -3px 6px #000, -3px 3px 6px #000'
+          }}
+        >
+          {text}
+        </p>
+    );
+
     const ShareMenu = () => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -250,6 +271,7 @@ export default function LaughFactoryPage() {
     );
 
     const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
+    const { top, bottom } = splitJoke(joke?.joke || '');
 
     const dailyJoke = censored 
         ? { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 }
@@ -345,15 +367,9 @@ export default function LaughFactoryPage() {
                             </CardHeader>
                             <CardContent className="relative">
                                 <img src={memeImage.imageDataUri} alt="Generated Meme background" className="w-full h-auto rounded-lg border-2" />
-                                <div className="absolute inset-0 flex items-center justify-center p-4">
-                                    <p 
-                                      className="text-center text-xl md:text-2xl font-bold text-white break-words"
-                                      style={{
-                                        textShadow: '2px 2px 4px #000, -2px -2px 4px #000, 2px -2px 4px #000, -2px 2px 4px #000'
-                                      }}
-                                    >
-                                        {joke.joke}
-                                    </p>
+                                <div className="absolute inset-0 flex flex-col justify-between p-4">
+                                  <MemeText text={top} />
+                                  <MemeText text={bottom} />
                                 </div>
                             </CardContent>
                         </JokeCard>
@@ -431,3 +447,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
