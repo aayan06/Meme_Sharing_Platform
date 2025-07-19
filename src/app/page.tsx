@@ -208,32 +208,28 @@ export default function LaughFactoryPage() {
     const splitJoke = (text: string): { top: string; bottom: string } => {
         if (!text) return { top: '', bottom: '' };
     
-        // Split by sentences. A simple regex for sentence-ending punctuation.
-        const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-    
-        // If there's only one sentence, split by words.
-        if (sentences.length <= 1) {
-            const words = text.split(' ');
-            if (words.length === 1) return { top: text, bottom: '' };
-            const middleIndex = Math.ceil(words.length / 2);
-            const top = words.slice(0, middleIndex).join(' ');
-            const bottom = words.slice(middleIndex).join(' ');
+        const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+
+        if (sentences.length >= 2) {
+            const middleIndex = Math.ceil(sentences.length / 2);
+            const top = sentences.slice(0, middleIndex).join(' ').trim();
+            const bottom = sentences.slice(middleIndex).join(' ').trim();
             return { top, bottom };
         }
-    
-        // If multiple sentences, find a good split point.
-        const middleIndex = Math.ceil(sentences.length / 2);
-        const top = sentences.slice(0, middleIndex).join(' ').trim();
-        const bottom = sentences.slice(middleIndex).join(' ').trim();
-    
+        
+        const words = text.split(' ');
+        if (words.length === 1) return { top: text, bottom: '' };
+        const middleIndex = Math.ceil(words.length / 2);
+        const top = words.slice(0, middleIndex).join(' ');
+        const bottom = words.slice(middleIndex).join(' ');
         return { top, bottom };
     };
 
     const MemeText = ({ text }: { text: string }) => (
         <p
-          className="w-full text-center text-2xl md:text-4xl font-bold uppercase text-white break-words px-2"
+          className="w-full text-center text-xl sm:text-2xl md:text-4xl font-bold uppercase text-white break-words px-2"
           style={{
-            textShadow: '3px 3px 0 #000, -3px 3px 0 #000, 3px -3px 0 #000, -3px -3px 0 #000, 3px 0px 0 #000, -3px 0px 0 #000, 0px 3px 0 #000, 0px -3px 0 #000'
+            textShadow: '3px 3px 0 #000, -3px 3px 0 #000, 3px -3px 0 #000, -3px -3px 0 #000, 3px 0px 0 #000, -3px 0px 0 #000, 0px 3px 0 #000, 0px -3px 0 #000, 2px 2px 5px rgba(0,0,0,0.5)'
           }}
         >
           {text}
@@ -281,21 +277,21 @@ export default function LaughFactoryPage() {
 
 
     return (
-        <div className="flex flex-col items-center min-h-screen p-4 sm:p-8 pt-12 dark">
+        <div className="flex flex-col items-center min-h-screen p-4 sm:p-6 pb-32 dark">
             <main className="w-full max-w-3xl mx-auto flex flex-col items-center space-y-8">
-                <header className="text-center w-full space-y-2">
-                    <h1 className="text-6xl md:text-7xl font-bold font-headline text-primary tracking-tighter">HAHA LAUNCH</h1>
-                    <p className="text-lg text-muted-foreground">Your daily dose of AI-powered humor</p>
+                <header className="text-center w-full space-y-2 mt-8 sm:mt-0">
+                    <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold font-headline text-primary tracking-tighter">HAHA LAUNCH</h1>
+                    <p className="text-base sm:text-lg text-muted-foreground">Your daily dose of AI-powered humor</p>
                 </header>
 
                 <JokeCard className="border-primary/50">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-2xl font-bold text-amber-400">
+                        <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold text-amber-400">
                             <Crown className="h-7 w-7" /> Daily Joke Winner
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-xl font-medium">{dailyJoke.joke}</p>
+                        <p className="text-lg sm:text-xl font-medium">{dailyJoke.joke}</p>
                         <div className="flex items-center gap-4 mt-4">
                             <p className="text-sm text-muted-foreground">- by {dailyJoke.creator}</p>
                             <div className="flex items-center gap-1 text-lg font-bold text-green-400">
@@ -309,13 +305,13 @@ export default function LaughFactoryPage() {
                 <section className="w-full space-y-6">
                     <div>
                       <Label className="text-lg font-semibold mb-4 block text-center">1. Choose a Category</Label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
                         {jokeCategories.map((cat) => (
                           <button
                             key={cat.id}
                             onClick={() => handleCategoryChange(cat.id)}
                             data-state={category === cat.id ? 'active' : 'inactive'}
-                            className="px-4 py-3 text-sm font-semibold rounded-full transition-all duration-200 ease-out transform active:scale-95
+                            className="px-3 py-3 sm:px-4 text-sm font-semibold rounded-full transition-all duration-200 ease-out transform active:scale-95
                             data-[state=inactive]:bg-card data-[state=inactive]:text-foreground data-[state=inactive]:hover:bg-card/70 data-[state=inactive]:shadow-md
                             data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:scale-105"
                           >
@@ -346,7 +342,7 @@ export default function LaughFactoryPage() {
                     {!isLoading && joke && isMemeCategory && memeImage && (
                         <JokeCard innerRef={memeCardRef}>
                              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-2xl font-bold font-headline">Meme Generated!</CardTitle>
+                                <CardTitle className="text-xl sm:text-2xl font-bold font-headline">Meme Generated!</CardTitle>
                                 <div className="flex items-center">
                                     <ShareMenu />
                                     <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme" className="rounded-full">
@@ -356,7 +352,7 @@ export default function LaughFactoryPage() {
                             </CardHeader>
                             <CardContent className="relative">
                                 <img src={memeImage.imageDataUri} alt="Generated Meme background" className="w-full h-auto rounded-lg border-2" />
-                                <div className="absolute inset-0 flex flex-col justify-between p-4">
+                                <div className="absolute inset-0 flex flex-col justify-between p-2 sm:p-4">
                                   <MemeText text={top} />
                                   <MemeText text={bottom} />
                                 </div>
@@ -367,7 +363,7 @@ export default function LaughFactoryPage() {
                     {!isLoading && joke && (!isMemeCategory || (isMemeCategory && !memeImage)) && (
                          <JokeCard>
                             <CardHeader className="flex flex-row items-start justify-between pb-2">
-                                <CardTitle className="text-2xl font-bold font-headline">Here's a good one!</CardTitle>
+                                <CardTitle className="text-xl sm:text-2xl font-bold font-headline">Here's a good one!</CardTitle>
                                 <div className="flex items-center">
                                     <ShareMenu />
                                      <Button
@@ -386,7 +382,7 @@ export default function LaughFactoryPage() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-xl font-medium leading-relaxed">{joke.joke}</p>
+                                <p className="text-lg sm:text-xl font-medium leading-relaxed">{joke.joke}</p>
                                  {audio?.media && (
                                     <div className="mt-4">
                                         <audio controls autoPlay className="w-full">
@@ -412,27 +408,35 @@ export default function LaughFactoryPage() {
                 </div>
             </main>
 
-            <footer className="sticky bottom-0 w-full flex justify-center p-4 mt-8">
-                 <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center gap-2 border">
-                    <Button onClick={handleGenerateJoke} disabled={isLoading} size="lg" className="rounded-full font-bold text-lg flex-1 shadow-md">
+            <footer className="fixed bottom-0 left-0 right-0 w-full flex justify-center p-2 sm:p-4 z-10">
+                 <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-md">
+                    <Button onClick={handleGenerateJoke} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md">
                         {isLoading ? (
-                            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                            <Loader2 className="mr-2 h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
                         ) : (
-                            <Sparkles className="mr-2 h-6 w-6" />
+                            <Sparkles className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
                         )}
-                        Generate Joke
+                        Generate
                     </Button>
-                     <Button asChild variant="secondary" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600">
-                       <Link href="/submit"><Send className="mr-2 h-4 w-4" /> Submit</Link>
+                     <Button asChild variant="secondary" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 px-3 sm:px-4">
+                       <Link href="/submit">
+                         <Send className="h-4 w-4 sm:mr-2" />
+                         <span className="hidden sm:inline">Submit</span>
+                       </Link>
                     </Button>
-                    <Button asChild variant="secondary" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600">
-                        <Link href="/submit"><Trophy className="mr-2 h-4 w-4" /> Board</Link>
+                    <Button asChild variant="secondary" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 px-3 sm:px-4">
+                        <Link href="/submit">
+                          <Trophy className="h-4 w-4 sm:mr-2" />
+                          <span className="hidden sm:inline">Board</span>
+                        </Link>
                     </Button>
-                    <Button variant="secondary" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600">
-                       <Wallet className="mr-2 h-4 w-4" /> Connect
+                    <Button variant="secondary" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 px-3 sm:px-4">
+                       <Wallet className="h-4 w-4 sm:mr-2" />
+                       <span className="hidden sm:inline">Connect</span>
                     </Button>
                  </div>
             </footer>
         </div>
     );
-}
+
+    
