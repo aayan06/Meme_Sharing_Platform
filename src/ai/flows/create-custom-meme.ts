@@ -44,6 +44,25 @@ const createCustomMemeFlow = ai.defineFlow(
   },
   async (input) => {
 
+    const safetySettings = [
+        {
+          category: 'HARM_CATEGORY_HATE_SPEECH',
+          threshold: 'BLOCK_NONE',
+        },
+        {
+          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+          threshold: 'BLOCK_NONE',
+        },
+        {
+          category: 'HARM_CATEGORY_HARASSMENT',
+          threshold: 'BLOCK_NONE',
+        },
+        {
+          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+          threshold: 'BLOCK_NONE',
+        },
+    ];
+
     const jokeResponse = await ai.generate({
         prompt: `You are a meme generator. A user has provided the following topic or text: "${input.topic}".
         
@@ -52,7 +71,10 @@ const createCustomMemeFlow = ai.defineFlow(
         - If it looks like a complete joke already, just use the provided text as-is.
 
         Return ONLY the joke text.`,
-        config: { temperature: 0.8 },
+        config: { 
+            temperature: 0.8,
+            safetySettings,
+         },
     });
     
     const joke = jokeResponse.text;
@@ -77,6 +99,7 @@ const createCustomMemeFlow = ai.defineFlow(
       prompt: imageGenPrompt,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
+        safetySettings,
       },
     });
 
