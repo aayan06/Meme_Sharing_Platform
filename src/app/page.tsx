@@ -60,7 +60,6 @@ export default function LaughFactoryPage() {
     const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
     const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
     const { toast } = useToast();
-    const memeCanvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
         if (censored) {
@@ -86,91 +85,6 @@ export default function LaughFactoryPage() {
             setMeta(memeImage.imageDataUri, joke.joke);
         } else {
              setMeta('https://placehold.co/1200x630.png', joke.joke);
-        }
-    }, [joke, memeImage, category]);
-
-    const drawMeme = () => {
-        const canvas = memeCanvasRef.current;
-        const jokeText = joke?.joke;
-        const imageUri = memeImage?.imageDataUri;
-
-        if (canvas && jokeText && imageUri) {
-            const ctx = canvas.getContext("2d");
-            if (!ctx) return;
-
-            const img = new window.Image();
-            img.crossOrigin = "anonymous";
-            img.src = imageUri;
-            img.onload = () => {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-                ctx.fillStyle = "white";
-                ctx.strokeStyle = "black";
-                ctx.lineWidth = Math.max(1, img.width / 200);
-                ctx.textAlign = "center";
-                
-                const fontSize = Math.max(20, img.width / 12);
-                ctx.font = `bold ${fontSize}px 'Impact', sans-serif`;
-                
-                const x = canvas.width / 2;
-                const y = canvas.height * 0.9;
-
-                const wrapText = (context: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) => {
-                    const words = text.split(' ');
-                    let line = '';
-                    const lines = [];
-
-                    for(let n = 0; n < words.length; n++) {
-                        const testLine = line + words[n] + ' ';
-                        const metrics = context.measureText(testLine);
-                        const testWidth = metrics.width;
-                        if (testWidth > maxWidth && n > 0) {
-                            lines.push(line);
-                            line = words[n] + ' ';
-                        } else {
-                            line = testLine;
-                        }
-                    }
-                    lines.push(line);
-
-                    let currentY = y - (lines.length - 1) * lineHeight;
-
-                    for (let i = 0; i < lines.length; i++) {
-                         context.strokeText(lines[i], x, currentY);
-                         context.fillText(lines[i], x, currentY);
-                         currentY += lineHeight;
-                    }
-                }
-                
-                const maxWidth = canvas.width * 0.9;
-                const lineHeight = fontSize * 1.2;
-                
-                // Super simple top/bottom text split for now
-                const jokeLines = jokeText.toUpperCase().split('. ');
-                const topText = jokeLines.slice(0, jokeLines.length / 2).join('. ');
-                const bottomText = jokeLines.slice(jokeLines.length / 2).join('. ');
-
-                if (bottomText) {
-                    wrapText(ctx, bottomText, x, y, maxWidth, lineHeight);
-                }
-                
-                if (topText) {
-                    const topY = canvas.height * 0.1 + lineHeight;
-                     wrapText(ctx, topText, x, topY, maxWidth, lineHeight);
-                } else if (!bottomText) {
-                    // if no split, just center it at the bottom
-                    wrapText(ctx, jokeText.toUpperCase(), x, y, maxWidth, lineHeight);
-                }
-
-            };
-        }
-    };
-
-    useEffect(() => {
-        const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
-        if (isMemeCategory && joke && memeImage) {
-            drawMeme();
         }
     }, [joke, memeImage, category]);
 
@@ -215,12 +129,11 @@ export default function LaughFactoryPage() {
     };
     
     const handleDownloadMeme = () => {
-        const canvas = memeCanvasRef.current;
-        if (canvas) {
-            const dataUrl = canvas.toDataURL("image/png");
+        const imageUri = memeImage?.imageDataUri;
+        if (imageUri) {
             const link = document.createElement("a");
             link.download = "haha-launch-meme.png";
-            link.href = dataUrl;
+            link.href = imageUri;
             link.click();
         }
     };
@@ -398,7 +311,7 @@ export default function LaughFactoryPage() {
                     {!isLoading && joke && isMemeCategory && memeImage && (
                         <JokeCard>
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-2xl font-bold font-headline">Meme Generated!</CardTitle>
+                                <CardTitle className="text-2xl font-bold font-headline">Meme Found!</CardTitle>
                                 <div className="flex items-center">
                                     <ShareMenu />
                                     <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme" className="rounded-full">
@@ -407,7 +320,8 @@ export default function LaughFactoryPage() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <canvas ref={memeCanvasRef} className="w-full h-auto rounded-lg border-2" />
+                                <img src={memeImage.imageDataUri} alt="Generated Meme" className="w-full h-auto rounded-lg border-2" />
+                                <p className="text-center text-lg mt-4 font-medium">{joke.joke}</p>
                             </CardContent>
                         </JokeCard>
                     )}

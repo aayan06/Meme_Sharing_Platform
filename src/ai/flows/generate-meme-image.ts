@@ -2,9 +2,9 @@
 'use server';
 
 /**
- * @fileOverview An AI agent that generates a crypto-themed meme image.
+ * @fileOverview An AI agent that finds a relevant, existing crypto-themed meme image online.
  *
- * - generateMemeImage - A function that generates a background image for a crypto meme.
+ * - generateMemeImage - A function that finds a background image for a crypto meme.
  * - GenerateMemeImageOutput - The return type for the generateMemeImage function.
  */
 
@@ -16,7 +16,7 @@ const GenerateMemeImageOutputSchema = z.object({
   imageDataUri: z
     .string()
     .describe(
-      "The generated crypto meme background image as a data URI."
+      "The found crypto meme image as a data URI."
     ),
 });
 export type GenerateMemeImageOutput = z.infer<typeof GenerateMemeImageOutputSchema>;
@@ -39,32 +39,30 @@ const generateMemeImageFlow = ai.defineFlow(
     let prompt = '';
 
     const baseInstructions = `
-      You are a meme generation expert. Your task is to generate a high-quality meme image based on a provided joke.
+      You are a Meme Curator AI. Your task is to find a popular, high-quality, existing meme from the web that is a perfect visual match for the provided joke.
 
       **CRITICAL RULES:**
-      1.  **No Existing Text**: You MUST NOT use any background images that already contain text, captions, watermarks, subtitles, or signs. Only use clean, high-resolution images with NO existing text, so the new meme text is clearly readable. The image should be a blank template suitable for adding meme captions.
-      2.  **Visual Matching**: The image's theme MUST visually match the tone and topic of the joke: "${input.joke}". For example, use a "bear market" chart for a joke about crashing coins.
-      3.  **Clarity**: Avoid random, cluttered, or abstract backgrounds. The image must support the text, not overpower it.
-      4.  **Single Image**: The output should be a single, complete image. Do not generate text separately.
-      5.  **Text Accuracy**: Before rendering, check for proper spelling and punctuation. Ensure correct capitalization and grammar.
+      1.  **Find, Don't Create**: You MUST find a real, well-known meme image. Do NOT generate a new image or add any text yourself.
+      2.  **Relevance is Key**: The meme's content, characters, and emotion MUST directly relate to the topic and tone of the joke: "${input.joke}".
+      3.  **High Quality**: The image must be clear and high-resolution. Avoid blurry, pixelated, or heavily watermarked images.
+      4.  **Single Image**: The output must be a single, complete meme image.
     `;
 
     if (input.category === 'crypto memes') {
       prompt = `
         ${baseInstructions}
         **Category**: Cryptocurrency Memes
-        **Joke**: "${input.joke}"
-        **Template Pool**: Use a random, rotating selection of high-quality, crypto-themed templates. Examples include: "Buy the dip," "Rugpull," "HODL," Satoshi, Wojak, Pepe traders, Elon Musk, or NFT-related scenes.
-        **Image Styles**: Vary the visual style. Consider chart memes, surreal edits, vaporwave aesthetics, or pixel art.
-        ${input.safeForWork ? 'The meme must be safe-for-work and use only light humor.' : 'You are in Degen Mode. The meme can be edgy or satirical.'}
+        **Joke Context**: "${input.joke}"
+        **Meme Examples to Look For**: "Buy the dip," "Rugpull," "HODL," Satoshi, Wojak, Pepe traders, Elon Musk, or NFT-related scenes. Find a meme that visually represents the joke's punchline.
+        ${input.safeForWork ? 'The meme must be safe-for-work.' : 'You are in Degen Mode. The meme can be edgy or satirical.'}
       `;
     } else if (input.category === 'edgy memes') {
       prompt = `
         ${baseInstructions}
         **Category**: Edgy Internet Memes
-        **Joke**: "${input.joke}"
-        **Template Pool**: Use popular, currently trending internet meme templates. Examples: Wojak variants (e.g., Soyjak, Trad-wife), Chad vs. Virgin, Gru's Plan, Distracted Boyfriend. DO NOT reuse images from the crypto category.
-        ${input.safeForWork ? 'The meme must be safe-for-work. Use templates tagged as "sfw" or "family".' : 'You are in Degen Mode. The template can include profanity or sensitive topics.'}
+        **Joke Context**: "${input.joke}"
+        **Meme Examples to Look For**: Look for popular, trending internet meme formats like Wojak variants (e.g., Soyjak, Trad-wife), Chad vs. Virgin, Gru's Plan, Distracted Boyfriend, etc.
+        ${input.safeForWork ? 'The meme must be safe-for-work.' : 'You are in Degen Mode. The template can include profanity or sensitive topics.'}
       `;
     }
 
@@ -72,7 +70,7 @@ const generateMemeImageFlow = ai.defineFlow(
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       prompt: prompt,
       config: {
-        responseModalities: ['TEXT', 'IMAGE'],
+        responseModalities: ['IMAGE'],
       },
     });
 
