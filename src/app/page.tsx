@@ -217,11 +217,25 @@ export default function LaughFactoryPage() {
 
     const splitJoke = (text: string): { top: string; bottom: string } => {
         if (!text) return { top: '', bottom: '' };
-        const words = text.split(' ');
-        if (words.length === 1) return { top: text, bottom: '' };
-        const middleIndex = Math.ceil(words.length / 2);
-        const top = words.slice(0, middleIndex).join(' ');
-        const bottom = words.slice(middleIndex).join(' ');
+    
+        // Split by sentences. A simple regex for sentence-ending punctuation.
+        const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    
+        // If there's only one sentence, split by words.
+        if (sentences.length <= 1) {
+            const words = text.split(' ');
+            if (words.length === 1) return { top: text, bottom: '' };
+            const middleIndex = Math.ceil(words.length / 2);
+            const top = words.slice(0, middleIndex).join(' ');
+            const bottom = words.slice(middleIndex).join(' ');
+            return { top, bottom };
+        }
+    
+        // If multiple sentences, find a good split point.
+        const middleIndex = Math.ceil(sentences.length / 2);
+        const top = sentences.slice(0, middleIndex).join(' ').trim();
+        const bottom = sentences.slice(middleIndex).join(' ').trim();
+    
         return { top, bottom };
     };
 
@@ -229,7 +243,7 @@ export default function LaughFactoryPage() {
         <p
           className="w-full text-center text-2xl md:text-4xl font-bold uppercase text-white break-words px-2"
           style={{
-            textShadow: '3px 3px 6px #000, -3px -3px 6px #000, 3px -3px 6px #000, -3px 3px 6px #000'
+            textShadow: '3px 3px 0 #000, -3px 3px 0 #000, 3px -3px 0 #000, -3px -3px 0 #000, 3px 0px 0 #000, -3px 0px 0 #000, 0px 3px 0 #000, 0px -3px 0 #000'
           }}
         >
           {text}
