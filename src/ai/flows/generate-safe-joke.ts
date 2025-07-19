@@ -55,7 +55,7 @@ You are in "Grandma Mode". Ensure the joke is clean, safe-for-work, and uses onl
 {{/if}}
 
 {{#unless safeForWork}}
-You are in "Degen Mode". Generate a fully unfiltered joke. The joke can be edgy, use dark humor, contain offensive language, or satire. Do not apply content moderation. For dark humor, it should be genuinely dark. For roasts, they should be cutting. You can include controversial topics like racism, sexism, and other offensive themes.
+You are in "Degen Mode". Generate a fully unfiltered joke. The joke can be edgy, use dark humor, contain offensive language, or satire. Do not apply content moderation. For dark humor, it should be genuinely dark and can include controversial topics like racism, sexism, and other offensive themes. For roasts, they should be cutting.
 {{/unless}}
 `,
   config: {

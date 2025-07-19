@@ -22,6 +22,11 @@ const GenerateMemeImageOutputSchema = z.object({
 export type GenerateMemeImageOutput = z.infer<typeof GenerateMemeImageOutputSchema>;
 
 export async function generateMemeImage(input: Pick<GenerateSafeJokeInput, 'category' | 'safeForWork' | 'joke'>): Promise<GenerateMemeImageOutput | null> {
+  // Meme generation is only for specific categories
+  if (input.category !== 'crypto memes' && input.category !== 'edgy memes') {
+    return null;
+  }
+
   try {
     return await generateMemeImageFlow(input);
   } catch (error) {
@@ -44,25 +49,26 @@ const generateMemeImageFlow = ai.defineFlow(
     let prompt = '';
     
     const baseInstructions = `
-      Generate a single, high-quality background image for a meme based on this joke: "${input.joke}".
+      Generate a single, high-quality background image for a classic meme based on this joke: "${input.joke}".
       
       **CRITICAL RULES:**
-      1.  **NO TEXT**: The image MUST be a clean background with NO text, captions, or watermarks.
-      2.  **RELEVANCE**: The image content and emotion MUST directly relate to the joke.
-      3.  **HIGH QUALITY**: The image must be clear and high-resolution.
+      1.  **NO TEXT**: The image MUST be a clean background with ABSOLUTELY NO text, captions, subtitles, signs, or watermarks. It is a blank template.
+      2.  **RELEVANCE**: The image content and emotion MUST directly relate to the joke's theme.
+      3.  **HIGH QUALITY**: The image must be clear, high-resolution, and suitable for adding text on top.
+      4.  **SPELLING & GRAMMAR**: Ensure any text you process internally is spelled correctly.
     `;
 
     if (input.category === 'crypto memes') {
       prompt = `
         ${baseInstructions}
-        **Theme**: Cryptocurrency. Think charts, popular crypto symbols, or characters representing traders. The visuals should capture the high-energy, volatile spirit of crypto culture.
+        **Theme**: Cryptocurrency. Think charts, popular crypto symbols (like Doge, Pepe), or characters representing traders. The visuals should capture the high-energy, volatile, and often absurd spirit of crypto culture.
         ${input.safeForWork ? 'The image must be safe-for-work.' : ''}
       `;
     } else if (input.category === 'edgy memes') {
       prompt = `
         ${baseInstructions}
-        **Theme**: Edgy Internet Humor & Dark Humor. Reflect dark, surreal, or ironic situations. The tone should be satirical or grimly humorous.
-        ${input.safeForWork ? 'The image must be safe-for-work.' : ''}
+        **Theme**: Edgy & Dark Humor. The image should be surreal, grim, satirical, or darkly humorous to match the joke.
+        ${input.safeForWork ? 'The image must be safe-for-work.' : 'The image can be visually dark or unsettling to match the edgy theme.'}
       `;
     }
 
