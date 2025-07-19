@@ -9,7 +9,6 @@ import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-aud
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet, Crown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,7 +50,6 @@ function setMeta(url: string, description: string) {
 
 export default function LaughFactoryPage() {
     const [category, setCategory] = useState(jokeCategories[0].id);
-    const [censored, setCensored] = useState(true);
     const [joke, setJoke] = useState<GenerateSafeJokeOutput | null>(null);
     const [usedJokes, setUsedJokes] = useState<string[]>([]);
     const [memeImage, setMemeImage] = useState<GenerateMemeImageOutput | null>(null);
@@ -62,19 +60,6 @@ export default function LaughFactoryPage() {
     const { toast } = useToast();
     const memeCardRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        if (censored) {
-            const selectedCat = jokeCategories.find(cat => cat.id === category);
-            if (selectedCat && !selectedCat.sfw) {
-                setCategory('dad jokes');
-                toast({
-                    title: "Category Changed",
-                    description: "Switched to a censored category.",
-                });
-            }
-        }
-    }, [censored, category, toast]);
-    
     useEffect(() => {
         const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
         if (!joke) {
@@ -119,7 +104,12 @@ export default function LaughFactoryPage() {
         setAudio(null);
         setSelectedReaction(null);
         try {
-            const isSfw = censored;
+            const selectedCategory = jokeCategories.find(cat => cat.id === category);
+            if (!selectedCategory) {
+                throw new Error("Category not found");
+            }
+
+            const isSfw = selectedCategory.sfw;
             const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
 
             const jokeResult = await generateSafeJoke({ category, safeForWork: isSfw, usedJokes });
@@ -287,9 +277,7 @@ export default function LaughFactoryPage() {
     const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
     const { top, bottom } = splitJoke(joke?.joke || '');
 
-    const dailyJoke = censored 
-        ? { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 }
-        : { joke: "My grief counselor died. He was so good, I don’t even care.", creator: "DarkHumor_Fan", likes: 666 };
+    const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
 
     return (
@@ -326,9 +314,8 @@ export default function LaughFactoryPage() {
                           <button
                             key={cat.id}
                             onClick={() => handleCategoryChange(cat.id)}
-                            disabled={censored && !cat.sfw}
                             data-state={category === cat.id ? 'active' : 'inactive'}
-                            className="px-4 py-3 text-sm font-semibold rounded-full transition-all duration-200 ease-out transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-muted/50 disabled:shadow-none
+                            className="px-4 py-3 text-sm font-semibold rounded-full transition-all duration-200 ease-out transform active:scale-95
                             data-[state=inactive]:bg-card data-[state=inactive]:text-foreground data-[state=inactive]:hover:bg-card/70 data-[state=inactive]:shadow-md
                             data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:scale-105"
                           >
@@ -336,18 +323,6 @@ export default function LaughFactoryPage() {
                           </button>
                         ))}
                       </div>
-                    </div>
-
-                    <div className="flex items-center justify-center p-4 rounded-full bg-card shadow-md">
-                        <Label htmlFor="censored-switch" className="text-lg font-semibold flex-1 text-center text-foreground mr-4">
-                            Censored
-                        </Label>
-                        <Switch
-                            id="censored-switch"
-                            checked={censored}
-                            onCheckedChange={setCensored}
-                            aria-label="Toggle censored filter"
-                        />
                     </div>
                 </section>
                 
