@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet, Crown, FileUp, Palette, PenSquare, Laugh, X } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -22,6 +22,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { auth } from "@/lib/firebase";
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -52,6 +54,7 @@ function setMeta(url: string, description: string) {
 }
 
 export default function LaughFactoryPage() {
+    const { user, userData } = useAuth();
     const [mode, setMode] = useState<'generate' | 'create'>('generate');
     const [category, setCategory] = useState(jokeCategories[0].id);
     const [joke, setJoke] = useState<GenerateSafeJokeOutput | null>(null);
@@ -327,6 +330,8 @@ export default function LaughFactoryPage() {
         setMemeImage(null);
         setAudio(null);
         setSelectedReaction(null);
+        setCustomMemeText('');
+        setUploadedImage(null);
     };
 
     const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes')) || (mode === 'create' && (uploadedImage || memeImage?.imageDataUri) && customMemeText);
@@ -338,12 +343,26 @@ export default function LaughFactoryPage() {
     return (
         <div className="flex flex-col items-center min-h-screen p-4 sm:p-6 dark">
             <main className="w-full max-w-3xl mx-auto flex flex-col items-center space-y-8">
-                <header className="text-center w-full space-y-2 mt-8 sm:mt-0">
+                 <header className="text-center w-full space-y-2 mt-8 sm:mt-0 relative">
+                    <div className="absolute top-0 right-0">
+                        {user ? (
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-muted-foreground">{user.email}</span>
+                                <Button variant="ghost" size="icon" onClick={() => auth.signOut()}>
+                                    <LogOut className="h-5 w-5" />
+                                </Button>
+                            </div>
+                        ) : (
+                             <Button asChild>
+                                <Link href="/auth">Login</Link>
+                            </Button>
+                        )}
+                    </div>
                     <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold font-headline text-primary tracking-tighter">HAHA LAUNCH</h1>
                     <p className="text-base sm:text-lg text-muted-foreground">Your daily dose of AI-powered humor</p>
                 </header>
                 
-                <div className="w-full flex justify-center gap-2 p-1 bg-card/80 backdrop-blur-lg rounded-full shadow-lg border">
+                 <div className="w-full flex justify-center p-1 bg-card/80 backdrop-blur-lg rounded-full shadow-lg border">
                     <Button
                         onClick={() => handleModeChange('generate')}
                         variant={mode === 'generate' ? 'default' : 'ghost'}
@@ -456,7 +475,7 @@ export default function LaughFactoryPage() {
                     </Card>
                 )}
                 
-                <div className="w-full min-h-[300px] flex items-center justify-center">
+                <div className="w-full flex items-center justify-center">
                     {isLoading && (
                          <JokeCard>
                             <CardHeader>
@@ -541,7 +560,7 @@ export default function LaughFactoryPage() {
                     )}
                 </div>
 
-                 <div className="w-full flex justify-center p-2 sm:p-4 mt-8">
+                 <div className="w-full flex justify-center p-2 sm:p-4">
                      <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-3xl">
                         <Button onClick={handleGenerateJoke} disabled={isLoading || (mode === 'create' && !customMemeText)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                             {isLoading ? (
@@ -563,9 +582,11 @@ export default function LaughFactoryPage() {
                               <span className="hidden sm:inline">Board</span>
                             </Link>
                         </Button>
-                        <Button variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:h-14 sm:w-auto sm:px-6">
-                           <Wallet className="h-5 w-5 sm:mr-2" />
-                           <span className="hidden sm:inline">Connect</span>
+                        <Button asChild variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:h-14 sm:w-auto sm:px-6">
+                           <Link href="/auth">
+                                <Wallet className="h-5 w-5 sm:mr-2" />
+                                <span className="hidden sm:inline">Connect</span>
+                           </Link>
                         </Button>
                      </div>
                 </div>
@@ -573,5 +594,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
