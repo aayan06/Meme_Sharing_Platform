@@ -321,6 +321,14 @@ export default function LaughFactoryPage() {
       </Card>
     );
 
+    const handleModeChange = (newMode: 'generate' | 'create') => {
+        setMode(newMode);
+        setJoke(null);
+        setMemeImage(null);
+        setAudio(null);
+        setSelectedReaction(null);
+    };
+
     const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes')) || (mode === 'create' && (uploadedImage || memeImage?.imageDataUri) && customMemeText);
     const { top, bottom } = splitJoke(joke?.joke || '');
 
@@ -337,7 +345,7 @@ export default function LaughFactoryPage() {
                 
                 <div className="w-full flex justify-center gap-2 p-1 bg-card/80 backdrop-blur-lg rounded-full shadow-lg border">
                     <Button
-                        onClick={() => setMode('generate')}
+                        onClick={() => handleModeChange('generate')}
                         variant={mode === 'generate' ? 'default' : 'ghost'}
                         className="flex-1 rounded-full text-sm sm:text-base font-semibold"
                         size="lg"
@@ -346,7 +354,7 @@ export default function LaughFactoryPage() {
                         Generate Joke
                     </Button>
                     <Button
-                        onClick={() => setMode('create')}
+                        onClick={() => handleModeChange('create')}
                         variant={mode === 'create' ? 'default' : 'ghost'}
                         className="flex-1 rounded-full text-sm sm:text-base font-semibold"
                         size="lg"
