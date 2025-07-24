@@ -7,13 +7,15 @@ import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/genera
 import { generateMemeImage, type GenerateMemeImageOutput } from "@/ai/flows/generate-meme-image";
 import { createCustomMeme } from "@/ai/flows/create-custom-meme";
 import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-audio";
+import { submitMeme } from "@/ai/flows/submit-meme";
+import { voteOnMeme } from "@/ai/flows/vote-on-meme";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Wallet, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -21,9 +23,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -55,7 +66,7 @@ function setMeta(url: string, description: string) {
 
 export default function LaughFactoryPage() {
     const { user, userData } = useAuth();
-    const [mode, setMode] = useState<'generate' | 'create'>('generate');
+    const [mode, setMode] = useState<'generate' | 'create' | 'leaderboard'>('generate');
     const [category, setCategory] = useState(jokeCategories[0].id);
     const [joke, setJoke] = useState<GenerateSafeJokeOutput | null>(null);
     const [usedJokes, setUsedJokes] = useState<string[]>([]);
@@ -63,12 +74,24 @@ export default function LaughFactoryPage() {
     const [audio, setAudio] = useState<GenerateAudioOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
     const [customMemeText, setCustomMemeText] = useState("");
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const { toast } = useToast();
     const memeCardRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Leaderboard State
+    const [leaderboard, setLeaderboard] = useState<any[]>([]);
+    const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
+    const [votingStatus, setVotingStatus] = useState<Record<string, boolean>>({});
+
+    useEffect(() => {
+        if (mode === 'leaderboard') {
+            fetchLeaderboard();
+        }
+    }, [mode]);
 
     useEffect(() => {
         const isMemeCategory = category === 'crypto memes' || category === 'edgy memes' || (mode === 'create' && (uploadedImage || memeImage) && joke);
@@ -85,9 +108,46 @@ export default function LaughFactoryPage() {
         }
     }, [joke, memeImage, category, uploadedImage, customMemeText, mode]);
 
-    const takeMemeScreenshot = async (callback: (dataUrl: string, description: string) => void) => {
+    const fetchLeaderboard = async () => {
+        setIsLoadingLeaderboard(true);
+        try {
+            const q = query(collection(db, "memes"), orderBy("voteCount", "desc"), limit(10));
+            const querySnapshot = await getDocs(q);
+            const jokes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setLeaderboard(jokes);
+        } catch (error) {
+            console.error("Error fetching leaderboard:", error);
+            toast({ title: "Error", description: "Could not load the leaderboard.", variant: "destructive" });
+        } finally {
+            setIsLoadingLeaderboard(false);
+        }
+    };
+    
+    const handleVote = async (memeId: string) => {
+        if (!user) {
+            toast({ title: "Login Required", description: "You need to be logged in to vote.", variant: "destructive"});
+            return;
+        }
+        setVotingStatus(prev => ({...prev, [memeId]: true}));
+        try {
+            const result = await voteOnMeme({ memeId, userId: user.uid });
+            if (result.success) {
+                toast({ title: "Vote Counted!", description: "You made this meme funnier."});
+                fetchLeaderboard(); // Refresh to show new vote count
+            } else {
+                 toast({ title: "Already Voted", description: result.message, variant: "destructive"});
+            }
+        } catch (error) {
+            toast({ title: "Error", description: "Could not cast your vote.", variant: "destructive"});
+        } finally {
+            setVotingStatus(prev => ({...prev, [memeId]: false}));
+        }
+    }
+
+
+    const takeMemeScreenshot = async (callback?: (dataUrl: string, description: string) => void): Promise<string | null> => {
         const element = memeCardRef.current;
-        if (!element) return;
+        if (!element) return null;
 
         try {
             const { default: html2canvas } = await import('html2canvas');
@@ -101,9 +161,8 @@ export default function LaughFactoryPage() {
             return dataUrl;
         } catch (error) {
             console.error("Failed to capture meme screenshot:", error);
-            // Fallback to the raw image if screenshot fails
-            const fallbackImage = uploadedImage || memeImage?.imageDataUri || '';
-            if(callback) callback(fallbackImage, joke?.joke || '');
+            const fallbackImage = uploadedImage || memeImage?.imageDataUri || null;
+            if(callback && fallbackImage) callback(fallbackImage, joke?.joke || '');
             return fallbackImage;
         }
     };
@@ -174,7 +233,7 @@ export default function LaughFactoryPage() {
     };
     
     const handleDownloadMeme = async () => {
-        const imageUri = await takeMemeScreenshot(() => {});
+        const imageUri = await takeMemeScreenshot();
         if (imageUri) {
             const link = document.createElement("a");
             link.download = "haha-launch-meme.png";
@@ -182,6 +241,47 @@ export default function LaughFactoryPage() {
             link.click();
         }
     };
+    
+    const handleSubmit = async () => {
+        if (!user) {
+            toast({ title: "Not Logged In", description: "You must be logged in to submit a meme.", variant: "destructive" });
+            return;
+        }
+        if (!joke || (!memeImage && !uploadedImage)) {
+            toast({ title: "Incomplete Meme", description: "Please generate a full meme with an image before submitting.", variant: "destructive" });
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const finalImageUri = await takeMemeScreenshot();
+            if (!finalImageUri) {
+                throw new Error("Could not capture the final meme image.");
+            }
+
+            await submitMeme({
+                userId: user.uid,
+                joke: joke.joke,
+                imageDataUri: finalImageUri,
+            });
+            
+            toast({ title: "Meme Submitted!", description: "Thanks for making the world funnier! Your meme is now on the leaderboard." });
+            setJoke(null);
+            setMemeImage(null);
+            setUploadedImage(null);
+            setCustomMemeText('');
+            
+            // Switch to leaderboard view
+            setMode('leaderboard');
+
+        } catch (error: any) {
+            console.error("Submission failed:", error);
+            toast({ title: "Submission Error", description: error.message || "Could not submit your meme.", variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
 
     const handleCategoryChange = (value: string) => {
         const selectedCat = jokeCategories.find(cat => cat.id === value);
@@ -324,7 +424,7 @@ export default function LaughFactoryPage() {
       </Card>
     );
 
-    const handleModeChange = (newMode: 'generate' | 'create') => {
+    const handleModeChange = (newMode: 'generate' | 'create' | 'leaderboard') => {
         setMode(newMode);
         setJoke(null);
         setMemeImage(null);
@@ -333,8 +433,10 @@ export default function LaughFactoryPage() {
         setCustomMemeText('');
         setUploadedImage(null);
     };
+    
+    const isMemeReady = joke && (memeImage?.imageDataUri || uploadedImage);
 
-    const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes')) || (mode === 'create' && (uploadedImage || memeImage?.imageDataUri) && customMemeText);
+    const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes')) || (mode === 'create' && isMemeReady);
     const { top, bottom } = splitJoke(joke?.joke || '');
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
@@ -381,9 +483,19 @@ export default function LaughFactoryPage() {
                         <PenSquare className="mr-2 h-5 w-5"/>
                         Create Your Own
                     </Button>
+                     <Button
+                        onClick={() => handleModeChange('leaderboard')}
+                        variant={mode === 'leaderboard' ? 'default' : 'ghost'}
+                        className="flex-1 rounded-full text-sm sm:text-base font-semibold"
+                        size="lg"
+                    >
+                        <Trophy className="mr-2 h-5 w-5"/>
+                        Leaderboard
+                    </Button>
                 </div>
 
                 {mode === 'generate' && (
+                  <>
                     <JokeCard className="border-primary/50 w-full animate-in fade-in-0 zoom-in-95 duration-300">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold text-amber-400">
@@ -401,9 +513,7 @@ export default function LaughFactoryPage() {
                             </div>
                         </CardContent>
                     </JokeCard>
-                )}
 
-                {mode === 'generate' && (
                     <section className="w-full space-y-6 animate-in fade-in-0 zoom-in-95 duration-300">
                         <div>
                           <Label className="text-lg font-semibold mb-4 block text-center">1. Choose a Category</Label>
@@ -423,6 +533,7 @@ export default function LaughFactoryPage() {
                           </div>
                         </div>
                     </section>
+                  </>
                 )}
 
                 {mode === 'create' && (
@@ -431,7 +542,7 @@ export default function LaughFactoryPage() {
                             <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold">
                                <Palette className="h-7 w-7" /> 2. Create Your Own
                             </CardTitle>
-                            <CardDescription>Upload an image and describe your meme idea.</CardDescription>
+                            <CardDescription>Upload an image and describe your meme idea, or just generate one!</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                              <div>
@@ -475,6 +586,62 @@ export default function LaughFactoryPage() {
                     </Card>
                 )}
                 
+                {mode === 'leaderboard' && (
+                     <Card className="w-full bg-card/80 backdrop-blur-sm shadow-lg border-2 rounded-2xl">
+                        <CardHeader>
+                            <CardTitle className="text-2xl font-bold flex items-center"><Trophy className="mr-2 text-yellow-500" /> Weekly Leaderboard</CardTitle>
+                            <CardDescription>The best jokes as voted by the community.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[50px]">Rank</TableHead>
+                                        <TableHead>Meme</TableHead>
+                                        <TableHead className="text-right">Votes</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoadingLeaderboard ? (
+                                        Array.from({ length: 5 }).map((_, i) => (
+                                            <TableRow key={i}>
+                                                <TableCell><Skeleton className="h-5 w-5 rounded-full" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-3/4" /></TableCell>
+                                                <TableCell className="text-right"><Skeleton className="h-5 w-10 ml-auto" /></TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        leaderboard.map((item, index) => (
+                                            <TableRow key={item.id}>
+                                                <TableCell className="font-bold text-lg text-center">{index + 1}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-4">
+                                                        <img src={item.imageUrl} alt="Meme" className="w-24 h-24 object-cover rounded-md border" />
+                                                        <p className="font-medium">{item.joke}</p>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex flex-col items-end gap-2">
+                                                        <span className="font-bold text-primary text-lg">{item.voteCount}</span>
+                                                        <Button 
+                                                            size="sm" 
+                                                            onClick={() => handleVote(item.id)}
+                                                            disabled={!user || votingStatus[item.id] || (item.voters && item.voters.includes(user.uid))}
+                                                        >
+                                                            {votingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin"/> : '😂 Vote'}
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                )}
+
+
                 <div className="w-full flex items-center justify-center">
                     {isLoading && (
                          <JokeCard>
@@ -562,6 +729,7 @@ export default function LaughFactoryPage() {
 
                  <div className="w-full flex justify-center p-2 sm:p-4">
                      <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-3xl">
+                        {mode !== 'leaderboard' && (
                         <Button onClick={handleGenerateJoke} disabled={isLoading || (mode === 'create' && !customMemeText)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                             {isLoading ? (
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -570,19 +738,14 @@ export default function LaughFactoryPage() {
                             )}
                             Generate
                         </Button>
+                        )}
+                        {mode === 'create' && isMemeReady && (
+                         <Button onClick={handleSubmit} disabled={isSubmitting || !isMemeReady || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
+                             {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
+                             Submit for Glory
+                         </Button>
+                        )}
                          <Button asChild variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:h-14 sm:w-auto sm:px-6">
-                           <Link href="/submit">
-                             <Send className="h-5 w-5 sm:mr-2" />
-                             <span className="hidden sm:inline">Submit</span>
-                           </Link>
-                        </Button>
-                        <Button asChild variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:h-14 sm:w-auto sm:px-6">
-                            <Link href="/submit">
-                              <Trophy className="h-5 w-5 sm:mr-2" />
-                              <span className="hidden sm:inline">Board</span>
-                            </Link>
-                        </Button>
-                        <Button asChild variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:h-14 sm:w-auto sm:px-6">
                            <Link href="/auth">
                                 <Wallet className="h-5 w-5 sm:mr-2" />
                                 <span className="hidden sm:inline">Connect</span>
