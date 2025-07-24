@@ -113,6 +113,15 @@ export default function LaughFactoryPage() {
         setSelectedReaction(null);
         try {
             if (mode === 'create') {
+                if (!customMemeText) {
+                     toast({
+                        title: "Meme Idea Needed",
+                        description: "Please describe your meme idea before generating.",
+                        variant: "destructive",
+                    });
+                    setIsLoading(false);
+                    return;
+                }
                 const result = await createCustomMeme({
                     topic: customMemeText,
                     imageDataUri: uploadedImage || undefined
@@ -175,6 +184,10 @@ export default function LaughFactoryPage() {
         const selectedCat = jokeCategories.find(cat => cat.id === value);
         if (selectedCat) {
             setCategory(value);
+            setJoke(null);
+            setMemeImage(null);
+            setAudio(null);
+            setSelectedReaction(null);
         }
     };
     
@@ -520,7 +533,7 @@ export default function LaughFactoryPage() {
                     )}
                 </div>
 
-                 <footer className="w-full flex justify-center p-2 sm:p-4 z-10 mt-8">
+                 <div className="w-full flex justify-center p-2 sm:p-4 mt-8">
                      <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-3xl">
                         <Button onClick={handleGenerateJoke} disabled={isLoading || (mode === 'create' && !customMemeText)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                             {isLoading ? (
@@ -547,8 +560,10 @@ export default function LaughFactoryPage() {
                            <span className="hidden sm:inline">Connect</span>
                         </Button>
                      </div>
-                </footer>
+                </div>
             </main>
         </div>
     );
 }
+
+    
