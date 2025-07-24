@@ -449,7 +449,7 @@ export default function LaughFactoryPage() {
                     <div className="absolute top-0 right-0">
                         {user ? (
                             <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-muted-foreground">{user.email}</span>
+                                <span className="text-sm font-medium text-muted-foreground">{user.email?.split('@')[0]}</span>
                                 <Button variant="ghost" size="icon" onClick={() => auth.signOut()}>
                                     <LogOut className="h-5 w-5" />
                                 </Button>
@@ -745,12 +745,6 @@ export default function LaughFactoryPage() {
                              Submit for Glory
                          </Button>
                         )}
-                         <Button asChild variant="secondary" size="icon" className="rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 h-12 w-12 sm:h-14 sm:w-auto sm:px-6">
-                           <Link href="/auth">
-                                <Wallet className="h-5 w-5 sm:mr-2" />
-                                <span className="hidden sm:inline">Connect</span>
-                           </Link>
-                        </Button>
                      </div>
                 </div>
             </main>
