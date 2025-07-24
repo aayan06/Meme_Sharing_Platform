@@ -21,14 +21,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from '@/components/ui/separator';
 
 export default function AuthPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [signUpEmail, setSignUpEmail] = useState('');
+  const [signUpPassword, setSignUpPassword] = useState('');
   const { toast } = useToast();
   const router = useRouter();
 
   const handleSignUp = async () => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword);
       const user = userCredential.user;
       
       // Create a user document in Firestore
@@ -48,7 +50,7 @@ export default function AuthPage() {
 
   const handleLogin = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
       toast({ title: 'Success', description: 'Logged in successfully!' });
       router.push('/');
     } catch (error: any) {
@@ -72,7 +74,7 @@ export default function AuthPage() {
 
       toast({ title: 'Success', description: 'Logged in with Google!' });
        router.push('/');
-    } catch (error: any) {
+    } catch (error: any)
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     }
   };
@@ -94,11 +96,11 @@ export default function AuthPage() {
                 <div className="space-y-4 pt-4">
                     <div className="space-y-2">
                         <Label htmlFor="login-email">Email</Label>
-                        <Input id="login-email" type="email" placeholder="m@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                        <Input id="login-email" type="email" placeholder="m@example.com" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="login-password">Password</Label>
-                        <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                        <Input id="login-password" type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
                     </div>
                     <Button onClick={handleLogin} className="w-full">Login</Button>
                 </div>
@@ -107,11 +109,11 @@ export default function AuthPage() {
                <div className="space-y-4 pt-4">
                     <div className="space-y-2">
                         <Label htmlFor="signup-email">Email</Label>
-                        <Input id="signup-email" type="email" placeholder="m@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                        <Input id="signup-email" type="email" placeholder="m@example.com" value={signUpEmail} onChange={(e) => setSignUpEmail(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="signup-password">Password</Label>
-                        <Input id="signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                        <Input id="signup-password" type="password" value={signUpPassword} onChange={(e) => setSignUpPassword(e.target.value)} />
                     </div>
                     <Button onClick={handleSignUp} className="w-full">Sign Up</Button>
                 </div>
