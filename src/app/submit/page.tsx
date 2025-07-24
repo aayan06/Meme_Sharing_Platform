@@ -8,6 +8,7 @@ import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/genera
 import { generateMemeImage, type GenerateMemeImageOutput } from "@/ai/flows/generate-meme-image";
 import { createCustomMeme } from "@/ai/flows/create-custom-meme";
 import { submitMeme } from "@/ai/flows/submit-meme";
+import { voteOnMeme } from "@/ai/flows/vote-on-meme";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -57,25 +58,47 @@ export default function SubmitPage() {
     // Leaderboard State
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
     const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
+    const [votingStatus, setVotingStatus] = useState<Record<string, boolean>>({});
 
      useEffect(() => {
-        const fetchLeaderboard = async () => {
-            setIsLoadingLeaderboard(true);
-            try {
-                const q = query(collection(db, "memes"), orderBy("voteCount", "desc"), limit(10));
-                const querySnapshot = await getDocs(q);
-                const jokes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setLeaderboard(jokes);
-            } catch (error) {
-                console.error("Error fetching leaderboard:", error);
-                toast({ title: "Error", description: "Could not load the leaderboard.", variant: "destructive" });
-            } finally {
-                setIsLoadingLeaderboard(false);
-            }
-        };
-
         fetchLeaderboard();
-    }, [toast]);
+    }, []);
+
+    const fetchLeaderboard = async () => {
+        setIsLoadingLeaderboard(true);
+        try {
+            const q = query(collection(db, "memes"), orderBy("voteCount", "desc"), limit(10));
+            const querySnapshot = await getDocs(q);
+            const jokes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setLeaderboard(jokes);
+        } catch (error) {
+            console.error("Error fetching leaderboard:", error);
+            toast({ title: "Error", description: "Could not load the leaderboard.", variant: "destructive" });
+        } finally {
+            setIsLoadingLeaderboard(false);
+        }
+    };
+
+    const handleVote = async (memeId: string) => {
+        if (!user) {
+            toast({ title: "Login Required", description: "You need to be logged in to vote.", variant: "destructive"});
+            return;
+        }
+        setVotingStatus(prev => ({...prev, [memeId]: true}));
+        try {
+            const result = await voteOnMeme({ memeId, userId: user.uid });
+            if (result.success) {
+                toast({ title: "Vote Counted!", description: "You made this meme funnier."});
+                fetchLeaderboard(); // Refresh to show new vote count
+            } else {
+                 toast({ title: "Already Voted", description: result.message, variant: "destructive"});
+            }
+        } catch (error) {
+            toast({ title: "Error", description: "Could not cast your vote.", variant: "destructive"});
+        } finally {
+            setVotingStatus(prev => ({...prev, [memeId]: false}));
+        }
+    }
 
 
     const takeMemeScreenshot = async (): Promise<string | null> => {
@@ -155,10 +178,7 @@ export default function SubmitPage() {
             setCustomMemeText('');
 
             // Refresh leaderboard
-             const q = query(collection(db, "memes"), orderBy("voteCount", "desc"), limit(10));
-             const querySnapshot = await getDocs(q);
-             const jokes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-             setLeaderboard(jokes);
+            fetchLeaderboard();
 
 
         } catch (error: any) {
@@ -304,49 +324,62 @@ export default function SubmitPage() {
                     </div>
 
                     {/* Leaderboard */}
-                    <div className="space-y-6">
-                        <Card className="w-full bg-card/80 backdrop-blur-sm shadow-lg border-2 rounded-2xl">
-                            <CardHeader>
-                                <CardTitle className="text-2xl font-bold flex items-center"><Trophy className="mr-2 text-yellow-500" /> Weekly Leaderboard</CardTitle>
-                                <CardDescription>The best jokes as voted by the community.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-[50px]">Rank</TableHead>
-                                            <TableHead>Joke</TableHead>
-                                            <TableHead className="text-right">Votes</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {isLoadingLeaderboard ? (
-                                            Array.from({ length: 5 }).map((_, i) => (
-                                                <TableRow key={i}>
-                                                    <TableCell><Skeleton className="h-5 w-5 rounded-full" /></TableCell>
-                                                    <TableCell><Skeleton className="h-5 w-3/4" /></TableCell>
-                                                    <TableCell className="text-right"><Skeleton className="h-5 w-10 ml-auto" /></TableCell>
-                                                </TableRow>
-                                            ))
-                                        ) : (
-                                            leaderboard.map((item, index) => (
-                                                <TableRow key={item.id}>
-                                                    <TableCell className="font-bold text-lg text-center">{index + 1}</TableCell>
-                                                    <TableCell>
+                    <Card className="w-full bg-card/80 backdrop-blur-sm shadow-lg border-2 rounded-2xl">
+                        <CardHeader>
+                            <CardTitle className="text-2xl font-bold flex items-center"><Trophy className="mr-2 text-yellow-500" /> Weekly Leaderboard</CardTitle>
+                            <CardDescription>The best jokes as voted by the community.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[50px]">Rank</TableHead>
+                                        <TableHead>Meme</TableHead>
+                                        <TableHead className="text-right">Votes</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoadingLeaderboard ? (
+                                        Array.from({ length: 5 }).map((_, i) => (
+                                            <TableRow key={i}>
+                                                <TableCell><Skeleton className="h-5 w-5 rounded-full" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-3/4" /></TableCell>
+                                                <TableCell className="text-right"><Skeleton className="h-5 w-10 ml-auto" /></TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        leaderboard.map((item, index) => (
+                                            <TableRow key={item.id}>
+                                                <TableCell className="font-bold text-lg text-center">{index + 1}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-4">
+                                                        <img src={item.imageUrl} alt="Meme" className="w-24 h-24 object-cover rounded-md border" />
                                                         <p className="font-medium">{item.joke}</p>
-                                                        {item.imageUrl && <a href={item.imageUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">View Meme</a>}
-                                                    </TableCell>
-                                                    <TableCell className="text-right font-bold text-primary">{item.voteCount}</TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
-                    </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex flex-col items-end gap-2">
+                                                        <span className="font-bold text-primary text-lg">{item.voteCount}</span>
+                                                        <Button 
+                                                            size="sm" 
+                                                            onClick={() => handleVote(item.id)}
+                                                            disabled={!user || votingStatus[item.id] || (item.voters && item.voters.includes(user.uid))}
+                                                        >
+                                                            {votingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin"/> : '😂 Vote'}
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
                 </div>
             </main>
         </div>
     );
 }
+
+    
