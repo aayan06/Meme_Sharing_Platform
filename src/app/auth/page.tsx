@@ -74,7 +74,7 @@ export default function AuthPage() {
 
       toast({ title: 'Success', description: 'Logged in with Google!' });
        router.push('/');
-    } catch (error: any)
+    } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     }
   };
