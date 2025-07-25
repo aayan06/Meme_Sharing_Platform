@@ -140,7 +140,7 @@ const createCustomMemeFlow = ai.defineFlow(
                 break; // Success, exit loop
             }
         } catch (error) {
-            console.error(`Attempt ${i + 1} failed:`, error);
+            console.error(`Image generation attempt ${i + 1} failed:`, error);
             if (i === maxRetries - 1) {
                 throw new Error(`Image generation failed after ${maxRetries} attempts.`);
             }
