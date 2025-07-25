@@ -9,13 +9,14 @@ import { createCustomMeme } from "@/ai/flows/create-custom-meme";
 import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-audio";
 import { submitMeme } from "@/ai/flows/submit-meme";
 import { voteOnMeme } from "@/ai/flows/vote-on-meme";
+import { tipMemeCreator } from "@/ai/flows/tip-meme-creator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -34,7 +35,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, doc, onSnapshot } from "firebase/firestore";
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -65,7 +66,7 @@ function setMeta(url: string, description: string) {
 }
 
 export default function LaughFactoryPage() {
-    const { user, userData } = useAuth();
+    const { user, userData, setUserData } = useAuth();
     const [mode, setMode] = useState<'generate' | 'create' | 'leaderboard'>('generate');
     const [category, setCategory] = useState(jokeCategories[0].id);
     const [joke, setJoke] = useState<GenerateSafeJokeOutput | null>(null);
@@ -86,6 +87,18 @@ export default function LaughFactoryPage() {
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
     const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
     const [votingStatus, setVotingStatus] = useState<Record<string, boolean>>({});
+    const [tippingStatus, setTippingStatus] = useState<Record<string, boolean>>({});
+
+     useEffect(() => {
+        if (user) {
+            const unsub = onSnapshot(doc(db, "users", user.uid), (doc) => {
+                if (doc.exists()) {
+                    setUserData(doc.data());
+                }
+            });
+            return () => unsub();
+        }
+    }, [user, setUserData]);
 
     useEffect(() => {
         if (mode === 'leaderboard') {
@@ -135,7 +148,7 @@ export default function LaughFactoryPage() {
                 toast({ title: "Vote Counted!", description: "You made this meme funnier."});
                 fetchLeaderboard(); // Refresh to show new vote count
             } else {
-                 toast({ title: "Already Voted", description: result.message, variant: "destructive"});
+                 toast({ title: "Vote Failed", description: result.message, variant: "destructive"});
             }
         } catch (error) {
             toast({ title: "Error", description: "Could not cast your vote.", variant: "destructive"});
@@ -143,6 +156,32 @@ export default function LaughFactoryPage() {
             setVotingStatus(prev => ({...prev, [memeId]: false}));
         }
     }
+
+     const handleTip = async (meme: any) => {
+        if (!user) {
+            toast({ title: "Login Required", description: "You need to be logged in to tip.", variant: "destructive" });
+            return;
+        }
+        setTippingStatus(prev => ({...prev, [meme.id]: true}));
+        try {
+            const result = await tipMemeCreator({
+                memeId: meme.id,
+                fromUserId: user.uid,
+                toUserId: meme.userId
+            });
+
+            if (result.success) {
+                toast({ title: "Tip Sent!", description: result.message });
+            } else {
+                toast({ title: "Tipping Failed", description: result.message, variant: "destructive" });
+            }
+        } catch (error: any) {
+             toast({ title: "Error", description: error.message || "Could not send your tip.", variant: "destructive" });
+        } finally {
+             setTippingStatus(prev => ({...prev, [meme.id]: false}));
+        }
+    };
+
 
     const takeMemeScreenshot = async (callback?: (dataUrl: string, description: string) => void): Promise<string | null> => {
         const element = memeCardRef.current;
@@ -173,6 +212,7 @@ export default function LaughFactoryPage() {
             });
             
             const { default: html2canvas } = await import('html2canvas');
+            await new Promise(resolve => setTimeout(resolve, 300));
             const canvas = await html2canvas(element, { 
                 useCORS: true,
                 allowTaint: true,
@@ -474,7 +514,11 @@ export default function LaughFactoryPage() {
                  <header className="text-center w-full space-y-2 mt-8 sm:mt-0 relative">
                     <div className="absolute top-0 right-0">
                         {user ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 bg-card/80 backdrop-blur-lg rounded-full p-2 border">
+                                   <Coins className="h-5 w-5 text-yellow-500"/>
+                                   <span className="font-bold text-lg text-primary">{userData?.hahaBalance ?? 0}</span>
+                                </div>
                                 <span className="text-sm font-medium text-muted-foreground">{user.email?.split('@')[0]}</span>
                                 <Button variant="ghost" size="icon" onClick={() => auth.signOut()}>
                                     <LogOut className="h-5 w-5" />
@@ -616,7 +660,7 @@ export default function LaughFactoryPage() {
                      <Card className="w-full bg-card/80 backdrop-blur-sm shadow-lg border-2 rounded-2xl">
                         <CardHeader>
                             <CardTitle className="text-2xl font-bold flex items-center"><Trophy className="mr-2 text-yellow-500" /> Weekly Leaderboard</CardTitle>
-                            <CardDescription>The best jokes as voted by the community.</CardDescription>
+                            <CardDescription>The best jokes as voted by the community. Tip creators you like!</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -624,7 +668,7 @@ export default function LaughFactoryPage() {
                                     <TableRow>
                                         <TableHead className="w-[50px]">Rank</TableHead>
                                         <TableHead>Meme</TableHead>
-                                        <TableHead className="text-right">Votes</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -648,13 +692,25 @@ export default function LaughFactoryPage() {
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex flex-col items-end gap-2">
-                                                        <span className="font-bold text-primary text-lg">{item.voteCount}</span>
-                                                        <Button 
-                                                            size="sm" 
-                                                            onClick={() => handleVote(item.id)}
-                                                            disabled={!user || votingStatus[item.id] || (item.voters && item.voters.includes(user.uid))}
+                                                        <div className="flex items-center gap-1 font-bold text-primary text-lg">
+                                                            {item.voteCount}
+                                                            <Button 
+                                                                size="sm" 
+                                                                onClick={() => handleVote(item.id)}
+                                                                disabled={!user || votingStatus[item.id] || (item.voters && item.voters.includes(user.uid))}
+                                                                className="w-20"
+                                                            >
+                                                                {votingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin"/> : '😂 Vote'}
+                                                            </Button>
+                                                        </div>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleTip(item)}
+                                                            disabled={!user || tippingStatus[item.id] || item.userId === user?.uid}
+                                                            className="w-20"
                                                         >
-                                                            {votingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin"/> : '😂 Vote'}
+                                                          {tippingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : '💰 Tip'}
                                                         </Button>
                                                     </div>
                                                 </TableCell>
