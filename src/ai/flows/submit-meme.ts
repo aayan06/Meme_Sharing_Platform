@@ -52,13 +52,13 @@ const submitMemeFlow = ai.defineFlow(
     });
     const imageUrl = await getDownloadURL(snapshot.ref);
 
-    // 2. Create document in Firestore
+    // 2. Create document in Firestore with the correct imageUrl
     const memesCollection = collection(db, 'memes');
     const newMemeDoc = await addDoc(memesCollection, {
       userId: creatorId,
       creatorHandle,
       joke,
-      imageUrl, // <-- This was the critical missing piece. It's now being saved.
+      imageUrl: imageUrl, // This is the critical fix.
       createdAt: serverTimestamp(),
       voteCount: 0,
       voters: [],
