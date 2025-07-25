@@ -11,6 +11,7 @@ import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-aud
 import { voteOnMeme } from "@/ai/flows/vote-on-meme";
 import { tipMemeCreator } from "@/ai/flows/tip-meme-creator";
 import { deleteMeme } from "@/ai/flows/delete-meme";
+import { deleteAllMemes } from "@/ai/flows/delete-all-memes";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -104,6 +105,7 @@ export default function LaughFactoryPage() {
     const [votingStatus, setVotingStatus] = useState<Record<string, boolean>>({});
     const [tippingStatus, setTippingStatus] = useState<Record<string, boolean>>({});
     const [deletingStatus, setDeletingStatus] = useState<Record<string, boolean>>({});
+    const [isDeletingAll, setIsDeletingAll] = useState(false);
 
      useEffect(() => {
         if (user) {
@@ -252,6 +254,25 @@ export default function LaughFactoryPage() {
             setDeletingStatus(prev => ({ ...prev, [memeId]: false }));
         }
     };
+
+    const handleDeleteAll = async () => {
+        setIsDeletingAll(true);
+        try {
+            const result = await deleteAllMemes();
+             toast({
+                title: result.success ? "Leaderboard Cleared" : "Error",
+                description: result.message,
+                variant: result.success ? "default" : "destructive",
+            });
+            if (result.success) {
+                fetchLeaderboard(); // Refresh leaderboard
+            }
+        } catch (error: any) {
+            toast({ title: "Error", description: error.message || "Could not clear the leaderboard.", variant: "destructive" });
+        } finally {
+             setIsDeletingAll(false);
+        }
+    }
 
 
     const handleGenerateJoke = async () => {
@@ -707,7 +728,29 @@ export default function LaughFactoryPage() {
                 {mode === 'leaderboard' && (
                      <div className="w-full">
                         <CardHeader className="text-center">
-                            <CardTitle className="text-3xl sm:text-4xl font-bold flex items-center justify-center gap-3"><Trophy className="w-8 h-8 text-yellow-500" /> Weekly Leaderboard</CardTitle>
+                            <div className="flex items-center justify-center gap-4">
+                                <CardTitle className="text-3xl sm:text-4xl font-bold flex items-center justify-center gap-3"><Trophy className="w-8 h-8 text-yellow-500" /> Weekly Leaderboard</CardTitle>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" disabled={isDeletingAll}>
+                                            {isDeletingAll ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                                            Delete All
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete all memes from the leaderboard and storage.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleDeleteAll}>Continue</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                             <CardDescription className="text-base sm:text-lg">The best memes as voted by the community. Tip creators you like!</CardDescription>
                         </CardHeader>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
