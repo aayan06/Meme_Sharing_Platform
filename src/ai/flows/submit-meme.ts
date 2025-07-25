@@ -7,8 +7,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { v4 as uuidv4 } from 'uuid';
 import { db, storage } from '@/lib/firebase';
 
