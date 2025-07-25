@@ -49,7 +49,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, orderBy, limit, getDocs, doc, onSnapshot, getDoc } from "firebase/firestore";
+import { collection, query, orderBy, limit, onSnapshot, doc } from "firebase/firestore";
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -101,7 +101,7 @@ export default function LaughFactoryPage() {
 
     // Leaderboard State
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
-    const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
+    const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
     const [votingStatus, setVotingStatus] = useState<Record<string, boolean>>({});
     const [tippingStatus, setTippingStatus] = useState<Record<string, boolean>>({});
     const [deletingStatus, setDeletingStatus] = useState<Record<string, boolean>>({});
@@ -131,7 +131,6 @@ export default function LaughFactoryPage() {
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#111827',
-            logging: true,
         });
     }
 
@@ -158,19 +157,21 @@ export default function LaughFactoryPage() {
     }, [joke, memeImage, uploadedImage]);
 
 
-    const fetchLeaderboard = async () => {
+    const fetchLeaderboard = () => {
         setIsLoadingLeaderboard(true);
-        try {
-            const q = query(collection(db, "memes"), orderBy("voteCount", "desc"), limit(20));
-            const querySnapshot = await getDocs(q);
+        const q = query(collection(db, "memes"), orderBy("voteCount", "desc"), limit(20));
+        
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const leaderboardData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setLeaderboard(leaderboardData);
-        } catch (error) {
+            setIsLoadingLeaderboard(false);
+        }, (error) => {
             console.error("Error fetching leaderboard:", error);
             toast({ title: "Error", description: "Could not load the leaderboard.", variant: "destructive" });
-        } finally {
             setIsLoadingLeaderboard(false);
-        }
+        });
+
+        return unsubscribe;
     };
     
     const handleVote = async (memeId: string) => {
@@ -183,7 +184,6 @@ export default function LaughFactoryPage() {
             const result = await voteOnMeme({ memeId, userId: user.uid });
             if (result.success) {
                 toast({ title: "Vote Counted!", description: "You made this meme funnier."});
-                fetchLeaderboard(); // Refresh to show new vote count
             } else {
                  toast({ title: "Vote Failed", description: result.message, variant: "destructive"});
             }
@@ -229,7 +229,6 @@ export default function LaughFactoryPage() {
             const result = await deleteMeme({ memeId, userId: user.uid });
             if (result.success) {
                 toast({ title: "Meme Deleted", description: result.message });
-                fetchLeaderboard(); // Refresh leaderboard
             } else {
                 toast({ title: "Deletion Failed", description: result.message, variant: "destructive" });
             }
@@ -249,9 +248,6 @@ export default function LaughFactoryPage() {
                 description: result.message,
                 variant: result.success ? "default" : "destructive",
             });
-            if (result.success) {
-                fetchLeaderboard(); // Refresh leaderboard
-            }
         } catch (error: any) {
             toast({ title: "Error", description: error.message || "Could not clear the leaderboard.", variant: "destructive" });
         } finally {
@@ -716,6 +712,7 @@ export default function LaughFactoryPage() {
                         <CardHeader className="text-center">
                             <div className="flex items-center justify-center gap-4">
                                 <CardTitle className="text-3xl sm:text-4xl font-bold flex items-center justify-center gap-3"><Trophy className="w-8 h-8 text-yellow-500" /> Weekly Leaderboard</CardTitle>
+                                {user && (
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="destructive" disabled={isDeletingAll}>
@@ -736,6 +733,7 @@ export default function LaughFactoryPage() {
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>
+                                )}
                             </div>
                             <CardDescription className="text-base sm:text-lg">The best memes as voted by the community. Tip creators you like!</CardDescription>
                         </CardHeader>
