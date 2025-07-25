@@ -7,7 +7,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { getFirestore, doc, runTransaction, DocumentReference } from "firebase/firestore";
+import { doc, runTransaction } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 
 const VoteOnMemeInputSchema = z.object({
