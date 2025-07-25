@@ -10,13 +10,14 @@ import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-aud
 import { submitMeme } from "@/ai/flows/submit-meme";
 import { voteOnMeme } from "@/ai/flows/vote-on-meme";
 import { tipMemeCreator } from "@/ai/flows/tip-meme-creator";
+import { deleteMeme } from "@/ai/flows/delete-meme";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -33,6 +34,17 @@ import {
     DialogTrigger,
     DialogClose,
 } from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
@@ -90,6 +102,7 @@ export default function LaughFactoryPage() {
     const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
     const [votingStatus, setVotingStatus] = useState<Record<string, boolean>>({});
     const [tippingStatus, setTippingStatus] = useState<Record<string, boolean>>({});
+    const [deletingStatus, setDeletingStatus] = useState<Record<string, boolean>>({});
 
      useEffect(() => {
         if (user) {
@@ -196,6 +209,27 @@ export default function LaughFactoryPage() {
              toast({ title: "Error", description: error.message || "Could not send your tip.", variant: "destructive" });
         } finally {
              setTippingStatus(prev => ({...prev, [meme.id]: false}));
+        }
+    };
+
+    const handleDelete = async (memeId: string) => {
+        if (!user) {
+            toast({ title: "Login Required", description: "You need to be logged in to delete memes.", variant: "destructive" });
+            return;
+        }
+        setDeletingStatus(prev => ({ ...prev, [memeId]: true }));
+        try {
+            const result = await deleteMeme({ memeId, userId: user.uid });
+            if (result.success) {
+                toast({ title: "Meme Deleted", description: result.message });
+                fetchLeaderboard(); // Refresh leaderboard
+            } else {
+                toast({ title: "Deletion Failed", description: result.message, variant: "destructive" });
+            }
+        } catch (error: any) {
+            toast({ title: "Error", description: error.message || "Could not delete your meme.", variant: "destructive" });
+        } finally {
+            setDeletingStatus(prev => ({ ...prev, [memeId]: false }));
         }
     };
 
@@ -522,8 +556,7 @@ export default function LaughFactoryPage() {
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
-    const navButtonClass = "flex-1 rounded-full text-sm sm:text-base font-semibold text-white bg-black hover:bg-green-500 data-[state=active]:text-white";
-    const activeNavButtonClass = "bg-primary hover:bg-primary/90";
+    const navButtonClass = "flex-1 rounded-full text-sm sm:text-base font-semibold text-white bg-card hover:bg-primary/80 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground";
 
     const getRankClass = (index: number) => {
         switch (index) {
@@ -563,11 +596,11 @@ export default function LaughFactoryPage() {
                     </div>
                 </header>
                 
-                 <div className="w-full max-w-lg flex justify-center p-1 bg-black backdrop-blur-lg rounded-full shadow-lg border">
+                 <div className="w-full max-w-lg flex justify-center p-1 bg-card backdrop-blur-lg rounded-full shadow-lg border">
                     <Button
                         onClick={() => handleModeChange('generate')}
                         className={cn(navButtonClass)}
-                        data-state={mode === 'generate' ? 'active' : 'inactive'}
+                        variant={mode === 'generate' ? 'primary' : 'ghost'}
                         size="lg"
                     >
                         <Sparkles className="mr-2 h-5 w-5"/>
@@ -576,7 +609,7 @@ export default function LaughFactoryPage() {
                     <Button
                         onClick={() => handleModeChange('create')}
                         className={cn(navButtonClass)}
-                        data-state={mode === 'create' ? 'active' : 'inactive'}
+                        variant={mode === 'create' ? 'primary' : 'ghost'}
                         size="lg"
                     >
                         <PenSquare className="mr-2 h-5 w-5"/>
@@ -585,7 +618,7 @@ export default function LaughFactoryPage() {
                      <Button
                         onClick={() => handleModeChange('leaderboard')}
                         className={cn(navButtonClass)}
-                        data-state={mode === 'leaderboard' ? 'active' : 'inactive'}
+                        variant={mode === 'leaderboard' ? 'primary' : 'ghost'}
                         size="lg"
                     >
                         <Trophy className="mr-2 h-5 w-5"/>
@@ -719,15 +752,45 @@ export default function LaughFactoryPage() {
                                                 <p className="font-medium text-sm leading-snug h-10 overflow-hidden">{item.joke}</p>
                                                 <p className="font-semibold text-xs text-primary">by {item.creatorHandle}</p>
                                                 <div className="w-full flex justify-between items-center pt-2">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handleTip(item)}
-                                                        disabled={!user || tippingStatus[item.id] || item.userId === user?.uid}
-                                                        className="rounded-full gap-1 text-sm"
-                                                    >
-                                                      {tippingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <>💰<span className="hidden sm:inline">Tip</span></>}
-                                                    </Button>
+                                                    <div className="flex items-center gap-1">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleTip(item)}
+                                                            disabled={!user || tippingStatus[item.id] || item.userId === user?.uid}
+                                                            className="rounded-full gap-1 text-sm"
+                                                        >
+                                                        {tippingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <>💰<span className="hidden sm:inline">Tip</span></>}
+                                                        </Button>
+
+                                                        {user && user.uid === item.userId && (
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="destructive"
+                                                                        disabled={deletingStatus[item.id]}
+                                                                        className="rounded-full gap-1 text-sm"
+                                                                    >
+                                                                        {deletingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            This action cannot be undone. This will permanently delete your meme from the leaderboard.
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                        <AlertDialogAction onClick={() => handleDelete(item.id)}>Delete</AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        )}
+                                                    </div>
+
                                                     <div className="flex items-center gap-1 font-bold text-primary text-lg">
                                                         <Button 
                                                             size="sm" 
