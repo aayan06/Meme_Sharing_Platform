@@ -102,7 +102,7 @@ export default function LaughFactoryPage() {
 
         if (isMemeCategory && (memeImage?.imageDataUri || uploadedImage)) {
             // Delay screenshot for social media sharing until image is loaded
-            setTimeout(() => takeMemeScreenshot(setMeta), 100);
+            setTimeout(() => takeMemeScreenshot(setMeta), 300);
         } else {
              setMeta('https://placehold.co/1200x630.png', joke.joke);
         }
@@ -151,7 +151,7 @@ export default function LaughFactoryPage() {
 
         try {
             // Add a short delay to ensure the DOM is fully rendered
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 300));
             
             const { default: html2canvas } = await import('html2canvas');
             const canvas = await html2canvas(element, { 
