@@ -8,8 +8,8 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { doc, getDoc, deleteDoc } from "firebase/firestore";
-import { ref as refFromURL, deleteObject } from "firebase/storage";
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { adminStorage } from '@/lib/firebase-admin';
 
 const DeleteMemeInputSchema = z.object({
   memeId: z.string().describe('The ID of the meme to delete.'),
@@ -65,18 +65,21 @@ const deleteMemeFlow = ai.defineFlow(
         
         // Authorized, so proceed with deletion from both Storage and Firestore
 
-        // 1. Delete the image from Firebase Storage if a URL exists
+        // 1. Delete the image from Firebase Storage using the Admin SDK
         if (memeData.imageUrl) {
             try {
-                 // CRITICAL FIX: Use refFromURL to get a reference from the full HTTPS URL.
-                 const imageRef = refFromURL(storage, memeData.imageUrl);
-                 await deleteObject(imageRef);
+                 // Extract the file path from the full HTTPS URL
+                 const url = new URL(memeData.imageUrl);
+                 const filePath = decodeURIComponent(url.pathname.split('/').slice(5).join('/'));
+                 
+                 const file = adminStorage.bucket().file(filePath);
+                 await file.delete();
             } catch (storageError: any) {
                 // Log storage error but don't block firestore deletion
-                console.error(`Failed to delete image from storage: ${storageError.message}`);
+                console.error(`Admin SDK failed to delete image from storage: ${storageError.message}`);
                  // If the object doesn't exist, it's fine, we can continue.
                  // For other errors (like permission issues), we might want to stop.
-                 if (storageError.code !== 'storage/object-not-found') {
+                 if (storageError.code !== 404) { // 404 is the code for object-not-found
                     throw new Error(`Storage deletion failed: ${storageError.message}`);
                  }
             }

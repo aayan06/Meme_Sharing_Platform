@@ -6,10 +6,10 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { collection, getDocs, writeBatch } from "firebase/firestore";
-import { ref, deleteObject } from "firebase/storage";
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { adminStorage } from '@/lib/firebase-admin';
 
 const DeleteAllMemesOutputSchema = z.object({
   success: z.boolean(),
@@ -38,16 +38,18 @@ const deleteAllMemesFlow = ai.defineFlow(
         };
       }
 
-      // Delete images from Storage
+      // Delete images from Storage using the Admin SDK
       for (const doc of querySnapshot.docs) {
           const memeData = doc.data();
           if (memeData.imageUrl) {
               try {
-                  const imageRef = ref(storage, memeData.imageUrl);
-                  await deleteObject(imageRef);
+                  const url = new URL(memeData.imageUrl);
+                  const filePath = decodeURIComponent(url.pathname.split('/').slice(5).join('/'));
+                  const file = adminStorage.bucket().file(filePath);
+                  await file.delete();
               } catch (storageError: any) {
                   // Log error but continue
-                   console.error(`Failed to delete image ${memeData.imageUrl}: ${storageError.message}`);
+                   console.error(`Admin SDK failed to delete image ${memeData.imageUrl}: ${storageError.message}`);
               }
           }
       }

@@ -1,6 +1,6 @@
 
 import { config } from 'dotenv';
-config();
+config({ path: '.env.local' });
 
 import '@/ai/flows/generate-safe-joke.ts';
 import '@/ai/flows/generate-meme-image.ts';
