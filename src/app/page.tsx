@@ -6,7 +6,7 @@ import Link from "next/link";
 import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/generate-safe-joke";
 import { generateMemeImage, type GenerateMemeImageOutput } from "@/ai/flows/generate-meme-image";
 import { createCustomMeme } from "@/ai/flows/create-custom-meme";
-import { createFinalMeme } from "@/ai/flows/create-final-meme";
+import { submitMeme } from "@/ai/flows/submit-meme";
 import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-audio";
 import { voteOnMeme } from "@/ai/flows/vote-on-meme";
 import { tipMemeCreator } from "@/ai/flows/tip-meme-creator";
@@ -130,14 +130,16 @@ export default function LaughFactoryPage() {
         
         if (isMemeCategory && (memeImage?.imageDataUri || uploadedImage)) {
             // Delay screenshot for social media sharing until image is loaded
-            if (memeCardRef.current) {
-                 createFinalMeme({
-                    userId: 'social',
-                    joke: joke.joke,
-                    backgroundImageDataUri: uploadedImage || memeImage!.imageDataUri,
-                 }).then(res => setMeta(res.imageUrl, joke.joke))
+            if (memeCardRef.current && joke) {
+                const element = memeCardRef.current;
+                 import('html2canvas').then(mod => mod.default(element, { 
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#111827',
+                })).then(canvas => {
+                    setMeta(canvas.toDataURL('image/png'), joke.joke);
+                });
             }
-
         } else {
              setMeta('https://placehold.co/1200x630.png', joke.joke);
         }
@@ -329,27 +331,30 @@ export default function LaughFactoryPage() {
     };
     
     const handleSubmit = async () => {
+        const element = memeCardRef.current;
         if (!user) {
             toast({ title: "Not Logged In", description: "You must be logged in to submit a meme.", variant: "destructive" });
             return;
         }
-        if (!joke || (!memeImage && !uploadedImage)) {
-            toast({ title: "Incomplete Meme", description: "Please generate a full meme with an image before submitting.", variant: "destructive" });
+        if (!joke || !element) {
+            toast({ title: "Incomplete Meme", description: "Please generate a full meme before submitting.", variant: "destructive" });
             return;
         }
 
         setIsSubmitting(true);
         try {
-            const backgroundImageUri = uploadedImage || memeImage?.imageDataUri;
-            if (!backgroundImageUri) {
-                 throw new Error("Could not find the background image for the meme.");
-            }
-
-            // The new flow will handle image composition and submission
-            await createFinalMeme({
+            const canvas = await import('html2canvas').then(mod => mod.default);
+            const dataUrl = await canvas(element, {
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#111827',
+                logging: false,
+            }).then(c => c.toDataURL('image/png'));
+            
+            await submitMeme({
                 userId: user.uid,
                 joke: joke.joke,
-                backgroundImageDataUri: backgroundImageUri,
+                imageDataUri: dataUrl,
             });
             
             toast({ title: "Meme Submitted!", description: "Thanks for making the world funnier! Your meme is now on the leaderboard." });
@@ -918,5 +923,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
