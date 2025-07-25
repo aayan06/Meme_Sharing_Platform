@@ -677,7 +677,7 @@ export default function LaughFactoryPage() {
                             <div className="flex items-center justify-between gap-4">
                                 <Button onClick={() => fileInputRef.current?.click()} className="flex-1">
                                     <FileUp className="mr-2 h-5 w-5" />
-                                    Upload Image (Optional)
+                                    Upload Image
                                 </Button>
                                 <Input
                                     type="file"
@@ -742,7 +742,6 @@ export default function LaughFactoryPage() {
                                                 </div>
                                             </DialogTrigger>
                                             <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-2">
-                                                <p className="font-medium text-sm leading-snug h-10 overflow-hidden">{item.joke}</p>
                                                 <p className="font-semibold text-xs text-primary">by {item.creatorHandle}</p>
                                                 <div className="w-full flex justify-between items-center pt-2">
                                                     <div className="flex items-center gap-1">
