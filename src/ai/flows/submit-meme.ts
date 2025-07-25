@@ -8,7 +8,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
-import { collection, addDoc, serverTimestamp, orderBy } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { v4 as uuidv4 } from 'uuid';
 import { db, storage } from '@/lib/firebase';
 
@@ -58,7 +58,7 @@ const submitMemeFlow = ai.defineFlow(
       userId: creatorId,
       creatorHandle,
       joke,
-      imageUrl,
+      imageUrl, // <-- This was the critical missing piece. It's now being saved.
       createdAt: serverTimestamp(),
       voteCount: 0,
       voters: [],

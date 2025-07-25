@@ -12,7 +12,7 @@ import { voteOnMeme } from "@/ai/flows/vote-on-meme";
 import { tipMemeCreator } from "@/ai/flows/tip-meme-creator";
 import { deleteMeme } from "@/ai/flows/delete-meme";
 import { deleteAllMemes } from "@/ai/flows/delete-all-memes";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,7 +49,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, orderBy, limit, onSnapshot, doc, getDoc } from "firebase/firestore";
+import { collection, query, orderBy, limit, onSnapshot, doc } from "firebase/firestore";
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -248,22 +248,22 @@ export default function LaughFactoryPage() {
         setSelectedReaction(null);
         try {
             if (mode === 'create') {
-                if (!customMemeText) {
+                if (!customMemeText && !uploadedImage) {
                      toast({
                         title: "Meme Idea Needed",
-                        description: "Please describe your meme idea before generating.",
+                        description: "Please describe your meme idea or upload an image before generating.",
                         variant: "destructive",
                     });
                     setIsLoading(false);
                     return;
                 }
                 const result = await createCustomMeme({
-                    topic: customMemeText,
+                    topic: customMemeText || 'A funny meme',
                     imageDataUri: uploadedImage || undefined
                 });
                 setJoke({ joke: result.joke });
                 setMemeImage({ imageDataUri: result.imageDataUri });
-                setUploadedImage(null); // Clear uploaded image since we have a final one
+                // Don't clear uploaded image here, let it be part of the final meme
             } else {
                 const selectedCategory = jokeCategories.find(cat => cat.id === category);
                 if (!selectedCategory) {
@@ -307,7 +307,7 @@ export default function LaughFactoryPage() {
     };
     
     const handleDownloadMeme = async () => {
-        const imageUrl = memeImage?.imageDataUri || uploadedImage;
+        const imageUrl = memeImage?.imageDataUri;
         if (!imageUrl) return;
 
         try {
@@ -317,6 +317,11 @@ export default function LaughFactoryPage() {
             link.click();
         } catch (error) {
             console.error("Failed to download meme:", error);
+            toast({
+                title: "Download Error",
+                description: "Could not download the meme image.",
+                variant: "destructive"
+            });
         }
     };
     
@@ -328,7 +333,7 @@ export default function LaughFactoryPage() {
         
         const imageDataUri = memeImage?.imageDataUri;
 
-        if (!joke || !imageDataUri) {
+        if (!joke?.joke || !imageDataUri) {
             toast({ title: "Incomplete Meme", description: "Please generate a full meme before submitting.", variant: "destructive" });
             return;
         }
@@ -701,21 +706,26 @@ export default function LaughFactoryPage() {
                             ) : (
                                 leaderboard.map((item, index) => (
                                     <Dialog key={item.id}>
-                                        <Card className={cn("overflow-hidden group transition-all duration-300 hover:shadow-primary/40 hover:shadow-lg hover:-translate-y-1 relative", getRankClass(index))}>
-                                            <DialogTrigger asChild>
-                                                <div className="cursor-pointer">
-                                                     {index === 0 && <Crown className="absolute top-2 right-2 h-8 w-8 text-yellow-400 drop-shadow-lg z-10" />}
-                                                     {item.imageUrl && (
-                                                        <img
-                                                            src={item.imageUrl}
-                                                            alt="Meme"
-                                                            className="w-full h-auto aspect-square object-cover"
-                                                            crossOrigin="anonymous"
-                                                        />
-                                                    )}
-                                                </div>
-                                            </DialogTrigger>
-                                            <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-2">
+                                        <Card className={cn("overflow-hidden group transition-all duration-300 hover:shadow-primary/40 hover:shadow-lg hover:-translate-y-1 relative flex flex-col", getRankClass(index))}>
+                                            <CardContent className="p-0 flex-grow">
+                                                <DialogTrigger asChild>
+                                                    <div className="cursor-pointer relative">
+                                                        {index === 0 && <Crown className="absolute top-2 right-2 h-8 w-8 text-yellow-400 drop-shadow-lg z-10" />}
+                                                        {item.imageUrl ? (
+                                                            <img
+                                                                src={item.imageUrl}
+                                                                alt="Meme"
+                                                                className="w-full h-auto aspect-square object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full aspect-square bg-muted flex items-center justify-center">
+                                                                <span className="text-muted-foreground">No Image</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </DialogTrigger>
+                                            </CardContent>
+                                            <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-2 mt-auto">
                                                 <p className="font-semibold text-xs text-primary">by {item.creatorHandle}</p>
                                                 <div className="w-full flex justify-between items-center pt-2">
                                                     <div className="flex items-center gap-1">
