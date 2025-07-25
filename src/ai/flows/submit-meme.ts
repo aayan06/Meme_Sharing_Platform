@@ -14,7 +14,8 @@ import { db, storage } from '@/lib/firebase';
 
 
 const SubmitMemeInputSchema = z.object({
-  userId: z.string().describe('The ID of the user submitting the meme.'),
+  creatorId: z.string().describe('The ID of the user submitting the meme.'),
+  creatorHandle: z.string().describe("The user's display name or email handle."),
   joke: z.string().describe('The text content of the meme.'),
   imageDataUri: z.string().describe("The meme image as a data URI."),
 });
@@ -38,10 +39,10 @@ const submitMemeFlow = ai.defineFlow(
     inputSchema: SubmitMemeInputSchema,
     outputSchema: SubmitMemeOutputSchema,
   },
-  async ({ userId, joke, imageDataUri }) => {
+  async ({ creatorId, creatorHandle, joke, imageDataUri }) => {
     
     // 1. Upload image to Firebase Storage
-    const imageRef = ref(storage, `memes/${userId}/${uuidv4()}.png`);
+    const imageRef = ref(storage, `memes/${creatorId}/${uuidv4()}.png`);
     
     // The data URI needs to be stripped of its prefix before uploading
     const base64Data = imageDataUri.split(',')[1];
@@ -54,7 +55,8 @@ const submitMemeFlow = ai.defineFlow(
     // 2. Create document in Firestore
     const memesCollection = collection(db, 'memes');
     const newMemeDoc = await addDoc(memesCollection, {
-      userId,
+      userId: creatorId,
+      creatorHandle,
       joke,
       imageUrl,
       createdAt: serverTimestamp(),

@@ -161,31 +161,9 @@ export default function LaughFactoryPage() {
     const fetchLeaderboard = async () => {
         setIsLoadingLeaderboard(true);
         try {
-            const q = query(collection(db, "memes"), orderBy("voteCount", "desc"), limit(10));
+            const q = query(collection(db, "memes"), orderBy("voteCount", "desc"), limit(20));
             const querySnapshot = await getDocs(q);
-    
-            const leaderboardData = await Promise.all(
-                querySnapshot.docs.map(async (memeDoc) => {
-                    const memeData = { id: memeDoc.id, ...memeDoc.data() };
-                    let creatorHandle = 'Anonymous';
-                    if (memeData.userId) {
-                        try {
-                            const userDocRef = doc(db, 'users', memeData.userId);
-                            const userDoc = await getDoc(userDocRef);
-                            if (userDoc.exists()) {
-                                const userData = userDoc.data();
-                                if (userData.email) {
-                                    creatorHandle = userData.email.split('@')[0];
-                                }
-                            }
-                        } catch (e) {
-                            console.error("Error fetching user data for leaderboard:", e);
-                        }
-                    }
-                    return { ...memeData, creatorHandle };
-                })
-            );
-    
+            const leaderboardData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setLeaderboard(leaderboardData);
         } catch (error) {
             console.error("Error fetching leaderboard:", error);
@@ -384,7 +362,8 @@ export default function LaughFactoryPage() {
                 const dataUrl = canvas.toDataURL('image/png');
                 
                 await submitMeme({
-                    userId: user.uid,
+                    creatorId: user.uid,
+                    creatorHandle: user.displayName || user.email || 'Anonymous',
                     joke: joke.joke,
                     imageDataUri: dataUrl,
                 });
