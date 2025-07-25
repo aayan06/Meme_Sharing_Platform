@@ -6,7 +6,6 @@ import Link from "next/link";
 import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/generate-safe-joke";
 import { generateMemeImage, type GenerateMemeImageOutput } from "@/ai/flows/generate-meme-image";
 import { createCustomMeme } from "@/ai/flows/create-custom-meme";
-import { submitMeme } from "@/ai/flows/submit-meme";
 import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-audio";
 import { voteOnMeme } from "@/ai/flows/vote-on-meme";
 import { tipMemeCreator } from "@/ai/flows/tip-meme-creator";
@@ -48,8 +47,11 @@ import {
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
-import { auth, db } from "@/lib/firebase";
-import { collection, query, orderBy, onSnapshot, doc } from "firebase/firestore";
+import { auth, db, storage } from '@/lib/firebase';
+import { collection, query, orderBy, onSnapshot, doc, addDoc, serverTimestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL, uploadString } from "firebase/storage";
+import { v4 as uuidv4 } from 'uuid';
+
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -266,7 +268,6 @@ export default function LaughFactoryPage() {
                 });
                 setJoke({ joke: result.joke });
                 setMemeImage({ imageDataUri: result.imageDataUri });
-                // We keep the uploaded image state in case they want to regenerate with different text
             } else {
                 const selectedCategory = jokeCategories.find(cat => cat.id === category);
                 if (!selectedCategory) {
@@ -335,30 +336,49 @@ export default function LaughFactoryPage() {
             toast({ title: "Not Logged In", description: "You must be logged in to submit a meme.", variant: "destructive" });
             return;
         }
-        
-        const imageDataUri = memeImage?.imageDataUri;
 
-        if (!joke?.joke || !imageDataUri) {
+        const imageDataUri = memeImage?.imageDataUri;
+        const currentJoke = joke?.joke;
+
+        if (!currentJoke || !imageDataUri) {
             toast({ title: "Incomplete Meme", description: "Please generate a full meme before submitting.", variant: "destructive" });
             return;
         }
 
         setIsSubmitting(true);
         try {
-            await submitMeme({
-                creatorId: user.uid,
-                creatorHandle: user.displayName || user.email || 'Anonymous',
-                joke: joke.joke,
-                imageDataUri: imageDataUri,
-            });
+            // 1. Convert data URI to Blob
+            const response = await fetch(imageDataUri);
+            const blob = await response.blob();
+
+            // 2. Create a unique storage path
+            const imagePath = `memes/${user.uid}/${uuidv4()}.png`;
+            const storageRef = ref(storage, imagePath);
+
+            // 3. Upload the blob to Firebase Storage
+            await uploadBytes(storageRef, blob);
             
-            toast({ title: "Meme Submitted!", description: "Thanks for making the world funnier! Your meme is now on the leaderboard." });
-            // Reset state after successful submission
+            // 4. Get the public download URL for the uploaded image.
+            const imageUrl = await getDownloadURL(storageRef);
+
+            // 5. Create document in Firestore with the correct imageUrl
+            await addDoc(collection(db, 'memes'), {
+                userId: user.uid,
+                creatorHandle: user.displayName || user.email?.split('@')[0] || 'Anonymous',
+                joke: currentJoke,
+                imageUrl: imageUrl, 
+                createdAt: serverTimestamp(),
+                voteCount: 0,
+                voters: [],
+            });
+
+            toast({ title: "Meme Submitted!", description: "Your meme is now on the leaderboard!" });
+            
+            // Reset state and switch to leaderboard
             setJoke(null);
             setMemeImage(null);
             setUploadedImage(null);
             setCustomMemeText('');
-            
             setMode('leaderboard');
 
         } catch (error: any) {
@@ -459,7 +479,7 @@ export default function LaughFactoryPage() {
                     <span>Twitter</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleShare('telegram')}>
-                     <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.17.9-.502 1.201-1.233 1.201-.859 0-1.31-.362-1.826-.856-1.024-.985-1.59-1.59-2.545-2.522-.984-.958-.352-1.488.24-2.203.11-.129.21-.264.315-.405.471-.624.942-1.248 1.408-1.868.087-.113.174-.227.26-.339.09-.121.018-.216-.109-.192-.15.03-.43.14-.735.33-.428.27-.84.54-1.22.81-.79.55-1.58.9-2.37.64-.87-.3-1.53-.94-2.19-1.58-.6-.58-1.17-1.44-.98-2.31.2-.95.83-1.84 1.4-2.31.57-.47 1.27-.75 2.1-.86 1.05-.13 2.07.16 2.9.62.24.13.48.27.72.4.1.06.2.12.28.十八.09.06.18.03.21-.07.03-.11.05-.22.05-.33z"></path></svg>
+                     <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.17.9-.502 1.201-1.233 1.201-.859 0-1.31-.362-1.826-.856-1.024-.985-1.59-1.59-2.545-2.522-.984-.958-.352-1.488.24-2.203.11-.129.21-.264.315-.405.471-.624.942-1.248 1.408-1.868.087-.113.174-.227.26-.339.09-.121.018-.216-.109-.192-.15.03-.43.14-.735.33-.428.27-.84.54-1.22.81-.79.55-1.58.9-2.37.64-.87-.3-1.53-.94-2.19-1.58-.6-.58-1.17-1.44-.98-2.31.2-.95.83-1.84 1.4-2.31.57-.47 1.27-.75 2.1-.86 1.05-.13 2.07.16 2.9.62.24.13.48.27.72.4.1.06.2.12.28.18.09.06.18.03.21-.07.03-.11.05-.22.05-.33z"></path></svg>
                     <span>Telegram</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleShare('reddit')}>
