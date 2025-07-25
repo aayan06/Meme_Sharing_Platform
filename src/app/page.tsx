@@ -11,7 +11,7 @@ import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-aud
 import { voteOnMeme } from "@/ai/flows/vote-on-meme";
 import { tipMemeCreator } from "@/ai/flows/tip-meme-creator";
 import { deleteMeme } from "@/ai/flows/delete-meme";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,7 +49,6 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, orderBy, limit, getDocs, doc, onSnapshot, getDoc } from "firebase/firestore";
-import html2canvas from 'html2canvas';
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -130,7 +129,14 @@ export default function LaughFactoryPage() {
 
         if (isMemeCategory && (memeImage?.imageDataUri || uploadedImage)) {
             // Delay screenshot for social media sharing until image is loaded
-            setTimeout(() => takeMemeScreenshot(setMeta), 500);
+            if (memeCardRef.current) {
+                 createFinalMeme({
+                    userId: 'social',
+                    joke: joke.joke,
+                    backgroundImageDataUri: uploadedImage || memeImage!.imageDataUri,
+                 }).then(res => setMeta(res.imageUrl, joke.joke))
+            }
+
         } else {
              setMeta('https://placehold.co/1200x630.png', joke.joke);
         }
@@ -234,29 +240,6 @@ export default function LaughFactoryPage() {
     };
 
 
-    const takeMemeScreenshot = async (callback?: (dataUrl: string, description: string) => void): Promise<string | null> => {
-        const element = memeCardRef.current;
-        if (!element) return null;
-
-        try {
-            const canvas = await html2canvas(element, { 
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: '#111827', // Dark background for consistency
-                logging: false,
-            });
-            const dataUrl = canvas.toDataURL('image/png');
-            if(callback) callback(dataUrl, joke?.joke || '');
-            return dataUrl;
-        } catch (error) {
-            console.error("Failed to capture meme screenshot:", error);
-            // Fallback to the raw image if screenshot fails
-            const fallbackImage = uploadedImage || memeImage?.imageDataUri || null;
-            if(callback && fallbackImage) callback(fallbackImage, joke?.joke || '');
-            return fallbackImage;
-        }
-    };
-
     const handleGenerateJoke = async () => {
         setIsLoading(true);
         setJoke(null);
@@ -323,12 +306,24 @@ export default function LaughFactoryPage() {
     };
     
     const handleDownloadMeme = async () => {
-        const imageUri = await takeMemeScreenshot();
-        if (imageUri) {
+       const element = memeCardRef.current;
+        if (!element) return null;
+
+        try {
+            const canvas = await import('html2canvas').then(mod => mod.default);
+            const canvasEl = await canvas(element, { 
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#111827', // Dark background for consistency
+                logging: false,
+            });
+            const dataUrl = canvasEl.toDataURL('image/png');
             const link = document.createElement("a");
             link.download = "haha-launch-meme.png";
-            link.href = imageUri;
+            link.href = dataUrl;
             link.click();
+        } catch (error) {
+            console.error("Failed to capture meme screenshot:", error);
         }
     };
     
@@ -634,9 +629,11 @@ export default function LaughFactoryPage() {
                                 key={cat.id}
                                 onClick={() => handleCategoryChange(cat.id)}
                                 data-state={category === cat.id ? 'active' : 'inactive'}
-                                className="px-3 py-3 sm:px-4 text-sm font-semibold rounded-full transition-all duration-200 ease-out transform active:scale-95
-                                data-[state=inactive]:bg-card data-[state=inactive]:text-foreground data-[state=inactive]:hover:bg-card/70 data-[state=inactive]:shadow-md
-                                data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:scale-105"
+                                className={cn(
+                                    "px-3 py-3 sm:px-4 text-sm font-semibold rounded-full transition-all duration-200 ease-out transform active:scale-95",
+                                    "text-foreground bg-card shadow-md hover:bg-green-500/90",
+                                    category === cat.id && "bg-primary text-primary-foreground scale-105"
+                                )}
                               >
                                 {cat.label}
                               </button>
@@ -708,7 +705,7 @@ export default function LaughFactoryPage() {
                                 Array.from({ length: 8 }).map((_, i) => (
                                     <Card key={i}>
                                         <CardContent className="p-4 space-y-4">
-                                            <Skeleton className="aspect-video w-full rounded-lg" />
+                                            <Skeleton className="w-full rounded-lg" />
                                             <Skeleton className="h-4 w-3/4" />
                                             <div className="flex justify-between">
                                                 <Skeleton className="h-8 w-20" />
@@ -721,14 +718,14 @@ export default function LaughFactoryPage() {
                                 leaderboard.map((item, index) => (
                                     <Dialog key={item.id}>
                                         <Card className={cn("overflow-hidden group transition-all duration-300 hover:shadow-primary/40 hover:shadow-lg hover:-translate-y-1 relative", getRankClass(index))}>
-                                            {index === 0 && <Crown className="absolute top-2 right-2 h-8 w-8 text-yellow-400 drop-shadow-lg" />}
                                             <DialogTrigger asChild>
                                                 <div className="cursor-pointer">
+                                                     {index === 0 && <Crown className="absolute top-2 right-2 h-8 w-8 text-yellow-400 drop-shadow-lg z-10" />}
                                                      {item.imageUrl && (
                                                         <img
                                                             src={item.imageUrl}
                                                             alt="Meme"
-                                                            className="w-full h-auto"
+                                                            className="w-full h-auto object-cover"
                                                             onError={(e: any) => { e.target.style.display='none'; }}
                                                         />
                                                     )}
