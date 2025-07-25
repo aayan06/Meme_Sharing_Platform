@@ -130,12 +130,12 @@ export default function LaughFactoryPage() {
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#111827',
-            logging: true, // Enable logging for debugging
+            logging: true,
         });
     }
 
     const updateSocials = async () => {
-        if (joke?.joke) {
+        if (joke?.joke && memeCardRef.current) {
             try {
                 const canvas = await getCanvas(memeCardRef.current);
                 if(canvas) {
@@ -151,9 +151,9 @@ export default function LaughFactoryPage() {
     }
     
     useEffect(() => {
-        // Only update socials if there's a meme ready to be shown
         if (joke && (memeImage || uploadedImage)) {
-            updateSocials();
+             // A small delay to ensure the DOM is updated before capturing
+            setTimeout(updateSocials, 100);
         }
     }, [joke, memeImage, uploadedImage]);
 
@@ -278,7 +278,9 @@ export default function LaughFactoryPage() {
                     imageDataUri: uploadedImage || undefined
                 });
                 setJoke({ joke: result.joke });
-                setMemeImage({ imageDataUri: result.imageDataUri });
+                if(result.imageDataUri) {
+                    setMemeImage({ imageDataUri: result.imageDataUri });
+                }
             } else {
                 const selectedCategory = jokeCategories.find(cat => cat.id === category);
                 if (!selectedCategory) {
@@ -340,8 +342,8 @@ export default function LaughFactoryPage() {
             toast({ title: "Not Logged In", description: "You must be logged in to submit a meme.", variant: "destructive" });
             return;
         }
-        if (!joke) {
-            toast({ title: "Incomplete Meme", description: "Please generate a full meme before submitting.", variant: "destructive" });
+        if (!joke || !uploadedImage) {
+            toast({ title: "Incomplete Meme", description: "Please generate a meme with your own image to submit.", variant: "destructive" });
             return;
         }
 
@@ -914,7 +916,7 @@ export default function LaughFactoryPage() {
                         </Button>
                         )}
                         {isMemeReady && (
-                         <Button onClick={handleSubmit} disabled={isSubmitting || !isMemeReady || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
+                         <Button onClick={handleSubmit} disabled={isSubmitting || !uploadedImage || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
                              {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
                              Submit for Glory
                          </Button>
