@@ -9,3 +9,4 @@ import '@/ai/flows/submit-meme.ts';
 import '@/ai/flows/vote-on-meme.ts';
 import '@/ai/flows/tip-meme-creator.ts';
 import '@/ai/flows/delete-meme.ts';
+import '@/ai/flows/create-final-meme.ts';

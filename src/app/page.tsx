@@ -6,8 +6,8 @@ import Link from "next/link";
 import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/generate-safe-joke";
 import { generateMemeImage, type GenerateMemeImageOutput } from "@/ai/flows/generate-meme-image";
 import { createCustomMeme } from "@/ai/flows/create-custom-meme";
+import { createFinalMeme } from "@/ai/flows/create-final-meme";
 import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-audio";
-import { submitMeme } from "@/ai/flows/submit-meme";
 import { voteOnMeme } from "@/ai/flows/vote-on-meme";
 import { tipMemeCreator } from "@/ai/flows/tip-meme-creator";
 import { deleteMeme } from "@/ai/flows/delete-meme";
@@ -238,30 +238,7 @@ export default function LaughFactoryPage() {
         const element = memeCardRef.current;
         if (!element) return null;
 
-        const imageElement = element.querySelector('img');
-        if (!imageElement) {
-             console.error("Screenshot failed: Could not find image element inside the card.");
-             return uploadedImage || memeImage?.imageDataUri || null;
-        }
-
         try {
-            // Wait for the image to be fully loaded before taking the screenshot
-            await new Promise((resolve, reject) => {
-                if (imageElement.complete && imageElement.naturalHeight !== 0) {
-                    resolve(true);
-                    return;
-                }
-                const timeout = setTimeout(() => reject(new Error("Image load timed out after 5 seconds.")), 5000);
-                imageElement.onload = () => {
-                    clearTimeout(timeout);
-                    resolve(true);
-                };
-                imageElement.onerror = () => {
-                    clearTimeout(timeout);
-                    reject(new Error("Image failed to load."));
-                };
-            });
-            
             const canvas = await html2canvas(element, { 
                 useCORS: true,
                 allowTaint: true,
@@ -273,6 +250,7 @@ export default function LaughFactoryPage() {
             return dataUrl;
         } catch (error) {
             console.error("Failed to capture meme screenshot:", error);
+            // Fallback to the raw image if screenshot fails
             const fallbackImage = uploadedImage || memeImage?.imageDataUri || null;
             if(callback && fallbackImage) callback(fallbackImage, joke?.joke || '');
             return fallbackImage;
@@ -366,18 +344,16 @@ export default function LaughFactoryPage() {
 
         setIsSubmitting(true);
         try {
-            // Add a delay to ensure the DOM is fully updated before taking a screenshot
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            const finalImageUri = await takeMemeScreenshot();
-            if (!finalImageUri) {
-                throw new Error("Could not capture the final meme image.");
+            const backgroundImageUri = uploadedImage || memeImage?.imageDataUri;
+            if (!backgroundImageUri) {
+                 throw new Error("Could not find the background image for the meme.");
             }
 
-            await submitMeme({
+            // The new flow will handle image composition and submission
+            await createFinalMeme({
                 userId: user.uid,
                 joke: joke.joke,
-                imageDataUri: finalImageUri,
+                backgroundImageDataUri: backgroundImageUri,
             });
             
             toast({ title: "Meme Submitted!", description: "Thanks for making the world funnier! Your meme is now on the leaderboard." });
@@ -556,13 +532,13 @@ export default function LaughFactoryPage() {
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
-    const navButtonClass = (isActive: boolean) =>
-    cn(
-      "flex-1 rounded-full text-sm sm:text-base font-semibold transition-colors duration-200",
-      isActive
-        ? "bg-primary text-primary-foreground" // Blue when active
-        : "bg-card text-foreground hover:bg-green-500" // Black/default, green on hover
-    );
+     const navButtonClass = (isActive: boolean) =>
+        cn(
+            "flex-1 rounded-full text-sm sm:text-base font-semibold transition-colors duration-200",
+            isActive
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-foreground hover:bg-green-500"
+        );
 
     const getRankClass = (index: number) => {
         switch (index) {
@@ -748,7 +724,11 @@ export default function LaughFactoryPage() {
                                             {index === 0 && <Crown className="absolute top-2 right-2 h-8 w-8 text-yellow-400 drop-shadow-lg" />}
                                             <DialogTrigger asChild>
                                                 <div className="cursor-pointer">
-                                                    <img src={item.imageUrl} alt="Meme" className="w-full" />
+                                                    <img
+                                                        src={item.imageUrl}
+                                                        alt="Meme"
+                                                        className="w-full h-auto rounded-t-lg"
+                                                    />
                                                 </div>
                                             </DialogTrigger>
                                             <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-2">
@@ -937,5 +917,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
