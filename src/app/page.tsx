@@ -527,7 +527,7 @@ export default function LaughFactoryPage() {
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
-    const navButtonClass = (isActive: boolean) =>
+     const navButtonClass = (isActive: boolean) =>
         cn(
             "flex-1 rounded-full text-sm sm:text-base font-semibold transition-colors duration-200",
             isActive
@@ -586,7 +586,7 @@ export default function LaughFactoryPage() {
                         onClick={() => handleModeChange('create')}
                         className={navButtonClass(mode === 'create')}
                         size="lg"
-                    >
+                        >
                         <PenSquare className="mr-2 h-5 w-5"/>
                         Create
                     </Button>
@@ -705,7 +705,7 @@ export default function LaughFactoryPage() {
                                 Array.from({ length: 8 }).map((_, i) => (
                                     <Card key={i}>
                                         <CardContent className="p-4 space-y-4">
-                                            <Skeleton className="w-full rounded-lg" />
+                                            <Skeleton className="w-full aspect-square rounded-lg" />
                                             <Skeleton className="h-4 w-3/4" />
                                             <div className="flex justify-between">
                                                 <Skeleton className="h-8 w-20" />
@@ -725,7 +725,7 @@ export default function LaughFactoryPage() {
                                                         <img
                                                             src={item.imageUrl}
                                                             alt="Meme"
-                                                            className="w-full h-auto object-cover"
+                                                            className="w-full h-auto rounded-md"
                                                             onError={(e: any) => { e.target.style.display='none'; }}
                                                         />
                                                     )}
@@ -917,3 +917,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
