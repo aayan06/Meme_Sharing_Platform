@@ -135,16 +135,9 @@ export default function LaughFactoryPage() {
     }
 
     const updateSocials = async () => {
-        if (joke?.joke && memeCardRef.current) {
-            try {
-                const canvas = await getCanvas(memeCardRef.current);
-                if(canvas) {
-                    setMeta(canvas.toDataURL('image/png'), joke.joke);
-                }
-            } catch (error) {
-                console.error("Failed to update meta tags with canvas", error);
-                setMeta('https://placehold.co/1200x630.png', joke.joke);
-            }
+        const imageUrl = memeImage?.imageDataUri || uploadedImage;
+        if (joke?.joke && imageUrl) {
+            setMeta(imageUrl, joke.joke);
         } else {
              setMeta('https://placehold.co/1200x630.png', 'Your daily dose of AI-powered humor');
         }
@@ -278,9 +271,8 @@ export default function LaughFactoryPage() {
                     imageDataUri: uploadedImage || undefined
                 });
                 setJoke({ joke: result.joke });
-                if(result.imageDataUri) {
-                    setMemeImage({ imageDataUri: result.imageDataUri });
-                }
+                setMemeImage({ imageDataUri: result.imageDataUri });
+                setUploadedImage(null); // Clear uploaded image since we have a final one
             } else {
                 const selectedCategory = jokeCategories.find(cat => cat.id === category);
                 if (!selectedCategory) {
@@ -324,16 +316,16 @@ export default function LaughFactoryPage() {
     };
     
     const handleDownloadMeme = async () => {
+        const imageUrl = memeImage?.imageDataUri || uploadedImage;
+        if (!imageUrl) return;
+
         try {
-            const canvas = await getCanvas(memeCardRef.current);
-            if (!canvas) return;
-            const dataUrl = canvas.toDataURL('image/png');
             const link = document.createElement("a");
             link.download = "haha-launch-meme.png";
-            link.href = dataUrl;
+            link.href = imageUrl;
             link.click();
         } catch (error) {
-            console.error("Failed to capture meme screenshot:", error);
+            console.error("Failed to download meme:", error);
         }
     };
     
@@ -342,44 +334,37 @@ export default function LaughFactoryPage() {
             toast({ title: "Not Logged In", description: "You must be logged in to submit a meme.", variant: "destructive" });
             return;
         }
-        if (!joke || !(uploadedImage || memeImage)) {
+        
+        const imageDataUri = memeImage?.imageDataUri;
+
+        if (!joke || !imageDataUri) {
             toast({ title: "Incomplete Meme", description: "Please generate a full meme before submitting.", variant: "destructive" });
             return;
         }
 
         setIsSubmitting(true);
+        try {
+            await submitMeme({
+                creatorId: user.uid,
+                creatorHandle: user.displayName || user.email || 'Anonymous',
+                joke: joke.joke,
+                imageDataUri: imageDataUri,
+            });
+            
+            toast({ title: "Meme Submitted!", description: "Thanks for making the world funnier! Your meme is now on the leaderboard." });
+            setJoke(null);
+            setMemeImage(null);
+            setUploadedImage(null);
+            setCustomMemeText('');
+            
+            setMode('leaderboard');
 
-        // A small delay to ensure the DOM is fully updated before capturing the canvas
-        setTimeout(async () => {
-            try {
-                const canvas = await getCanvas(memeCardRef.current);
-                if (!canvas) {
-                    throw new Error("Could not capture meme element.");
-                }
-                const dataUrl = canvas.toDataURL('image/png');
-                
-                await submitMeme({
-                    creatorId: user.uid,
-                    creatorHandle: user.displayName || user.email || 'Anonymous',
-                    joke: joke.joke,
-                    imageDataUri: dataUrl,
-                });
-                
-                toast({ title: "Meme Submitted!", description: "Thanks for making the world funnier! Your meme is now on the leaderboard." });
-                setJoke(null);
-                setMemeImage(null);
-                setUploadedImage(null);
-                setCustomMemeText('');
-                
-                setMode('leaderboard');
-
-            } catch (error: any) {
-                console.error("Submission failed:", error);
-                toast({ title: "Submission Error", description: error.message || "Could not submit your meme.", variant: "destructive" });
-            } finally {
-                setIsSubmitting(false);
-            }
-        }, 100); 
+        } catch (error: any) {
+            console.error("Submission failed:", error);
+            toast({ title: "Submission Error", description: error.message || "Could not submit your meme.", variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
 
@@ -400,9 +385,7 @@ export default function LaughFactoryPage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setUploadedImage(reader.result as string);
-                // Clear AI-generated image if a user uploads their own
                 setMemeImage(null);
-                // If there's no custom text, we can clear the joke to allow a fresh start
                 if (!customMemeText) {
                     setJoke(null);
                 }
@@ -538,9 +521,9 @@ export default function LaughFactoryPage() {
         setUploadedImage(null);
     };
     
-    const isMemeReady = joke && (memeImage?.imageDataUri || uploadedImage);
+    const isMemeReady = joke && memeImage?.imageDataUri;
 
-    const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes')) || (mode === 'create' && !!(uploadedImage || memeImage));
+    const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes'));
     const { top, bottom } = splitJoke(joke?.joke || '');
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
@@ -768,7 +751,6 @@ export default function LaughFactoryPage() {
                                                             src={item.imageUrl}
                                                             alt="Meme"
                                                             className="w-full h-auto aspect-square object-cover"
-                                                            crossOrigin="anonymous"
                                                         />
                                                     )}
                                                 </div>
@@ -836,7 +818,7 @@ export default function LaughFactoryPage() {
                                                     Meme by {item.creatorHandle}. Votes: {item.voteCount}.
                                                 </DialogDescription>
                                             </DialogHeader>
-                                            <img src={item.imageUrl} alt="Meme" className="w-full h-auto rounded-lg" crossOrigin="anonymous" />
+                                            <img src={item.imageUrl} alt="Meme" className="w-full h-auto rounded-lg" />
                                             <DialogClose className="absolute -top-2 -right-2 bg-slate-800/80 text-white rounded-full">
                                                 <X className="h-5 w-5"/>
                                             </DialogClose>
@@ -866,65 +848,62 @@ export default function LaughFactoryPage() {
                         </JokeCard>
                     )}
                     
-                    {!isLoading && joke && (isMemeCategory || uploadedImage) && (
+                    {!isLoading && joke && (
                         <JokeCard innerRef={memeCardRef}>
                              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-xl sm:text-2xl font-bold font-headline">Meme Generated!</CardTitle>
+                                <CardTitle className="text-xl sm:text-2xl font-bold font-headline">
+                                    {isMemeCategory || mode === 'create' ? "Meme Generated!" : "Here's a good one!"}
+                                </CardTitle>
                                 <div className="flex items-center">
                                     <ShareMenu />
-                                    <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme" className="rounded-full">
-                                        <Download className="h-5 w-5" />
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="relative">
-                                <img 
-                                    src={uploadedImage || memeImage!.imageDataUri} 
-                                    alt="Generated Meme background" 
-                                    className="w-full h-auto rounded-lg border-2" 
-                                    crossOrigin="anonymous"
-                                />
-                                <div className="absolute inset-0 flex flex-col justify-between p-2 sm:p-4">
-                                  <MemeText text={top} />
-                                  <MemeText text={bottom} />
-                                </div>
-                            </CardContent>
-                        </JokeCard>
-                    )}
-
-                    {!isLoading && joke && !(isMemeCategory || uploadedImage) && (
-                         <JokeCard>
-                            <CardHeader className="flex flex-row items-start justify-between pb-2">
-                                <CardTitle className="text-xl sm:text-2xl font-bold font-headline">Here's a good one!</CardTitle>
-                                <div className="flex items-center">
-                                    <ShareMenu />
-                                     <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => handleGenerateAudio(joke.joke)}
-                                        disabled={isGeneratingAudio}
-                                        aria-label="Read joke aloud"
-                                        className="rounded-full"
-                                    >
-                                        {isGeneratingAudio ? <Loader2 className="h-5 w-5 animate-spin" /> : <Volume2 className="h-5 w-5" />}
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => handleCopyToClipboard(joke.joke)} aria-label="Copy joke" className="rounded-full">
-                                        <Copy className="h-5 w-5" />
-                                    </Button>
+                                    {(isMemeCategory || mode === 'create') && memeImage?.imageDataUri && (
+                                        <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme" className="rounded-full">
+                                            <Download className="h-5 w-5" />
+                                        </Button>
+                                    )}
+                                    {!(isMemeCategory || mode === 'create') && (
+                                        <>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleGenerateAudio(joke.joke)}
+                                                disabled={isGeneratingAudio}
+                                                aria-label="Read joke aloud"
+                                                className="rounded-full"
+                                            >
+                                                {isGeneratingAudio ? <Loader2 className="h-5 w-5 animate-spin" /> : <Volume2 className="h-5 w-5" />}
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleCopyToClipboard(joke.joke)} aria-label="Copy joke" className="rounded-full">
+                                                <Copy className="h-5 w-5" />
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-lg sm:text-xl font-medium leading-relaxed">{joke.joke}</p>
-                                 {audio?.media && (
-                                    <div className="mt-4">
-                                        <audio controls autoPlay className="w-full">
-                                            <source src={audio.media} type="audio/wav" />
-                                            Your browser does not support the audio element.
-                                        </audio>
-                                    </div>
+                                {memeImage?.imageDataUri ? (
+                                    <img 
+                                        src={memeImage.imageDataUri} 
+                                        alt="Generated Meme" 
+                                        className="w-full h-auto rounded-lg border-2" 
+                                    />
+                                ) : (
+                                    <>
+                                        <p className="text-lg sm:text-xl font-medium leading-relaxed">{joke.joke}</p>
+                                        {audio?.media && (
+                                            <div className="mt-4">
+                                                <audio controls autoPlay className="w-full">
+                                                    <source src={audio.media} type="audio/wav" />
+                                                    Your browser does not support the audio element.
+                                                </audio>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
-                                <div className="flex justify-end items-center space-x-2 mt-6">
-                                    <Button variant={selectedReaction === 'laugh' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('laugh')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
+                            </CardContent>
+                             {!(isMemeCategory || mode === 'create') && (
+                                <CardFooter className="flex justify-end items-center space-x-2">
+                                     <Button variant={selectedReaction === 'laugh' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('laugh')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
                                         <span>😂</span>
                                     </Button>
                                     <Button variant={selectedReaction === 'neutral' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('neutral')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
@@ -933,8 +912,8 @@ export default function LaughFactoryPage() {
                                     <Button variant={selectedReaction === 'unamused' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('unamused')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
                                         <span>🙄</span>
                                     </Button>
-                                </div>
-                            </CardContent>
+                                </CardFooter>
+                            )}
                         </JokeCard>
                     )}
                 </div>
@@ -963,7 +942,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
-
-    

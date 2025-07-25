@@ -82,20 +82,43 @@ const createCustomMemeFlow = ai.defineFlow(
     
     const joke = jokeResponse.text;
 
-    if (input.imageDataUri) {
-        return {
-            joke,
-            imageDataUri: input.imageDataUri,
+    // Determine Top and Bottom text for the meme
+    const splitJoke = (text: string): { top: string; bottom: string } => {
+        if (!text) return { top: '', bottom: '' };
+        const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+        if (sentences.length >= 2) {
+            const middleIndex = Math.ceil(sentences.length / 2);
+            const top = sentences.slice(0, middleIndex).join(' ').trim();
+            const bottom = sentences.slice(middleIndex).join(' ').trim();
+            return { top, bottom };
         }
-    }
+        const words = text.split(' ');
+        if (words.length === 1) return { top: text, bottom: '' };
+        const middleIndex = Math.ceil(words.length / 2);
+        const top = words.slice(0, middleIndex).join(' ');
+        const bottom = words.slice(middleIndex).join(' ');
+        return { top, bottom };
+    };
+    const { top, bottom } = splitJoke(joke);
 
-    const imageGenPrompt = `Generate a high-quality, photo-realistic background image for a meme. The meme's text is: "${joke}".
-    
-    **CRITICAL RULES:**
-    1.  **NO TEXT**: The image MUST be a clean background with ABSOLUTELY NO text, captions, subtitles, or watermarks.
-    2.  **RELEVANCE**: The image content and emotion MUST directly relate to the joke's theme. For edgy or dark humor, the visuals can be surreal, grim, or unsettling.
-    3.  **HIGH QUALITY**: The image must be clear and suitable for adding text on top.
-    `;
+    const imageGenPrompt = input.imageDataUri 
+    ? [
+        {text: `Overlay the following text onto this image in a classic meme format.
+            - Top text: "${top}"
+            - Bottom text: "${bottom}"
+            Use a bold, white, all-caps font (like Impact) with a black outline for maximum readability.
+        `},
+        {media: {url: input.imageDataUri}}
+      ]
+    : `Generate a high-quality, photo-realistic image for a meme. The meme text is:
+        - Top text: "${top}"
+        - Bottom text: "${bottom}"
+
+        **CRITICAL RULES:**
+        1.  **INCLUDE TEXT**: The image MUST be a complete meme with the text rendered directly on it. Use a classic, bold, white, all-caps font (like Impact) with a black outline.
+        2.  **RELEVANCE**: The image content and emotion MUST directly relate to the joke's theme.
+        3.  **HIGH QUALITY**: The final image must be clear and high-resolution.`;
+
 
     let media;
     const maxRetries = 3;
