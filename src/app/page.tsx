@@ -150,11 +150,15 @@ export default function LaughFactoryPage() {
         if (!element) return null;
 
         try {
+            // Add a short delay to ensure the DOM is fully rendered
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             const { default: html2canvas } = await import('html2canvas');
             const canvas = await html2canvas(element, { 
                 useCORS: true,
                 allowTaint: true,
-                backgroundColor: null, 
+                backgroundColor: null,
+                logging: false, // Suppress verbose console logs
             });
             const dataUrl = canvas.toDataURL('image/png');
             if(callback) callback(dataUrl, joke?.joke || '');
