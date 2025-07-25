@@ -97,17 +97,35 @@ const createCustomMemeFlow = ai.defineFlow(
     3.  **HIGH QUALITY**: The image must be clear and suitable for adding text on top.
     `;
 
-    const {media} = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: imageGenPrompt,
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-        safetySettings,
-      },
-    });
+    let media;
+    const maxRetries = 3;
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const response = await ai.generate({
+                model: 'googleai/gemini-2.0-flash-preview-image-generation',
+                prompt: imageGenPrompt,
+                config: {
+                    responseModalities: ['TEXT', 'IMAGE'],
+                    safetySettings,
+                },
+            });
+            media = response.media;
+            if (media) {
+                break; // Success, exit loop
+            }
+        } catch (error) {
+            console.error(`Attempt ${i + 1} failed:`, error);
+            if (i === maxRetries - 1) {
+                throw new Error(`Image generation failed after ${maxRetries} attempts.`);
+            }
+            // Wait for a second before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    }
+
 
     if (!media) {
-      throw new Error('Image generation failed: No media object returned.');
+      throw new Error('Image generation failed: No media object returned after retries.');
     }
     
     return {
