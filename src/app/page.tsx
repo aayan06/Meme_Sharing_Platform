@@ -169,10 +169,17 @@ export default function LaughFactoryPage() {
                     const memeData = { id: memeDoc.id, ...memeDoc.data() };
                     let creatorHandle = 'Anonymous';
                     if (memeData.userId) {
-                        const userDocRef = doc(db, 'users', memeData.userId);
-                        const userDoc = await getDoc(userDocRef);
-                        if (userDoc.exists() && userDoc.data().email) {
-                            creatorHandle = userDoc.data().email.split('@')[0];
+                        try {
+                            const userDocRef = doc(db, 'users', memeData.userId);
+                            const userDoc = await getDoc(userDocRef);
+                            if (userDoc.exists()) {
+                                const userData = userDoc.data();
+                                if (userData.email) {
+                                    creatorHandle = userData.email.split('@')[0];
+                                }
+                            }
+                        } catch (e) {
+                            console.error("Error fetching user data for leaderboard:", e);
                         }
                     }
                     return { ...memeData, creatorHandle };
@@ -779,7 +786,6 @@ export default function LaughFactoryPage() {
                                                             src={item.imageUrl}
                                                             alt="Meme"
                                                             className="w-full h-auto aspect-square object-cover"
-                                                            onError={(e: any) => { e.target.style.display='none'; }}
                                                         />
                                                     )}
                                                 </div>
