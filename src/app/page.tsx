@@ -24,10 +24,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, orderBy, limit, getDocs, doc, onSnapshot } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, doc, onSnapshot, getDoc } from "firebase/firestore";
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -118,8 +125,23 @@ export default function LaughFactoryPage() {
         try {
             const q = query(collection(db, "memes"), orderBy("voteCount", "desc"), limit(10));
             const querySnapshot = await getDocs(q);
-            const jokes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setLeaderboard(jokes);
+    
+            const leaderboardData = await Promise.all(
+                querySnapshot.docs.map(async (memeDoc) => {
+                    const memeData = { id: memeDoc.id, ...memeDoc.data() };
+                    let creatorHandle = 'Anonymous';
+                    if (memeData.userId) {
+                        const userDocRef = doc(db, 'users', memeData.userId);
+                        const userDoc = await getDoc(userDocRef);
+                        if (userDoc.exists() && userDoc.data().email) {
+                            creatorHandle = userDoc.data().email.split('@')[0];
+                        }
+                    }
+                    return { ...memeData, creatorHandle };
+                })
+            );
+    
+            setLeaderboard(leaderboardData);
         } catch (error) {
             console.error("Error fetching leaderboard:", error);
             toast({ title: "Error", description: "Could not load the leaderboard.", variant: "destructive" });
@@ -671,37 +693,44 @@ export default function LaughFactoryPage() {
                                 ))
                             ) : (
                                 leaderboard.map((item) => (
-                                    <Card key={item.id} className="overflow-hidden group transition-all duration-300 hover:shadow-primary/40 hover:shadow-lg hover:-translate-y-1">
-                                        <CardContent className="p-0">
-                                            <img src={item.imageUrl} alt="Meme" className="aspect-square w-full object-cover" />
-                                        </CardContent>
-                                        <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-3">
-                                            <p className="font-medium text-sm leading-snug h-10 overflow-hidden">{item.joke}</p>
-                                            <div className="w-full flex justify-between items-center">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleTip(item)}
-                                                    disabled={!user || tippingStatus[item.id] || item.userId === user?.uid}
-                                                    className="rounded-full"
-                                                >
-                                                  {tippingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : '💰 Tip'}
-                                                </Button>
-                                                <div className="flex items-center gap-1 font-bold text-primary text-lg">
-                                                    
-                                                    <Button 
-                                                        size="sm" 
-                                                        onClick={() => handleVote(item.id)}
-                                                        disabled={!user || votingStatus[item.id] || (item.voters && item.voters.includes(user.uid))}
+                                    <Dialog key={item.id}>
+                                        <Card className="overflow-hidden group transition-all duration-300 hover:shadow-primary/40 hover:shadow-lg hover:-translate-y-1">
+                                            <DialogTrigger asChild>
+                                                <CardContent className="p-0 cursor-pointer">
+                                                    <img src={item.imageUrl} alt="Meme" className="aspect-square w-full object-cover" />
+                                                </CardContent>
+                                            </DialogTrigger>
+                                            <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-3">
+                                                <p className="font-semibold text-sm text-primary">by {item.creatorHandle}</p>
+                                                <p className="font-medium text-sm leading-snug h-10 overflow-hidden">{item.joke}</p>
+                                                <div className="w-full flex justify-between items-center">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleTip(item)}
+                                                        disabled={!user || tippingStatus[item.id] || item.userId === user?.uid}
                                                         className="rounded-full"
                                                     >
-                                                        {votingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin"/> : '😂'}
+                                                      {tippingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : '💰 Tip'}
                                                     </Button>
-                                                    <span>{item.voteCount}</span>
+                                                    <div className="flex items-center gap-1 font-bold text-primary text-lg">
+                                                        <Button 
+                                                            size="sm" 
+                                                            onClick={() => handleVote(item.id)}
+                                                            disabled={!user || votingStatus[item.id] || (item.voters && item.voters.includes(user.uid))}
+                                                            className="rounded-full"
+                                                        >
+                                                            {votingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin"/> : '😂'}
+                                                        </Button>
+                                                        <span>{item.voteCount}</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </CardFooter>
-                                    </Card>
+                                            </CardFooter>
+                                        </Card>
+                                        <DialogContent className="max-w-3xl p-0 border-0">
+                                            <img src={item.imageUrl} alt="Meme" className="w-full h-auto rounded-lg" />
+                                        </DialogContent>
+                                    </Dialog>
                                 ))
                             )}
                         </div>
@@ -818,5 +847,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
