@@ -29,7 +29,6 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
     DialogDescription
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils";
@@ -522,6 +521,10 @@ export default function LaughFactoryPage() {
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
+    const navButtonClass = "flex-1 rounded-full text-sm sm:text-base font-semibold text-white bg-black hover:bg-green-500";
+    const activeNavButtonClass = "!bg-primary";
+
+
     return (
         <div className="flex flex-col items-center min-h-screen p-4 sm:p-6 dark bg-background">
             <main className="w-full max-w-7xl mx-auto flex flex-col items-center space-y-8">
@@ -550,11 +553,10 @@ export default function LaughFactoryPage() {
                     </div>
                 </header>
                 
-                 <div className="w-full max-w-lg flex justify-center p-1 bg-card/80 backdrop-blur-lg rounded-full shadow-lg border">
+                 <div className="w-full max-w-lg flex justify-center p-1 bg-black backdrop-blur-lg rounded-full shadow-lg border">
                     <Button
                         onClick={() => handleModeChange('generate')}
-                        variant={mode === 'generate' ? 'default' : 'ghost'}
-                        className="flex-1 rounded-full text-sm sm:text-base font-semibold"
+                        className={cn(navButtonClass, mode === 'generate' && activeNavButtonClass)}
                         size="lg"
                     >
                         <Sparkles className="mr-2 h-5 w-5"/>
@@ -562,8 +564,7 @@ export default function LaughFactoryPage() {
                     </Button>
                     <Button
                         onClick={() => handleModeChange('create')}
-                        variant={mode === 'create' ? 'default' : 'ghost'}
-                        className="flex-1 rounded-full text-sm sm:text-base font-semibold"
+                        className={cn(navButtonClass, mode === 'create' && activeNavButtonClass)}
                         size="lg"
                     >
                         <PenSquare className="mr-2 h-5 w-5"/>
@@ -571,8 +572,7 @@ export default function LaughFactoryPage() {
                     </Button>
                      <Button
                         onClick={() => handleModeChange('leaderboard')}
-                        variant={mode === 'leaderboard' ? 'default' : 'ghost'}
-                        className="flex-1 rounded-full text-sm sm:text-base font-semibold"
+                        className={cn(navButtonClass, mode === 'leaderboard' && activeNavButtonClass)}
                         size="lg"
                     >
                         <Trophy className="mr-2 h-5 w-5"/>
