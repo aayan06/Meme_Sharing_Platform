@@ -31,6 +31,7 @@ import {
     DialogTitle,
     DialogDescription,
     DialogTrigger,
+    DialogClose,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -521,8 +522,17 @@ export default function LaughFactoryPage() {
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
-    const navButtonClass = "flex-1 rounded-full text-sm sm:text-base font-semibold text-white bg-black hover:bg-green-500";
+    const navButtonClass = "flex-1 rounded-full text-sm sm:text-base font-semibold text-white bg-black hover:bg-green-500 data-[state=active]:text-white";
     const activeNavButtonClass = "bg-primary hover:bg-primary/90";
+
+    const getRankClass = (index: number) => {
+        switch (index) {
+            case 0: return "border-yellow-400 border-4 shadow-yellow-400/50 shadow-lg";
+            case 1: return "border-slate-400 border-4";
+            case 2: return "border-orange-400 border-4";
+            default: return "border-border";
+        }
+    };
 
 
     return (
@@ -556,7 +566,8 @@ export default function LaughFactoryPage() {
                  <div className="w-full max-w-lg flex justify-center p-1 bg-black backdrop-blur-lg rounded-full shadow-lg border">
                     <Button
                         onClick={() => handleModeChange('generate')}
-                        className={cn(navButtonClass, mode === 'generate' && activeNavButtonClass)}
+                        className={cn(navButtonClass)}
+                        data-state={mode === 'generate' ? 'active' : 'inactive'}
                         size="lg"
                     >
                         <Sparkles className="mr-2 h-5 w-5"/>
@@ -564,7 +575,8 @@ export default function LaughFactoryPage() {
                     </Button>
                     <Button
                         onClick={() => handleModeChange('create')}
-                        className={cn(navButtonClass, mode === 'create' && activeNavButtonClass)}
+                        className={cn(navButtonClass)}
+                        data-state={mode === 'create' ? 'active' : 'inactive'}
                         size="lg"
                     >
                         <PenSquare className="mr-2 h-5 w-5"/>
@@ -572,7 +584,8 @@ export default function LaughFactoryPage() {
                     </Button>
                      <Button
                         onClick={() => handleModeChange('leaderboard')}
-                        className={cn(navButtonClass, mode === 'leaderboard' && activeNavButtonClass)}
+                        className={cn(navButtonClass)}
+                        data-state={mode === 'leaderboard' ? 'active' : 'inactive'}
                         size="lg"
                     >
                         <Trophy className="mr-2 h-5 w-5"/>
@@ -693,42 +706,43 @@ export default function LaughFactoryPage() {
                                     </Card>
                                 ))
                             ) : (
-                                leaderboard.map((item) => (
+                                leaderboard.map((item, index) => (
                                     <Dialog key={item.id}>
-                                        <Card className="overflow-hidden group transition-all duration-300 hover:shadow-primary/40 hover:shadow-lg hover:-translate-y-1">
+                                        <Card className={cn("overflow-hidden group transition-all duration-300 hover:shadow-primary/40 hover:shadow-lg hover:-translate-y-1 relative", getRankClass(index))}>
+                                            {index === 0 && <Crown className="absolute top-2 right-2 h-8 w-8 text-yellow-400 drop-shadow-lg" />}
                                             <DialogTrigger asChild>
                                                 <div className="cursor-pointer">
                                                     <img src={item.imageUrl} alt="Meme" className="aspect-square w-full object-cover" />
                                                 </div>
                                             </DialogTrigger>
-                                            <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-3">
-                                                <p className="font-semibold text-sm text-primary">by {item.creatorHandle}</p>
+                                            <CardContent className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-2">
                                                 <p className="font-medium text-sm leading-snug h-10 overflow-hidden">{item.joke}</p>
-                                                <div className="w-full flex justify-between items-center">
+                                                <p className="font-semibold text-xs text-primary">by {item.creatorHandle}</p>
+                                                <div className="w-full flex justify-between items-center pt-2">
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
                                                         onClick={() => handleTip(item)}
                                                         disabled={!user || tippingStatus[item.id] || item.userId === user?.uid}
-                                                        className="rounded-full"
+                                                        className="rounded-full gap-1 text-sm"
                                                     >
-                                                      {tippingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : '💰 Tip'}
+                                                      {tippingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <>💰<span className="hidden sm:inline">Tip</span></>}
                                                     </Button>
                                                     <div className="flex items-center gap-1 font-bold text-primary text-lg">
                                                         <Button 
                                                             size="sm" 
                                                             onClick={() => handleVote(item.id)}
                                                             disabled={!user || votingStatus[item.id] || (item.voters && user && item.voters.includes(user.uid))}
-                                                            className="rounded-full"
+                                                            className="rounded-full text-lg"
                                                         >
                                                             {votingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin"/> : '😂'}
                                                         </Button>
                                                         <span>{item.voteCount}</span>
                                                     </div>
                                                 </div>
-                                            </CardFooter>
+                                            </CardContent>
                                         </Card>
-                                        <DialogContent className="max-w-3xl p-0 border-0">
+                                        <DialogContent className="max-w-3xl p-0 border-0 bg-transparent shadow-none">
                                             <DialogHeader className="sr-only">
                                                 <DialogTitle>{item.joke}</DialogTitle>
                                                 <DialogDescription>
@@ -736,6 +750,9 @@ export default function LaughFactoryPage() {
                                                 </DialogDescription>
                                             </DialogHeader>
                                             <img src={item.imageUrl} alt="Meme" className="w-full h-auto rounded-lg" />
+                                            <DialogClose className="absolute -top-2 -right-2 bg-slate-800/80 text-white rounded-full">
+                                                <X className="h-5 w-5"/>
+                                            </DialogClose>
                                         </DialogContent>
                                     </Dialog>
                                 ))
@@ -854,5 +871,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
