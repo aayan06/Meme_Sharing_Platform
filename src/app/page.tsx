@@ -62,6 +62,9 @@ const jokeCategories = [
 ];
 
 function setMeta(url: string, description: string) {
+    // This function can cause issues in unmount scenarios, so we check if document exists.
+    if (typeof document === 'undefined') return;
+
     document.querySelectorAll('meta[property="og:image"], meta[name="twitter:image"]').forEach(el => el.remove());
     
     const ogImage = document.createElement('meta');
@@ -120,32 +123,40 @@ export default function LaughFactoryPage() {
         }
     }, [mode]);
 
-    const getCanvas = async (element: HTMLElement) => {
+    const getCanvas = async (element: HTMLElement | null): Promise<HTMLCanvasElement | null> => {
+        if (!element) return null;
         const canvas = await import('html2canvas').then(mod => mod.default);
         return canvas(element, { 
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#111827',
-            logging: false,
+            logging: true, // Enable logging for debugging
         });
     }
 
-    useEffect(() => {
-        if (joke) {
-            setMeta('https://placehold.co/1200x630.png', joke.joke);
+    const updateSocials = async () => {
+        if (joke?.joke) {
+            try {
+                const canvas = await getCanvas(memeCardRef.current);
+                if(canvas) {
+                    setMeta(canvas.toDataURL('image/png'), joke.joke);
+                }
+            } catch (error) {
+                console.error("Failed to update meta tags with canvas", error);
+                setMeta('https://placehold.co/1200x630.png', joke.joke);
+            }
         } else {
-            setMeta('https://placehold.co/1200x630.png', 'Your daily dose of AI-powered humor');
-        }
-    }, [joke]);
-
-    const updateSocials = () => {
-        if (memeCardRef.current && joke) {
-            const element = memeCardRef.current;
-            getCanvas(element).then(canvas => {
-                setMeta(canvas.toDataURL('image/png'), joke.joke);
-            });
+             setMeta('https://placehold.co/1200x630.png', 'Your daily dose of AI-powered humor');
         }
     }
+    
+    useEffect(() => {
+        // Only update socials if there's a meme ready to be shown
+        if (joke && (memeImage || uploadedImage)) {
+            updateSocials();
+        }
+    }, [joke, memeImage, uploadedImage]);
+
 
     const fetchLeaderboard = async () => {
         setIsLoadingLeaderboard(true);
@@ -311,11 +322,10 @@ export default function LaughFactoryPage() {
     };
     
     const handleDownloadMeme = async () => {
-       const element = memeCardRef.current;
-        if (!element) return;
-
         try {
-            const dataUrl = await getCanvas(element).then(c => c.toDataURL('image/png'));
+            const canvas = await getCanvas(memeCardRef.current);
+            if (!canvas) return;
+            const dataUrl = canvas.toDataURL('image/png');
             const link = document.createElement("a");
             link.download = "haha-launch-meme.png";
             link.href = dataUrl;
@@ -326,19 +336,22 @@ export default function LaughFactoryPage() {
     };
     
     const handleSubmit = async () => {
-        const element = memeCardRef.current;
         if (!user) {
             toast({ title: "Not Logged In", description: "You must be logged in to submit a meme.", variant: "destructive" });
             return;
         }
-        if (!joke || !element) {
+        if (!joke) {
             toast({ title: "Incomplete Meme", description: "Please generate a full meme before submitting.", variant: "destructive" });
             return;
         }
 
         setIsSubmitting(true);
         try {
-            const dataUrl = await getCanvas(element).then(c => c.toDataURL('image/png'));
+            const canvas = await getCanvas(memeCardRef.current);
+            if (!canvas) {
+                throw new Error("Could not capture meme element.");
+            }
+            const dataUrl = canvas.toDataURL('image/png');
             
             await submitMeme({
                 userId: user.uid,
@@ -522,13 +535,13 @@ export default function LaughFactoryPage() {
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
-     const navButtonClass = (isActive: boolean) =>
-        cn(
-            "flex-1 rounded-full text-sm sm:text-base font-semibold transition-colors duration-200",
-            isActive
-                ? "bg-primary text-primary-foreground"
-                : "bg-card text-foreground hover:bg-green-500/80"
-        );
+    const navButtonClass = (isActive: boolean) =>
+    cn(
+        "flex-1 rounded-full text-sm sm:text-base font-semibold transition-colors duration-200",
+        isActive
+            ? "bg-primary text-primary-foreground"
+            : "bg-card text-foreground hover:bg-green-500/80"
+    );
 
     const getRankClass = (index: number) => {
         switch (index) {
@@ -832,7 +845,7 @@ export default function LaughFactoryPage() {
                                 </div>
                             </CardHeader>
                             <CardContent className="relative">
-                                <img onLoad={updateSocials} src={uploadedImage || memeImage!.imageDataUri} alt="Generated Meme background" className="w-full h-auto rounded-lg border-2" />
+                                <img src={uploadedImage || memeImage!.imageDataUri} alt="Generated Meme background" className="w-full h-auto rounded-lg border-2" />
                                 <div className="absolute inset-0 flex flex-col justify-between p-2 sm:p-4">
                                   <MemeText text={top} />
                                   <MemeText text={bottom} />
@@ -912,5 +925,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
