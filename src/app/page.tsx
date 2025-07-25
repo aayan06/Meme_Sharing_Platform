@@ -155,7 +155,7 @@ export default function LaughFactoryPage() {
         }
 
         try {
-             // Wait for the image to be fully loaded
+            // Wait for the image to be fully loaded before taking the screenshot
             await new Promise((resolve, reject) => {
                 if (imageElement.complete && imageElement.naturalHeight !== 0) {
                     resolve(true);
@@ -277,6 +277,9 @@ export default function LaughFactoryPage() {
 
         setIsSubmitting(true);
         try {
+            // Add a delay to ensure the DOM is fully updated before taking a screenshot
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             const finalImageUri = await takeMemeScreenshot();
             if (!finalImageUri) {
                 throw new Error("Could not capture the final meme image.");
