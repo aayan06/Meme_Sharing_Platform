@@ -37,6 +37,13 @@ const deleteMemeFlow = ai.defineFlow(
   },
   async ({ memeId, userId }) => {
     try {
+        if (!userId) {
+            return {
+                success: false,
+                message: "User not authenticated.",
+            };
+        }
+
         const memeRef = doc(db, 'memes', memeId);
         const memeDoc = await getDoc(memeRef);
 
