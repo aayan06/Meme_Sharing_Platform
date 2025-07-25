@@ -62,7 +62,6 @@ const jokeCategories = [
 ];
 
 function setMeta(url: string, description: string) {
-    // This function can cause issues in unmount scenarios, so we check if document exists.
     if (typeof document === 'undefined') return;
 
     document.querySelectorAll('meta[property="og:image"], meta[name="twitter:image"]').forEach(el => el.remove());
@@ -152,7 +151,6 @@ export default function LaughFactoryPage() {
     
     useEffect(() => {
         if (joke && (memeImage || uploadedImage)) {
-             // A small delay to ensure the DOM is updated before capturing
             setTimeout(updateSocials, 100);
         }
     }, [joke, memeImage, uploadedImage]);
@@ -348,34 +346,36 @@ export default function LaughFactoryPage() {
         }
 
         setIsSubmitting(true);
-        try {
-            const canvas = await getCanvas(memeCardRef.current);
-            if (!canvas) {
-                throw new Error("Could not capture meme element.");
-            }
-            const dataUrl = canvas.toDataURL('image/png');
-            
-            await submitMeme({
-                userId: user.uid,
-                joke: joke.joke,
-                imageDataUri: dataUrl,
-            });
-            
-            toast({ title: "Meme Submitted!", description: "Thanks for making the world funnier! Your meme is now on the leaderboard." });
-            setJoke(null);
-            setMemeImage(null);
-            setUploadedImage(null);
-            setCustomMemeText('');
-            
-            // Switch to leaderboard view
-            setMode('leaderboard');
 
-        } catch (error: any) {
-            console.error("Submission failed:", error);
-            toast({ title: "Submission Error", description: error.message || "Could not submit your meme.", variant: "destructive" });
-        } finally {
-            setIsSubmitting(false);
-        }
+        setTimeout(async () => {
+            try {
+                const canvas = await getCanvas(memeCardRef.current);
+                if (!canvas) {
+                    throw new Error("Could not capture meme element.");
+                }
+                const dataUrl = canvas.toDataURL('image/png');
+                
+                await submitMeme({
+                    userId: user.uid,
+                    joke: joke.joke,
+                    imageDataUri: dataUrl,
+                });
+                
+                toast({ title: "Meme Submitted!", description: "Thanks for making the world funnier! Your meme is now on the leaderboard." });
+                setJoke(null);
+                setMemeImage(null);
+                setUploadedImage(null);
+                setCustomMemeText('');
+                
+                setMode('leaderboard');
+
+            } catch (error: any) {
+                console.error("Submission failed:", error);
+                toast({ title: "Submission Error", description: error.message || "Could not submit your meme.", variant: "destructive" });
+            } finally {
+                setIsSubmitting(false);
+            }
+        }, 100); 
     };
 
 
