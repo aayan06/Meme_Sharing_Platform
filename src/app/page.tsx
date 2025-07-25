@@ -507,7 +507,7 @@ export default function LaughFactoryPage() {
         setUploadedImage(null);
     };
     
-    const isMemeReady = (joke && memeImage?.imageDataUri);
+    const isMemeReady = (joke && (memeImage?.imageDataUri || uploadedImage));
     const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes'));
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
@@ -848,7 +848,7 @@ export default function LaughFactoryPage() {
                                 </CardTitle>
                                 <div className="flex items-center">
                                     <ShareMenu />
-                                    {(isMemeCategory || mode === 'create') && memeImage?.imageDataUri && (
+                                    {(isMemeCategory || mode === 'create') && (memeImage?.imageDataUri || uploadedImage) && (
                                         <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme" className="rounded-full">
                                             <Download className="h-5 w-5" />
                                         </Button>
@@ -873,9 +873,9 @@ export default function LaughFactoryPage() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                {memeImage?.imageDataUri ? (
+                                {memeImage?.imageDataUri || uploadedImage ? (
                                     <img 
-                                        src={memeImage.imageDataUri} 
+                                        src={memeImage?.imageDataUri || uploadedImage || ''} 
                                         alt={joke.joke} 
                                         className="w-full h-auto rounded-lg border-2" 
                                         crossOrigin="anonymous"
@@ -924,7 +924,7 @@ export default function LaughFactoryPage() {
                         </Button>
                         )}
                         {isMemeReady && (
-                         <Button onClick={() => handleSubmit(memeImage!.imageDataUri, joke!.joke)} disabled={isSubmitting || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
+                         <Button onClick={() => handleSubmit(memeImage!.imageDataUri || uploadedImage!, joke!.joke)} disabled={isSubmitting || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
                              {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
                              Submit for Glory
                          </Button>
