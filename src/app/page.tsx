@@ -75,7 +75,7 @@ export default function LaughFactoryPage() {
     const [audio, setAudio] = useState<GenerateAudioOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(isSubmitting);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
     const [customMemeText, setCustomMemeText] = useState("");
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -854,4 +854,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
