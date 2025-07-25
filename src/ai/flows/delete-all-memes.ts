@@ -27,6 +27,14 @@ const deleteAllMemesFlow = ai.defineFlow(
     outputSchema: DeleteAllMemesOutputSchema,
   },
   async () => {
+
+     if (!adminStorage) {
+        return {
+            success: false,
+            message: "Server is not configured for this action. Missing Firebase Admin credentials."
+        }
+    }
+
     try {
       const memesCollection = collection(db, 'memes');
       const querySnapshot = await getDocs(memesCollection);
@@ -39,6 +47,7 @@ const deleteAllMemesFlow = ai.defineFlow(
       }
 
       // Delete images from Storage using the Admin SDK
+      const deletionPromises = [];
       for (const doc of querySnapshot.docs) {
           const memeData = doc.data();
           if (memeData.imageUrl) {
@@ -46,13 +55,15 @@ const deleteAllMemesFlow = ai.defineFlow(
                   const url = new URL(memeData.imageUrl);
                   const filePath = decodeURIComponent(url.pathname.split('/').slice(5).join('/'));
                   const file = adminStorage.bucket().file(filePath);
-                  await file.delete();
+                  deletionPromises.push(file.delete());
               } catch (storageError: any) {
                   // Log error but continue
                    console.error(`Admin SDK failed to delete image ${memeData.imageUrl}: ${storageError.message}`);
               }
           }
       }
+      await Promise.allSettled(deletionPromises);
+
 
       // Batch delete documents from Firestore
       const batch = writeBatch(db);

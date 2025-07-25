@@ -36,6 +36,14 @@ const deleteMemeFlow = ai.defineFlow(
     outputSchema: DeleteMemeOutputSchema,
   },
   async ({ memeId, userId }) => {
+    
+    if (!adminStorage) {
+        return {
+            success: false,
+            message: "Server is not configured for this action. Missing Firebase Admin credentials."
+        }
+    }
+
     try {
         if (!userId) {
             return {
@@ -80,7 +88,10 @@ const deleteMemeFlow = ai.defineFlow(
                  // If the object doesn't exist, it's fine, we can continue.
                  // For other errors (like permission issues), we might want to stop.
                  if (storageError.code !== 404) { // 404 is the code for object-not-found
-                    throw new Error(`Storage deletion failed: ${storageError.message}`);
+                    return {
+                        success: false,
+                        message: `Storage deletion failed: ${storageError.message}`
+                    };
                  }
             }
         }
