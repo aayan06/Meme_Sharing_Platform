@@ -735,7 +735,7 @@ export default function LaughFactoryPage() {
                                                         <img
                                                             src={item.imageUrl}
                                                             alt="Meme"
-                                                            className="w-full h-auto"
+                                                            className="w-full h-auto aspect-square object-cover"
                                                             onError={(e: any) => { e.target.style.display='none'; }}
                                                         />
                                                     )}
