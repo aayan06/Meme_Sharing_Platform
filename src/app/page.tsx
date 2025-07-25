@@ -102,7 +102,7 @@ export default function LaughFactoryPage() {
 
         if (isMemeCategory && (memeImage?.imageDataUri || uploadedImage)) {
             // Delay screenshot for social media sharing until image is loaded
-            setTimeout(() => takeMemeScreenshot(setMeta), 300);
+            setTimeout(() => takeMemeScreenshot(setMeta), 500);
         } else {
              setMeta('https://placehold.co/1200x630.png', joke.joke);
         }
@@ -144,21 +144,40 @@ export default function LaughFactoryPage() {
         }
     }
 
-
     const takeMemeScreenshot = async (callback?: (dataUrl: string, description: string) => void): Promise<string | null> => {
         const element = memeCardRef.current;
         if (!element) return null;
 
+        const imageElement = element.querySelector('img');
+        if (!imageElement) {
+             console.error("Screenshot failed: Could not find image element inside the card.");
+             return uploadedImage || memeImage?.imageDataUri || null;
+        }
+
         try {
-            // Add a short delay to ensure the DOM is fully rendered
-            await new Promise(resolve => setTimeout(resolve, 300));
+             // Wait for the image to be fully loaded
+            await new Promise((resolve, reject) => {
+                if (imageElement.complete && imageElement.naturalHeight !== 0) {
+                    resolve(true);
+                    return;
+                }
+                const timeout = setTimeout(() => reject(new Error("Image load timed out after 5 seconds.")), 5000);
+                imageElement.onload = () => {
+                    clearTimeout(timeout);
+                    resolve(true);
+                };
+                imageElement.onerror = () => {
+                    clearTimeout(timeout);
+                    reject(new Error("Image failed to load."));
+                };
+            });
             
             const { default: html2canvas } = await import('html2canvas');
             const canvas = await html2canvas(element, { 
                 useCORS: true,
                 allowTaint: true,
-                backgroundColor: null,
-                logging: false, // Suppress verbose console logs
+                backgroundColor: '#111827', // Dark background for consistency
+                logging: false,
             });
             const dataUrl = canvas.toDataURL('image/png');
             if(callback) callback(dataUrl, joke?.joke || '');
@@ -755,3 +774,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
