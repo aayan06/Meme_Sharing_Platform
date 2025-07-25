@@ -49,7 +49,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db, storage } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, doc, addDoc, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, uploadString } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -331,16 +331,13 @@ export default function LaughFactoryPage() {
         }
     };
     
-    const handleSubmit = async () => {
+    const handleSubmit = async (imageDataUri: string, jokeText: string) => {
         if (!user) {
             toast({ title: "Not Logged In", description: "You must be logged in to submit a meme.", variant: "destructive" });
             return;
         }
 
-        const imageDataUri = memeImage?.imageDataUri;
-        const currentJoke = joke?.joke;
-
-        if (!currentJoke || !imageDataUri) {
+        if (!imageDataUri || !jokeText) {
             toast({ title: "Incomplete Meme", description: "Please generate a full meme before submitting.", variant: "destructive" });
             return;
         }
@@ -365,7 +362,7 @@ export default function LaughFactoryPage() {
             await addDoc(collection(db, 'memes'), {
                 userId: user.uid,
                 creatorHandle: user.displayName || user.email?.split('@')[0] || 'Anonymous',
-                joke: currentJoke,
+                joke: jokeText,
                 imageUrl: imageUrl, 
                 createdAt: serverTimestamp(),
                 voteCount: 0,
@@ -927,7 +924,7 @@ export default function LaughFactoryPage() {
                         </Button>
                         )}
                         {isMemeReady && (
-                         <Button onClick={handleSubmit} disabled={isSubmitting || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
+                         <Button onClick={() => handleSubmit(memeImage!.imageDataUri, joke!.joke)} disabled={isSubmitting || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
                              {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
                              Submit for Glory
                          </Button>
@@ -938,3 +935,4 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
