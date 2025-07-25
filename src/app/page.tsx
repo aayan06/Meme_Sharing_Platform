@@ -130,7 +130,7 @@ export default function LaughFactoryPage() {
         return canvas(element, { 
             useCORS: true,
             allowTaint: true,
-            backgroundColor: '#111827',
+            backgroundColor: '#000000',
         });
     }
 
@@ -877,7 +877,7 @@ export default function LaughFactoryPage() {
                                 </div>
                             </CardHeader>
                             <CardContent className="relative">
-                                <img src={uploadedImage || memeImage!.imageDataUri} alt="Generated Meme background" className="w-full h-auto rounded-lg border-2" />
+                                <img src={uploadedImage || memeImage!.imageDataUri} alt="Generated Meme background" className="w-full h-auto rounded-lg border-2" crossOrigin="anonymous"/>
                                 <div className="absolute inset-0 flex flex-col justify-between p-2 sm:p-4">
                                   <MemeText text={top} />
                                   <MemeText text={bottom} />
@@ -958,3 +958,5 @@ export default function LaughFactoryPage() {
     );
 }
 
+
+    
