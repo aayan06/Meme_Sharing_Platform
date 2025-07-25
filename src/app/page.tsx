@@ -120,30 +120,32 @@ export default function LaughFactoryPage() {
         }
     }, [mode]);
 
-    useEffect(() => {
-        if (!joke) {
-            setMeta('https://placehold.co/1200x630.png', 'Your daily dose of AI-powered humor');
-            return;
-        }
+    const getCanvas = async (element: HTMLElement) => {
+        const canvas = await import('html2canvas').then(mod => mod.default);
+        return canvas(element, { 
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#111827',
+            logging: false,
+        });
+    }
 
-        const isMemeCategory = category === 'crypto memes' || category === 'edgy memes' || (mode === 'create' && (uploadedImage || memeImage) && joke);
-        
-        if (isMemeCategory && (memeImage?.imageDataUri || uploadedImage)) {
-            // Delay screenshot for social media sharing until image is loaded
-            if (memeCardRef.current && joke) {
-                const element = memeCardRef.current;
-                 import('html2canvas').then(mod => mod.default(element, { 
-                    useCORS: true,
-                    allowTaint: true,
-                    backgroundColor: '#111827',
-                })).then(canvas => {
-                    setMeta(canvas.toDataURL('image/png'), joke.joke);
-                });
-            }
+    useEffect(() => {
+        if (joke) {
+            setMeta('https://placehold.co/1200x630.png', joke.joke);
         } else {
-             setMeta('https://placehold.co/1200x630.png', joke.joke);
+            setMeta('https://placehold.co/1200x630.png', 'Your daily dose of AI-powered humor');
         }
-    }, [joke, memeImage, category, uploadedImage, mode]);
+    }, [joke]);
+
+    const updateSocials = () => {
+        if (memeCardRef.current && joke) {
+            const element = memeCardRef.current;
+            getCanvas(element).then(canvas => {
+                setMeta(canvas.toDataURL('image/png'), joke.joke);
+            });
+        }
+    }
 
     const fetchLeaderboard = async () => {
         setIsLoadingLeaderboard(true);
@@ -310,17 +312,10 @@ export default function LaughFactoryPage() {
     
     const handleDownloadMeme = async () => {
        const element = memeCardRef.current;
-        if (!element) return null;
+        if (!element) return;
 
         try {
-            const canvas = await import('html2canvas').then(mod => mod.default);
-            const canvasEl = await canvas(element, { 
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: '#111827', // Dark background for consistency
-                logging: false,
-            });
-            const dataUrl = canvasEl.toDataURL('image/png');
+            const dataUrl = await getCanvas(element).then(c => c.toDataURL('image/png'));
             const link = document.createElement("a");
             link.download = "haha-launch-meme.png";
             link.href = dataUrl;
@@ -343,13 +338,7 @@ export default function LaughFactoryPage() {
 
         setIsSubmitting(true);
         try {
-            const canvas = await import('html2canvas').then(mod => mod.default);
-            const dataUrl = await canvas(element, {
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: '#111827',
-                logging: false,
-            }).then(c => c.toDataURL('image/png'));
+            const dataUrl = await getCanvas(element).then(c => c.toDataURL('image/png'));
             
             await submitMeme({
                 userId: user.uid,
@@ -731,7 +720,7 @@ export default function LaughFactoryPage() {
                                                         <img
                                                             src={item.imageUrl}
                                                             alt="Meme"
-                                                            className="w-full h-auto rounded-md"
+                                                            className="w-full h-auto"
                                                             onError={(e: any) => { e.target.style.display='none'; }}
                                                         />
                                                     )}
@@ -843,7 +832,7 @@ export default function LaughFactoryPage() {
                                 </div>
                             </CardHeader>
                             <CardContent className="relative">
-                                <img src={uploadedImage || memeImage!.imageDataUri} alt="Generated Meme background" className="w-full h-auto rounded-lg border-2" />
+                                <img onLoad={updateSocials} src={uploadedImage || memeImage!.imageDataUri} alt="Generated Meme background" className="w-full h-auto rounded-lg border-2" />
                                 <div className="absolute inset-0 flex flex-col justify-between p-2 sm:p-4">
                                   <MemeText text={top} />
                                   <MemeText text={bottom} />
@@ -923,3 +912,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
