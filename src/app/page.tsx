@@ -121,12 +121,13 @@ export default function LaughFactoryPage() {
     }, [mode]);
 
     useEffect(() => {
-        const isMemeCategory = category === 'crypto memes' || category === 'edgy memes' || (mode === 'create' && (uploadedImage || memeImage) && joke);
         if (!joke) {
             setMeta('https://placehold.co/1200x630.png', 'Your daily dose of AI-powered humor');
             return;
         }
 
+        const isMemeCategory = category === 'crypto memes' || category === 'edgy memes' || (mode === 'create' && (uploadedImage || memeImage) && joke);
+        
         if (isMemeCategory && (memeImage?.imageDataUri || uploadedImage)) {
             // Delay screenshot for social media sharing until image is loaded
             if (memeCardRef.current) {
@@ -140,7 +141,7 @@ export default function LaughFactoryPage() {
         } else {
              setMeta('https://placehold.co/1200x630.png', joke.joke);
         }
-    }, [joke, memeImage, category, uploadedImage, customMemeText, mode]);
+    }, [joke, memeImage, category, uploadedImage, mode]);
 
     const fetchLeaderboard = async () => {
         setIsLoadingLeaderboard(true);
@@ -789,9 +790,9 @@ export default function LaughFactoryPage() {
                                             </CardFooter>
                                         </Card>
                                         <DialogContent className="max-w-3xl p-0 border-0 bg-transparent shadow-none">
-                                           <DialogHeader className="sr-only">
-                                                <DialogTitle>{item.joke}</DialogTitle>
-                                                <DialogDescription>
+                                           <DialogHeader>
+                                                <DialogTitle className="sr-only">{item.joke}</DialogTitle>
+                                                <DialogDescription className="sr-only">
                                                     Meme by {item.creatorHandle}. Votes: {item.voteCount}.
                                                 </DialogDescription>
                                             </DialogHeader>
