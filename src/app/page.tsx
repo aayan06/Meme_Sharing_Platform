@@ -11,7 +11,7 @@ import { submitMeme } from "@/ai/flows/submit-meme";
 import { voteOnMeme } from "@/ai/flows/vote-on-meme";
 import { tipMemeCreator } from "@/ai/flows/tip-meme-creator";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -24,14 +24,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
@@ -507,42 +499,43 @@ export default function LaughFactoryPage() {
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
-
     return (
-        <div className="flex flex-col items-center min-h-screen p-4 sm:p-6 dark">
-            <main className="w-full max-w-3xl mx-auto flex flex-col items-center space-y-8">
-                 <header className="text-center w-full space-y-2 mt-8 sm:mt-0 relative">
-                    <div className="absolute top-0 right-0">
+        <div className="flex flex-col items-center min-h-screen p-4 sm:p-6 dark bg-background">
+            <main className="w-full max-w-7xl mx-auto flex flex-col items-center space-y-8">
+                 <header className="flex justify-between items-center w-full pt-4 sm:pt-2">
+                    <div className="flex items-center gap-2">
+                         <Laugh className="h-8 w-8 text-primary" />
+                         <h1 className="text-2xl font-bold font-headline text-primary tracking-tighter">HAHA LAUNCH</h1>
+                    </div>
+                    <div className="flex items-center gap-4">
                         {user ? (
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2 bg-card/80 backdrop-blur-lg rounded-full p-2 border">
+                            <>
+                                <div className="flex items-center gap-2 bg-card/80 backdrop-blur-lg rounded-full py-2 px-3 border">
                                    <Coins className="h-5 w-5 text-yellow-500"/>
                                    <span className="font-bold text-lg text-primary">{userData?.hahaBalance ?? 0}</span>
                                 </div>
-                                <span className="text-sm font-medium text-muted-foreground">{user.email?.split('@')[0]}</span>
-                                <Button variant="ghost" size="icon" onClick={() => auth.signOut()}>
+                                <span className="text-sm font-medium text-muted-foreground hidden sm:inline">{user.email?.split('@')[0]}</span>
+                                <Button variant="ghost" size="icon" onClick={() => auth.signOut()} className="rounded-full">
                                     <LogOut className="h-5 w-5" />
                                 </Button>
-                            </div>
+                            </>
                         ) : (
                              <Button asChild>
-                                <Link href="/auth">Login</Link>
+                                <Link href="/auth">Login / Sign Up</Link>
                             </Button>
                         )}
                     </div>
-                    <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold font-headline text-primary tracking-tighter">HAHA LAUNCH</h1>
-                    <p className="text-base sm:text-lg text-muted-foreground">Your daily dose of AI-powered humor</p>
                 </header>
                 
-                 <div className="w-full flex justify-center p-1 bg-card/80 backdrop-blur-lg rounded-full shadow-lg border">
+                 <div className="w-full max-w-lg flex justify-center p-1 bg-card/80 backdrop-blur-lg rounded-full shadow-lg border">
                     <Button
                         onClick={() => handleModeChange('generate')}
                         variant={mode === 'generate' ? 'default' : 'ghost'}
                         className="flex-1 rounded-full text-sm sm:text-base font-semibold"
                         size="lg"
                     >
-                        <Laugh className="mr-2 h-5 w-5"/>
-                        Generate Joke
+                        <Sparkles className="mr-2 h-5 w-5"/>
+                        Generate
                     </Button>
                     <Button
                         onClick={() => handleModeChange('create')}
@@ -551,7 +544,7 @@ export default function LaughFactoryPage() {
                         size="lg"
                     >
                         <PenSquare className="mr-2 h-5 w-5"/>
-                        Create Your Own
+                        Create
                     </Button>
                      <Button
                         onClick={() => handleModeChange('leaderboard')}
@@ -565,11 +558,11 @@ export default function LaughFactoryPage() {
                 </div>
 
                 {mode === 'generate' && (
-                  <>
+                  <div className="w-full max-w-3xl space-y-8">
                     <JokeCard className="border-primary/50 w-full animate-in fade-in-0 zoom-in-95 duration-300">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold text-amber-400">
-                                <Crown className="h-7 w-7" /> Daily Joke Winner
+                                <Crown className="h-7 w-7" /> Joke of the Day
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -603,23 +596,23 @@ export default function LaughFactoryPage() {
                           </div>
                         </div>
                     </section>
-                  </>
+                  </div>
                 )}
 
                 {mode === 'create' && (
-                     <Card className="w-full bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl animate-in fade-in-0 zoom-in-95 duration-300">
+                     <Card className="w-full max-w-3xl bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl animate-in fade-in-0 zoom-in-95 duration-300">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold">
-                               <Palette className="h-7 w-7" /> 2. Create Your Own
+                               <Palette className="h-7 w-7" /> 2. Create Your Masterpiece
                             </CardTitle>
-                            <CardDescription>Upload an image and describe your meme idea, or just generate one!</CardDescription>
+                            <CardDescription>Upload an image and describe your meme, or just generate one from an idea!</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                              <div>
-                                <Label htmlFor="custom-text" className="font-semibold">Meme Idea</Label>
+                                <Label htmlFor="custom-text" className="font-semibold">Meme Idea or Text</Label>
                                 <Textarea
                                     id="custom-text"
-                                    placeholder="What do you want your meme to be about?"
+                                    placeholder="e.g., Clumsy cats, politicians trying to be cool, or the exact text for your meme..."
                                     value={customMemeText}
                                     onChange={(e) => setCustomMemeText(e.target.value)}
                                     className="mt-2"
@@ -657,74 +650,66 @@ export default function LaughFactoryPage() {
                 )}
                 
                 {mode === 'leaderboard' && (
-                     <Card className="w-full bg-card/80 backdrop-blur-sm shadow-lg border-2 rounded-2xl">
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-bold flex items-center"><Trophy className="mr-2 text-yellow-500" /> Weekly Leaderboard</CardTitle>
-                            <CardDescription>The best jokes as voted by the community. Tip creators you like!</CardDescription>
+                     <div className="w-full">
+                        <CardHeader className="text-center">
+                            <CardTitle className="text-3xl sm:text-4xl font-bold flex items-center justify-center gap-3"><Trophy className="w-8 h-8 text-yellow-500" /> Weekly Leaderboard</CardTitle>
+                            <CardDescription className="text-base sm:text-lg">The best memes as voted by the community. Tip creators you like!</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[50px]">Rank</TableHead>
-                                        <TableHead>Meme</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {isLoadingLeaderboard ? (
-                                        Array.from({ length: 5 }).map((_, i) => (
-                                            <TableRow key={i}>
-                                                <TableCell><Skeleton className="h-5 w-5 rounded-full" /></TableCell>
-                                                <TableCell><Skeleton className="h-5 w-3/4" /></TableCell>
-                                                <TableCell className="text-right"><Skeleton className="h-5 w-10 ml-auto" /></TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        leaderboard.map((item, index) => (
-                                            <TableRow key={item.id}>
-                                                <TableCell className="font-bold text-lg text-center">{index + 1}</TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-4">
-                                                        <img src={item.imageUrl} alt="Meme" className="w-24 h-24 object-cover rounded-md border" />
-                                                        <p className="font-medium">{item.joke}</p>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex flex-col items-end gap-2">
-                                                        <div className="flex items-center gap-1 font-bold text-primary text-lg">
-                                                            {item.voteCount}
-                                                            <Button 
-                                                                size="sm" 
-                                                                onClick={() => handleVote(item.id)}
-                                                                disabled={!user || votingStatus[item.id] || (item.voters && item.voters.includes(user.uid))}
-                                                                className="w-20"
-                                                            >
-                                                                {votingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin"/> : '😂 Vote'}
-                                                            </Button>
-                                                        </div>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => handleTip(item)}
-                                                            disabled={!user || tippingStatus[item.id] || item.userId === user?.uid}
-                                                            className="w-20"
-                                                        >
-                                                          {tippingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : '💰 Tip'}
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                            {isLoadingLeaderboard ? (
+                                Array.from({ length: 8 }).map((_, i) => (
+                                    <Card key={i}>
+                                        <CardContent className="p-4 space-y-4">
+                                            <Skeleton className="aspect-square w-full rounded-lg" />
+                                            <Skeleton className="h-4 w-3/4" />
+                                            <div className="flex justify-between">
+                                                <Skeleton className="h-8 w-20" />
+                                                <Skeleton className="h-8 w-20" />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))
+                            ) : (
+                                leaderboard.map((item) => (
+                                    <Card key={item.id} className="overflow-hidden group transition-all duration-300 hover:shadow-primary/40 hover:shadow-lg hover:-translate-y-1">
+                                        <CardContent className="p-0">
+                                            <img src={item.imageUrl} alt="Meme" className="aspect-square w-full object-cover" />
+                                        </CardContent>
+                                        <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-3">
+                                            <p className="font-medium text-sm leading-snug h-10 overflow-hidden">{item.joke}</p>
+                                            <div className="w-full flex justify-between items-center">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => handleTip(item)}
+                                                    disabled={!user || tippingStatus[item.id] || item.userId === user?.uid}
+                                                    className="rounded-full"
+                                                >
+                                                  {tippingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : '💰 Tip'}
+                                                </Button>
+                                                <div className="flex items-center gap-1 font-bold text-primary text-lg">
+                                                    
+                                                    <Button 
+                                                        size="sm" 
+                                                        onClick={() => handleVote(item.id)}
+                                                        disabled={!user || votingStatus[item.id] || (item.voters && item.voters.includes(user.uid))}
+                                                        className="rounded-full"
+                                                    >
+                                                        {votingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin"/> : '😂'}
+                                                    </Button>
+                                                    <span>{item.voteCount}</span>
+                                                </div>
+                                            </div>
+                                        </CardFooter>
+                                    </Card>
+                                ))
+                            )}
+                        </div>
+                    </div>
                 )}
 
 
-                <div className="w-full flex items-center justify-center">
+                <div className="w-full max-w-3xl flex items-center justify-center">
                     {isLoading && (
                          <JokeCard>
                             <CardHeader>
@@ -810,7 +795,7 @@ export default function LaughFactoryPage() {
                 </div>
 
                  <div className="w-full flex justify-center p-2 sm:p-4">
-                     <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-3xl">
+                     <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-xl">
                         {mode !== 'leaderboard' && (
                         <Button onClick={handleGenerateJoke} disabled={isLoading || (mode === 'create' && !customMemeText)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                             {isLoading ? (
@@ -818,10 +803,10 @@ export default function LaughFactoryPage() {
                             ) : (
                                 <Sparkles className="mr-2 h-5 w-5" />
                             )}
-                            Generate
+                            {mode === 'create' ? 'Create Meme' : 'Generate Joke'}
                         </Button>
                         )}
-                        {mode === 'create' && isMemeReady && (
+                        {isMemeReady && (
                          <Button onClick={handleSubmit} disabled={isSubmitting || !isMemeReady || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
                              {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
                              Submit for Glory
