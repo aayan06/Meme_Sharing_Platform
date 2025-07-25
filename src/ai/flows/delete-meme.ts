@@ -60,17 +60,19 @@ const deleteMemeFlow = ai.defineFlow(
             };
         }
 
-        // Delete the image from Firebase Storage if the URL is valid
+        // Only attempt to delete from storage if authorized and an image URL exists
         if (memeData.imageUrl) {
             try {
+                 // Create a reference from the full HTTPS URL
                  const imageRef = ref(storage, memeData.imageUrl);
                  await deleteObject(imageRef);
             } catch (storageError: any) {
                 // Log storage error but don't block firestore deletion
                 console.error(`Failed to delete image from storage: ${storageError.message}`);
                  if (storageError.code !== 'storage/object-not-found') {
-                    // If it's not a "not found" error, maybe we should stop.
-                    // For now, we'll continue to delete the Firestore entry.
+                    // If it's a permission error or something else, we might want to throw
+                    // to indicate a bigger problem (like misconfigured rules).
+                    throw new Error(`Storage deletion failed: ${storageError.message}`);
                  }
             }
         }
