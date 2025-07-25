@@ -30,6 +30,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogDescription
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -74,7 +75,7 @@ export default function LaughFactoryPage() {
     const [audio, setAudio] = useState<GenerateAudioOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(isSubmitting);
     const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
     const [customMemeText, setCustomMemeText] = useState("");
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -728,6 +729,12 @@ export default function LaughFactoryPage() {
                                             </CardFooter>
                                         </Card>
                                         <DialogContent className="max-w-3xl p-0 border-0">
+                                            <DialogHeader className="sr-only">
+                                                <DialogTitle>{item.joke}</DialogTitle>
+                                                <DialogDescription>
+                                                    Meme by {item.creatorHandle}. Votes: {item.voteCount}.
+                                                </DialogDescription>
+                                            </DialogHeader>
                                             <img src={item.imageUrl} alt="Meme" className="w-full h-auto rounded-lg" />
                                         </DialogContent>
                                     </Dialog>
@@ -847,3 +854,4 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
