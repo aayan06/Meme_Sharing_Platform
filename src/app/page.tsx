@@ -131,7 +131,6 @@ export default function LaughFactoryPage() {
         return canvas(element, { 
             useCORS: true,
             allowTaint: true,
-            backgroundColor: '#000000',
         });
     }
 
@@ -769,6 +768,7 @@ export default function LaughFactoryPage() {
                                                             src={item.imageUrl}
                                                             alt="Meme"
                                                             className="w-full h-auto aspect-square object-cover"
+                                                            crossOrigin="anonymous"
                                                         />
                                                     )}
                                                 </div>
@@ -836,7 +836,7 @@ export default function LaughFactoryPage() {
                                                     Meme by {item.creatorHandle}. Votes: {item.voteCount}.
                                                 </DialogDescription>
                                             </DialogHeader>
-                                            <img src={item.imageUrl} alt="Meme" className="w-full h-auto rounded-lg" />
+                                            <img src={item.imageUrl} alt="Meme" className="w-full h-auto rounded-lg" crossOrigin="anonymous" />
                                             <DialogClose className="absolute -top-2 -right-2 bg-slate-800/80 text-white rounded-full">
                                                 <X className="h-5 w-5"/>
                                             </DialogClose>
@@ -963,5 +963,7 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
 
     
