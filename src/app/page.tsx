@@ -159,7 +159,7 @@ export default function LaughFactoryPage() {
 
     const fetchLeaderboard = () => {
         setIsLoadingLeaderboard(true);
-        const q = query(collection(db, "memes"), orderBy("voteCount", "desc"), limit(20));
+        const q = query(collection(db, "memes"), orderBy("createdAt", "desc"), limit(20));
         
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const leaderboardData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -342,13 +342,14 @@ export default function LaughFactoryPage() {
             toast({ title: "Not Logged In", description: "You must be logged in to submit a meme.", variant: "destructive" });
             return;
         }
-        if (!joke || !uploadedImage) {
-            toast({ title: "Incomplete Meme", description: "Please generate a meme with your own image to submit.", variant: "destructive" });
+        if (!joke || !(uploadedImage || memeImage)) {
+            toast({ title: "Incomplete Meme", description: "Please generate a full meme before submitting.", variant: "destructive" });
             return;
         }
 
         setIsSubmitting(true);
 
+        // A small delay to ensure the DOM is fully updated before capturing the canvas
         setTimeout(async () => {
             try {
                 const canvas = await getCanvas(memeCardRef.current);
@@ -399,8 +400,12 @@ export default function LaughFactoryPage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setUploadedImage(reader.result as string);
-                setJoke(null); // Clear previous joke
+                // Clear AI-generated image if a user uploads their own
                 setMemeImage(null);
+                // If there's no custom text, we can clear the joke to allow a fresh start
+                if (!customMemeText) {
+                    setJoke(null);
+                }
             };
             reader.readAsDataURL(file);
         } else {
@@ -535,7 +540,7 @@ export default function LaughFactoryPage() {
     
     const isMemeReady = joke && (memeImage?.imageDataUri || uploadedImage);
 
-    const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes')) || (mode === 'create' && isMemeReady);
+    const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes')) || (mode === 'create' && !!(uploadedImage || memeImage));
     const { top, bottom } = splitJoke(joke?.joke || '');
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
@@ -860,7 +865,7 @@ export default function LaughFactoryPage() {
                         </JokeCard>
                     )}
                     
-                    {!isLoading && joke && isMemeCategory && (memeImage?.imageDataUri || uploadedImage) && (
+                    {!isLoading && joke && (isMemeCategory || uploadedImage) && (
                         <JokeCard innerRef={memeCardRef}>
                              <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-xl sm:text-2xl font-bold font-headline">Meme Generated!</CardTitle>
@@ -881,7 +886,7 @@ export default function LaughFactoryPage() {
                         </JokeCard>
                     )}
 
-                    {!isLoading && joke && (!isMemeCategory || !(memeImage?.imageDataUri || uploadedImage)) && (
+                    {!isLoading && joke && !(isMemeCategory || uploadedImage) && (
                          <JokeCard>
                             <CardHeader className="flex flex-row items-start justify-between pb-2">
                                 <CardTitle className="text-xl sm:text-2xl font-bold font-headline">Here's a good one!</CardTitle>
@@ -931,7 +936,7 @@ export default function LaughFactoryPage() {
                  <div className="w-full flex justify-center p-2 sm:p-4">
                      <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-xl">
                         {mode !== 'leaderboard' && (
-                        <Button onClick={handleGenerateJoke} disabled={isLoading || (mode === 'create' && !customMemeText)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
+                        <Button onClick={handleGenerateJoke} disabled={isLoading || (mode === 'create' && !customMemeText && !uploadedImage)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                             {isLoading ? (
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             ) : (
@@ -941,7 +946,7 @@ export default function LaughFactoryPage() {
                         </Button>
                         )}
                         {isMemeReady && (
-                         <Button onClick={handleSubmit} disabled={isSubmitting || !uploadedImage || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
+                         <Button onClick={handleSubmit} disabled={isSubmitting || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
                              {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
                              Submit for Glory
                          </Button>
