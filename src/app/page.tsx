@@ -556,7 +556,13 @@ export default function LaughFactoryPage() {
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
-    const navButtonClass = "flex-1 rounded-full text-sm sm:text-base font-semibold text-white bg-card hover:bg-primary/80 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground";
+    const navButtonClass = (isActive: boolean) =>
+    cn(
+      "flex-1 rounded-full text-sm sm:text-base font-semibold transition-colors duration-200",
+      isActive
+        ? "bg-primary text-primary-foreground" // Blue when active
+        : "bg-card text-foreground hover:bg-accent" // Black/default, green on hover
+    );
 
     const getRankClass = (index: number) => {
         switch (index) {
@@ -597,10 +603,9 @@ export default function LaughFactoryPage() {
                 </header>
                 
                  <div className="w-full max-w-lg flex justify-center p-1 bg-card backdrop-blur-lg rounded-full shadow-lg border">
-                    <Button
+                 <Button
                         onClick={() => handleModeChange('generate')}
-                        className={cn(navButtonClass)}
-                        variant={mode === 'generate' ? 'primary' : 'ghost'}
+                        className={navButtonClass(mode === 'generate')}
                         size="lg"
                     >
                         <Sparkles className="mr-2 h-5 w-5"/>
@@ -608,8 +613,7 @@ export default function LaughFactoryPage() {
                     </Button>
                     <Button
                         onClick={() => handleModeChange('create')}
-                        className={cn(navButtonClass)}
-                        variant={mode === 'create' ? 'primary' : 'ghost'}
+                        className={navButtonClass(mode === 'create')}
                         size="lg"
                     >
                         <PenSquare className="mr-2 h-5 w-5"/>
@@ -617,8 +621,7 @@ export default function LaughFactoryPage() {
                     </Button>
                      <Button
                         onClick={() => handleModeChange('leaderboard')}
-                        className={cn(navButtonClass)}
-                        variant={mode === 'leaderboard' ? 'primary' : 'ghost'}
+                        className={navButtonClass(mode === 'leaderboard')}
                         size="lg"
                     >
                         <Trophy className="mr-2 h-5 w-5"/>
@@ -748,7 +751,7 @@ export default function LaughFactoryPage() {
                                                     <img src={item.imageUrl} alt="Meme" className="aspect-square w-full object-cover" />
                                                 </div>
                                             </DialogTrigger>
-                                            <CardContent className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-2">
+                                            <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-2">
                                                 <p className="font-medium text-sm leading-snug h-10 overflow-hidden">{item.joke}</p>
                                                 <p className="font-semibold text-xs text-primary">by {item.creatorHandle}</p>
                                                 <div className="w-full flex justify-between items-center pt-2">
@@ -803,7 +806,7 @@ export default function LaughFactoryPage() {
                                                         <span>{item.voteCount}</span>
                                                     </div>
                                                 </div>
-                                            </CardContent>
+                                            </CardFooter>
                                         </Card>
                                         <DialogContent className="max-w-3xl p-0 border-0 bg-transparent shadow-none">
                                             <DialogHeader className="sr-only">
