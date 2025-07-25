@@ -8,7 +8,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { doc, getDoc, deleteDoc } from "firebase/firestore";
-import { ref, deleteObject } from "firebase/storage";
+import { ref as refFromURL, deleteObject } from "firebase/storage";
 import { db, storage } from '@/lib/firebase';
 
 const DeleteMemeInputSchema = z.object({
@@ -68,8 +68,8 @@ const deleteMemeFlow = ai.defineFlow(
         // 1. Delete the image from Firebase Storage if a URL exists
         if (memeData.imageUrl) {
             try {
-                 // Create a reference from the full HTTPS URL
-                 const imageRef = ref(storage, memeData.imageUrl);
+                 // CRITICAL FIX: Use refFromURL to get a reference from the full HTTPS URL.
+                 const imageRef = refFromURL(storage, memeData.imageUrl);
                  await deleteObject(imageRef);
             } catch (storageError: any) {
                 // Log storage error but don't block firestore deletion
