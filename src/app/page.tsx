@@ -125,15 +125,6 @@ export default function LaughFactoryPage() {
         }
     }, [mode]);
 
-    const getCanvas = async (element: HTMLElement | null): Promise<HTMLCanvasElement | null> => {
-        if (!element) return null;
-        const canvas = await import('html2canvas').then(mod => mod.default);
-        return canvas(element, { 
-            useCORS: true,
-            allowTaint: true,
-        });
-    }
-
     const updateSocials = async () => {
         const imageUrl = memeImage?.imageDataUri || uploadedImage;
         if (joke?.joke && imageUrl) {
@@ -446,37 +437,6 @@ export default function LaughFactoryPage() {
         }
     };
 
-    const splitJoke = (text: string): { top: string; bottom: string } => {
-        if (!text) return { top: '', bottom: '' };
-    
-        const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
-
-        if (sentences.length >= 2) {
-            const middleIndex = Math.ceil(sentences.length / 2);
-            const top = sentences.slice(0, middleIndex).join(' ').trim();
-            const bottom = sentences.slice(middleIndex).join(' ').trim();
-            return { top, bottom };
-        }
-        
-        const words = text.split(' ');
-        if (words.length === 1) return { top: text, bottom: '' };
-        const middleIndex = Math.ceil(words.length / 2);
-        const top = words.slice(0, middleIndex).join(' ');
-        const bottom = words.slice(middleIndex).join(' ');
-        return { top, bottom };
-    };
-
-    const MemeText = ({ text }: { text: string }) => (
-        <p
-          className="w-full text-center text-xl sm:text-2xl md:text-4xl font-bold uppercase text-white break-words px-2"
-          style={{
-            textShadow: '3px 3px 0 #000, -3px 3px 0 #000, 3px -3px 0 #000, -3px -3px 0 #000, 3px 0px 0 #000, -3px 0px 0 #000, 0px 3px 0 #000, 0px -3px 0 #000, 2px 2px 5px rgba(0,0,0,0.5)'
-          }}
-        >
-          {text}
-        </p>
-    );
-
     const ShareMenu = () => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -524,7 +484,6 @@ export default function LaughFactoryPage() {
     const isMemeReady = joke && memeImage?.imageDataUri;
 
     const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes'));
-    const { top, bottom } = splitJoke(joke?.joke || '');
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
@@ -751,6 +710,7 @@ export default function LaughFactoryPage() {
                                                             src={item.imageUrl}
                                                             alt="Meme"
                                                             className="w-full h-auto aspect-square object-cover"
+                                                            crossOrigin="anonymous"
                                                         />
                                                     )}
                                                 </div>
@@ -886,6 +846,7 @@ export default function LaughFactoryPage() {
                                         src={memeImage.imageDataUri} 
                                         alt="Generated Meme" 
                                         className="w-full h-auto rounded-lg border-2" 
+                                        crossOrigin="anonymous"
                                     />
                                 ) : (
                                     <>
