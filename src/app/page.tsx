@@ -49,7 +49,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, orderBy, limit, onSnapshot, doc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, getDocs } from "firebase/firestore";
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -121,7 +121,9 @@ export default function LaughFactoryPage() {
     useEffect(() => {
         if (mode === 'leaderboard') {
             const unsubscribe = fetchLeaderboard();
-            return () => unsubscribe();
+            return () => {
+                if (unsubscribe) unsubscribe();
+            };
         }
     }, [mode]);
 
@@ -143,7 +145,7 @@ export default function LaughFactoryPage() {
 
     const fetchLeaderboard = () => {
         setIsLoadingLeaderboard(true);
-        const q = query(collection(db, "memes"), orderBy("createdAt", "desc"), limit(20));
+        const q = query(collection(db, "memes"), orderBy("createdAt", "desc"));
         
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const leaderboardData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -246,6 +248,7 @@ export default function LaughFactoryPage() {
         setMemeImage(null);
         setAudio(null);
         setSelectedReaction(null);
+        
         try {
             if (mode === 'create') {
                 if (!customMemeText && !uploadedImage) {
@@ -263,7 +266,7 @@ export default function LaughFactoryPage() {
                 });
                 setJoke({ joke: result.joke });
                 setMemeImage({ imageDataUri: result.imageDataUri });
-                // Don't clear uploaded image here, let it be part of the final meme
+                // We keep the uploaded image state in case they want to regenerate with different text
             } else {
                 const selectedCategory = jokeCategories.find(cat => cat.id === category);
                 if (!selectedCategory) {
@@ -314,7 +317,9 @@ export default function LaughFactoryPage() {
             const link = document.createElement("a");
             link.download = "haha-launch-meme.png";
             link.href = imageUrl;
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
         } catch (error) {
             console.error("Failed to download meme:", error);
             toast({
@@ -348,6 +353,7 @@ export default function LaughFactoryPage() {
             });
             
             toast({ title: "Meme Submitted!", description: "Thanks for making the world funnier! Your meme is now on the leaderboard." });
+            // Reset state after successful submission
             setJoke(null);
             setMemeImage(null);
             setUploadedImage(null);
@@ -381,10 +387,8 @@ export default function LaughFactoryPage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setUploadedImage(reader.result as string);
-                setMemeImage(null);
-                if (!customMemeText) {
-                    setJoke(null);
-                }
+                setMemeImage(null); // Clear any generated image
+                setJoke(null); // Clear joke as well, since it's a new meme context
             };
             reader.readAsDataURL(file);
         } else {
@@ -486,10 +490,8 @@ export default function LaughFactoryPage() {
         setUploadedImage(null);
     };
     
-    const isMemeReady = joke && memeImage?.imageDataUri;
-
+    const isMemeReady = (joke && memeImage?.imageDataUri);
     const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes'));
-
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
     const navButtonClass = (isActive: boolean) =>
@@ -629,7 +631,7 @@ export default function LaughFactoryPage() {
                                     rows={3}
                                 />
                             </div>
-                            <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center justify-center gap-4">
                                 <Button onClick={() => fileInputRef.current?.click()} className="flex-1">
                                     <FileUp className="mr-2 h-5 w-5" />
                                     Upload Image
@@ -707,23 +709,21 @@ export default function LaughFactoryPage() {
                                 leaderboard.map((item, index) => (
                                     <Dialog key={item.id}>
                                         <Card className={cn("overflow-hidden group transition-all duration-300 hover:shadow-primary/40 hover:shadow-lg hover:-translate-y-1 relative flex flex-col", getRankClass(index))}>
-                                            <CardContent className="p-0 flex-grow">
-                                                <DialogTrigger asChild>
-                                                    <div className="cursor-pointer relative">
-                                                        {index === 0 && <Crown className="absolute top-2 right-2 h-8 w-8 text-yellow-400 drop-shadow-lg z-10" />}
-                                                        {item.imageUrl ? (
-                                                            <img
-                                                                src={item.imageUrl}
-                                                                alt="Meme"
-                                                                className="w-full h-auto aspect-square object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-full aspect-square bg-muted flex items-center justify-center">
-                                                                <span className="text-muted-foreground">No Image</span>
-                                                            </div>
-                                                        )}
+                                            <CardContent className="p-0 flex-grow relative">
+                                                {index === 0 && <Crown className="absolute top-2 right-2 h-8 w-8 text-yellow-400 drop-shadow-lg z-10" />}
+                                                {item.imageUrl ? (
+                                                    <DialogTrigger asChild>
+                                                        <img
+                                                            src={item.imageUrl}
+                                                            alt={item.joke || "Meme"}
+                                                            className="w-full h-auto aspect-square object-cover cursor-pointer"
+                                                        />
+                                                    </DialogTrigger>
+                                                ) : (
+                                                    <div className="w-full aspect-square bg-muted flex items-center justify-center">
+                                                        <span className="text-muted-foreground text-sm p-4 text-center">Image not available</span>
                                                     </div>
-                                                </DialogTrigger>
+                                                )}
                                             </CardContent>
                                             <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-2 mt-auto">
                                                 <p className="font-semibold text-xs text-primary">by {item.creatorHandle}</p>
@@ -788,7 +788,7 @@ export default function LaughFactoryPage() {
                                                     Meme by {item.creatorHandle}. Votes: {item.voteCount}.
                                                 </DialogDescription>
                                             </DialogHeader>
-                                            <img src={item.imageUrl} alt="Meme" className="w-full h-auto rounded-lg" />
+                                            <img src={item.imageUrl} alt={item.joke || "Meme"} className="w-full h-auto rounded-lg" />
                                             <DialogClose className="absolute -top-2 -right-2 bg-slate-800/80 text-white rounded-full">
                                                 <X className="h-5 w-5"/>
                                             </DialogClose>
@@ -854,7 +854,7 @@ export default function LaughFactoryPage() {
                                 {memeImage?.imageDataUri ? (
                                     <img 
                                         src={memeImage.imageDataUri} 
-                                        alt="Generated Meme" 
+                                        alt={joke.joke} 
                                         className="w-full h-auto rounded-lg border-2" 
                                         crossOrigin="anonymous"
                                     />

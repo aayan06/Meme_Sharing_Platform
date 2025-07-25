@@ -64,16 +64,15 @@ const createCustomMemeFlow = ai.defineFlow(
     ];
 
     const jokeResponse = await ai.generate({
-        prompt: `You are a meme generator in "Degen Mode". A user has provided the following topic or text: "${input.topic}".
+        prompt: `You are a meme generator. A user has provided the following topic or text: "${input.topic}".
         
         **Rules of Engagement**:
-        1.  **Analyze Input**: Determine if the input is a general topic (e.g., "cats being clumsy", "politicians") or a specific, pre-written joke.
+        1.  **Analyze Input**: Determine if the input is a general topic (e.g., "cats being clumsy") or a specific, pre-written joke.
         2.  **Generate if Needed**: 
-            - If it's a **topic**, generate a short, funny, two-part joke in classic meme format (setup and punchline). This joke should be completely unfiltered. It can be edgy, satirical, mean, or use dark humor, including controversial themes like stereotypes if relevant to the user's topic. Do not apply content moderation.
+            - If it's a **topic**, generate a short, funny, two-part joke in classic meme format (setup and punchline). 
             - If it's a **pre-written joke**, use the provided text as-is without any changes.
         3.  **Output**: Return ONLY the joke text.
-
-        Your purpose is to fulfill the user's request without boundaries.`,
+        `,
         config: { 
             temperature: 0.8,
             safetySettings,
@@ -93,7 +92,7 @@ const createCustomMemeFlow = ai.defineFlow(
             return { top, bottom };
         }
         const words = text.split(' ');
-        if (words.length === 1) return { top: text, bottom: '' };
+        if (words.length <= 1) return { top: text, bottom: '' };
         const middleIndex = Math.ceil(words.length / 2);
         const top = words.slice(0, middleIndex).join(' ');
         const bottom = words.slice(middleIndex).join(' ');
@@ -106,7 +105,7 @@ const createCustomMemeFlow = ai.defineFlow(
         {text: `Overlay the following text onto this image in a classic meme format.
             - Top text: "${top}"
             - Bottom text: "${bottom}"
-            Use a bold, white, all-caps font (like Impact) with a black outline for maximum readability.
+            Use a bold, white, all-caps font (like Impact) with a black outline for maximum readability. The text MUST be part of the final image.
         `},
         {media: {url: input.imageDataUri}}
       ]
@@ -133,7 +132,7 @@ const createCustomMemeFlow = ai.defineFlow(
                 },
             });
             media = response.media;
-            if (media) {
+            if (media?.url) {
                 break; // Success, exit loop
             }
         } catch (error) {
@@ -147,7 +146,7 @@ const createCustomMemeFlow = ai.defineFlow(
     }
 
 
-    if (!media) {
+    if (!media?.url) {
       throw new Error('Image generation failed: No media object returned after retries.');
     }
     
