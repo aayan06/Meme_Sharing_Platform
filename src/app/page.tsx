@@ -357,6 +357,7 @@ export default function LaughFactoryPage() {
             
             // 4. Get the public download URL for the uploaded image.
             const imageUrl = await getDownloadURL(storageRef);
+            console.log("FINAL URL:", imageUrl); // For debugging purposes.
 
             // 5. Create document in Firestore with the correct imageUrl
             await addDoc(collection(db, 'memes'), {
