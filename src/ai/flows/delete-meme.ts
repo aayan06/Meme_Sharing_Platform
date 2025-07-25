@@ -48,7 +48,10 @@ const deleteMemeFlow = ai.defineFlow(
         const memeDoc = await getDoc(memeRef);
 
         if (!memeDoc.exists()) {
-            throw new Error("Meme not found.");
+            return {
+                success: false,
+                message: "Meme not found.",
+            };
         }
 
         const memeData = memeDoc.data();
@@ -59,8 +62,10 @@ const deleteMemeFlow = ai.defineFlow(
                 message: "You are not authorized to delete this meme.",
             };
         }
+        
+        // Authorized, so proceed with deletion from both Storage and Firestore
 
-        // Only attempt to delete from storage if authorized and an image URL exists
+        // 1. Delete the image from Firebase Storage if a URL exists
         if (memeData.imageUrl) {
             try {
                  // Create a reference from the full HTTPS URL
@@ -69,15 +74,15 @@ const deleteMemeFlow = ai.defineFlow(
             } catch (storageError: any) {
                 // Log storage error but don't block firestore deletion
                 console.error(`Failed to delete image from storage: ${storageError.message}`);
+                 // If the object doesn't exist, it's fine, we can continue.
+                 // For other errors (like permission issues), we might want to stop.
                  if (storageError.code !== 'storage/object-not-found') {
-                    // If it's a permission error or something else, we might want to throw
-                    // to indicate a bigger problem (like misconfigured rules).
                     throw new Error(`Storage deletion failed: ${storageError.message}`);
                  }
             }
         }
         
-        // Delete the document from Firestore
+        // 2. Delete the document from Firestore
         await deleteDoc(memeRef);
 
         return {
