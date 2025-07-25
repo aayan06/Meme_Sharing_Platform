@@ -29,12 +29,14 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogDescription
+    DialogDescription,
+    DialogTrigger,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
 import { collection, query, orderBy, limit, getDocs, doc, onSnapshot, getDoc } from "firebase/firestore";
+import html2canvas from 'html2canvas';
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -225,8 +227,6 @@ export default function LaughFactoryPage() {
                 };
             });
             
-            const { default: html2canvas } = await import('html2canvas');
-            await new Promise(resolve => setTimeout(resolve, 300));
             const canvas = await html2canvas(element, { 
                 useCORS: true,
                 allowTaint: true,
@@ -718,7 +718,7 @@ export default function LaughFactoryPage() {
                                                         <Button 
                                                             size="sm" 
                                                             onClick={() => handleVote(item.id)}
-                                                            disabled={!user || votingStatus[item.id] || (item.voters && item.voters.includes(user.uid))}
+                                                            disabled={!user || votingStatus[item.id] || (item.voters && user && item.voters.includes(user.uid))}
                                                             className="rounded-full"
                                                         >
                                                             {votingStatus[item.id] ? <Loader2 className="h-4 w-4 animate-spin"/> : '😂'}
