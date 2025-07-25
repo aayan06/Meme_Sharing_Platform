@@ -42,7 +42,8 @@ const submitMemeFlow = ai.defineFlow(
   async ({ creatorId, creatorHandle, joke, imageDataUri }) => {
     
     // 1. Upload image to Firebase Storage
-    const imageRef = ref(storage, `memes/${creatorId}/${uuidv4()}.png`);
+    const imagePath = `memes/${creatorId}/${uuidv4()}.png`;
+    const imageRef = ref(storage, imagePath);
     
     // The data URI needs to be stripped of its prefix before uploading
     const base64Data = imageDataUri.split(',')[1];
@@ -50,24 +51,26 @@ const submitMemeFlow = ai.defineFlow(
     const snapshot = await uploadString(imageRef, base64Data, 'base64', {
         contentType: 'image/png'
     });
+    
+    // 2. Get the public download URL for the uploaded image. This is the critical fix.
     const imageUrl = await getDownloadURL(snapshot.ref);
 
-    // 2. Create document in Firestore with the correct imageUrl
+    // 3. Create document in Firestore with the correct imageUrl
     const memesCollection = collection(db, 'memes');
     const newMemeDoc = await addDoc(memesCollection, {
       userId: creatorId,
-      creatorHandle,
-      joke,
-      imageUrl: imageUrl, // This is the critical fix.
+      creatorHandle: creatorHandle,
+      joke: joke,
+      imageUrl: imageUrl, // This now holds the public download URL.
       createdAt: serverTimestamp(),
       voteCount: 0,
       voters: [],
     });
 
-    // Return the new meme's ID and image URL
+    // 4. Return the new meme's ID and image URL
     return {
       memeId: newMemeDoc.id,
-      imageUrl,
+      imageUrl: imageUrl,
     };
   }
 );

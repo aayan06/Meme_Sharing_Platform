@@ -49,7 +49,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, orderBy, onSnapshot, doc, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc } from "firebase/firestore";
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -717,6 +717,11 @@ export default function LaughFactoryPage() {
                                                             src={item.imageUrl}
                                                             alt={item.joke || "Meme"}
                                                             className="w-full h-auto aspect-square object-cover cursor-pointer"
+                                                            onError={(e) => {
+                                                                const target = e.target as HTMLImageElement;
+                                                                target.onerror = null; // prevents looping
+                                                                target.src = `https://placehold.co/600x600.png?text=Not+Found`;
+                                                            }}
                                                         />
                                                     </DialogTrigger>
                                                 ) : (
