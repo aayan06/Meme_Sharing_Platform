@@ -532,12 +532,12 @@ export default function LaughFactoryPage() {
 
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
-     const navButtonClass = (isActive: boolean) =>
+    const navButtonClass = (isActive: boolean) =>
         cn(
             "flex-1 rounded-full text-sm sm:text-base font-semibold transition-colors duration-200",
             isActive
                 ? "bg-primary text-primary-foreground"
-                : "bg-card text-foreground hover:bg-green-500"
+                : "bg-card text-foreground hover:bg-green-500/80"
         );
 
     const getRankClass = (index: number) => {
@@ -708,7 +708,7 @@ export default function LaughFactoryPage() {
                                 Array.from({ length: 8 }).map((_, i) => (
                                     <Card key={i}>
                                         <CardContent className="p-4 space-y-4">
-                                            <Skeleton className="aspect-square w-full rounded-lg" />
+                                            <Skeleton className="aspect-video w-full rounded-lg" />
                                             <Skeleton className="h-4 w-3/4" />
                                             <div className="flex justify-between">
                                                 <Skeleton className="h-8 w-20" />
@@ -724,11 +724,14 @@ export default function LaughFactoryPage() {
                                             {index === 0 && <Crown className="absolute top-2 right-2 h-8 w-8 text-yellow-400 drop-shadow-lg" />}
                                             <DialogTrigger asChild>
                                                 <div className="cursor-pointer">
-                                                    <img
-                                                        src={item.imageUrl}
-                                                        alt="Meme"
-                                                        className="w-full h-auto rounded-t-lg"
-                                                    />
+                                                     {item.imageUrl && (
+                                                        <img
+                                                            src={item.imageUrl}
+                                                            alt="Meme"
+                                                            className="w-full h-auto"
+                                                            onError={(e: any) => { e.target.style.display='none'; }}
+                                                        />
+                                                    )}
                                                 </div>
                                             </DialogTrigger>
                                             <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-2">
@@ -789,7 +792,7 @@ export default function LaughFactoryPage() {
                                             </CardFooter>
                                         </Card>
                                         <DialogContent className="max-w-3xl p-0 border-0 bg-transparent shadow-none">
-                                            <DialogHeader className="sr-only">
+                                           <DialogHeader className="sr-only">
                                                 <DialogTitle>{item.joke}</DialogTitle>
                                                 <DialogDescription>
                                                     Meme by {item.creatorHandle}. Votes: {item.voteCount}.
