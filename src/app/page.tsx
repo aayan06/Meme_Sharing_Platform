@@ -561,7 +561,7 @@ export default function LaughFactoryPage() {
       "flex-1 rounded-full text-sm sm:text-base font-semibold transition-colors duration-200",
       isActive
         ? "bg-primary text-primary-foreground" // Blue when active
-        : "bg-card text-foreground hover:bg-accent" // Black/default, green on hover
+        : "bg-card text-foreground hover:bg-green-500" // Black/default, green on hover
     );
 
     const getRankClass = (index: number) => {
@@ -748,7 +748,7 @@ export default function LaughFactoryPage() {
                                             {index === 0 && <Crown className="absolute top-2 right-2 h-8 w-8 text-yellow-400 drop-shadow-lg" />}
                                             <DialogTrigger asChild>
                                                 <div className="cursor-pointer">
-                                                    <img src={item.imageUrl} alt="Meme" className="aspect-square w-full object-cover" />
+                                                    <img src={item.imageUrl} alt="Meme" className="w-full" />
                                                 </div>
                                             </DialogTrigger>
                                             <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-2">
@@ -937,3 +937,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
