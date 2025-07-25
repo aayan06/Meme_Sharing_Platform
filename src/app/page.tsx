@@ -91,7 +91,7 @@ export default function LaughFactoryPage() {
     const [audio, setAudio] = useState<GenerateAudioOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(isSubmitting);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
     const [customMemeText, setCustomMemeText] = useState("");
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -702,19 +702,19 @@ export default function LaughFactoryPage() {
                                 leaderboard.map((item, index) => (
                                     <Dialog key={item.id}>
                                         <Card className={cn("overflow-hidden group transition-all duration-300 hover:shadow-primary/40 hover:shadow-lg hover:-translate-y-1 relative", getRankClass(index))}>
-                                            <div className="cursor-pointer">
-                                                 {index === 0 && <Crown className="absolute top-2 right-2 h-8 w-8 text-yellow-400 drop-shadow-lg z-10" />}
-                                                 {item.imageUrl && (
-                                                    <DialogTrigger asChild>
+                                            <DialogTrigger asChild>
+                                                <div className="cursor-pointer">
+                                                     {index === 0 && <Crown className="absolute top-2 right-2 h-8 w-8 text-yellow-400 drop-shadow-lg z-10" />}
+                                                     {item.imageUrl && (
                                                         <img
                                                             src={item.imageUrl}
                                                             alt="Meme"
                                                             className="w-full h-auto aspect-square object-cover"
                                                             crossOrigin="anonymous"
                                                         />
-                                                    </DialogTrigger>
-                                                )}
-                                            </div>
+                                                    )}
+                                                </div>
+                                            </DialogTrigger>
                                             <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-2">
                                                 <p className="font-semibold text-xs text-primary">by {item.creatorHandle}</p>
                                                 <div className="w-full flex justify-between items-center pt-2">
@@ -903,5 +903,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
