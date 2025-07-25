@@ -63,28 +63,31 @@ const createCustomMemeFlow = ai.defineFlow(
         },
     ];
 
-    const jokeResponse = await ai.generate({
-        prompt: `You are a meme generator. A user has provided the following topic or text: "${input.topic}".
-        
-        **Rules of Engagement**:
-        1.  **Analyze Input**: Determine if the input is a general topic (e.g., "cats being clumsy") or a specific, pre-written joke.
-        2.  **Generate if Needed**: 
-            - If it's a **topic**, generate a short, funny, two-part joke in classic meme format (setup and punchline). 
-            - If it's a **pre-written joke**, use the provided text as-is without any changes.
-        3.  **Output**: Return ONLY the joke text.
-        `,
-        config: { 
-            temperature: 0.8,
-            safetySettings,
-         },
-    });
+    let joke = input.topic;
+
+    // Only generate a joke if the input seems like a topic, not pre-written text.
+    // A simple heuristic: if it's long or contains line breaks, it's likely pre-written.
+    if (input.topic.length < 50 && !input.topic.includes('\n')) {
+        const jokeResponse = await ai.generate({
+            prompt: `You are a meme generator. A user has provided the following topic: "${input.topic}".
+            
+            **Rules of Engagement**:
+            1.  Generate a short, funny, two-part joke in classic meme format (setup and punchline) based on the topic.
+            2.  Output ONLY the joke text. Do not add any conversational text like "Here's a joke:".
+            `,
+            config: { 
+                temperature: 0.8,
+                safetySettings,
+             },
+        });
+        joke = jokeResponse.text;
+    }
     
-    const joke = jokeResponse.text;
 
     // Determine Top and Bottom text for the meme
     const splitJoke = (text: string): { top: string; bottom: string } => {
         if (!text) return { top: '', bottom: '' };
-        const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+        const sentences = text.match(/[^.!?]+[.!?\n]+/g) || [];
         if (sentences.length >= 2) {
             const middleIndex = Math.ceil(sentences.length / 2);
             const top = sentences.slice(0, middleIndex).join(' ').trim();
@@ -102,21 +105,22 @@ const createCustomMemeFlow = ai.defineFlow(
 
     const imageGenPrompt = input.imageDataUri 
     ? [
-        {text: `Overlay the following text onto this image in a classic meme format.
+        {text: `You are a meme generator. Overlay the following text onto this image in a classic meme format.
             - Top text: "${top}"
             - Bottom text: "${bottom}"
-            Use a bold, white, all-caps font (like Impact) with a black outline for maximum readability. The text MUST be part of the final image.
+            Use a bold, white, all-caps font (like Impact) with a black outline for maximum readability. The text MUST be part of the final generated image. Do not change the underlying image.
         `},
         {media: {url: input.imageDataUri}}
       ]
-    : `Generate a high-quality, photo-realistic image for a meme. The meme text is:
+    : `You are a meme generator. Generate a single, high-quality, photo-realistic image for a meme. The meme text is:
         - Top text: "${top}"
         - Bottom text: "${bottom}"
 
         **CRITICAL RULES:**
-        1.  **INCLUDE TEXT**: The image MUST be a complete meme with the text rendered directly on it. Use a classic, bold, white, all-caps font (like Impact) with a black outline.
+        1.  **INCLUDE TEXT ON IMAGE**: The image MUST be a complete meme with the text rendered directly on it. Use a classic, bold, white, all-caps font (like Impact) with a black outline.
         2.  **RELEVANCE**: The image content and emotion MUST directly relate to the joke's theme.
-        3.  **HIGH QUALITY**: The final image must be clear and high-resolution.`;
+        3.  **HIGH QUALITY**: The final image must be clear and high-resolution.
+        4.  **NO EXTRA TEXT**: Do not add any other text, watermarks, or artifacts.`;
 
 
     let media;
