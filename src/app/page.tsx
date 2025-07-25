@@ -49,7 +49,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, orderBy, limit, onSnapshot, doc } from "firebase/firestore";
+import { collection, query, orderBy, limit, onSnapshot, doc, getDoc } from "firebase/firestore";
 
 const jokeCategories = [
     { id: "dad jokes", label: "Dad Jokes", sfw: true },
@@ -120,7 +120,8 @@ export default function LaughFactoryPage() {
 
     useEffect(() => {
         if (mode === 'leaderboard') {
-            fetchLeaderboard();
+            const unsubscribe = fetchLeaderboard();
+            return () => unsubscribe();
         }
     }, [mode]);
 
@@ -877,7 +878,12 @@ export default function LaughFactoryPage() {
                                 </div>
                             </CardHeader>
                             <CardContent className="relative">
-                                <img src={uploadedImage || memeImage!.imageDataUri} alt="Generated Meme background" className="w-full h-auto rounded-lg border-2" crossOrigin="anonymous"/>
+                                <img 
+                                    src={uploadedImage || memeImage!.imageDataUri} 
+                                    alt="Generated Meme background" 
+                                    className="w-full h-auto rounded-lg border-2" 
+                                    crossOrigin="anonymous"
+                                />
                                 <div className="absolute inset-0 flex flex-col justify-between p-2 sm:p-4">
                                   <MemeText text={top} />
                                   <MemeText text={bottom} />
@@ -957,6 +963,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
 
     
