@@ -522,7 +522,7 @@ export default function LaughFactoryPage() {
     const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
 
     const navButtonClass = "flex-1 rounded-full text-sm sm:text-base font-semibold text-white bg-black hover:bg-green-500";
-    const activeNavButtonClass = "!bg-primary";
+    const activeNavButtonClass = "bg-primary hover:bg-primary/90";
 
 
     return (
@@ -697,9 +697,9 @@ export default function LaughFactoryPage() {
                                     <Dialog key={item.id}>
                                         <Card className="overflow-hidden group transition-all duration-300 hover:shadow-primary/40 hover:shadow-lg hover:-translate-y-1">
                                             <DialogTrigger asChild>
-                                                <CardContent className="p-0 cursor-pointer">
+                                                <div className="cursor-pointer">
                                                     <img src={item.imageUrl} alt="Meme" className="aspect-square w-full object-cover" />
-                                                </CardContent>
+                                                </div>
                                             </DialogTrigger>
                                             <CardFooter className="p-3 bg-card/50 backdrop-blur-lg flex-col items-start space-y-3">
                                                 <p className="font-semibold text-sm text-primary">by {item.creatorHandle}</p>
@@ -854,3 +854,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
