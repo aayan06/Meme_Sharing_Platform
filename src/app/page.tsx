@@ -9,7 +9,6 @@ import { createCustomMeme } from "@/ai/flows/create-custom-meme";
 import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-audio";
 import { voteOnMeme } from "@/ai/flows/vote-on-meme";
 import { tipMemeCreator } from "@/ai/flows/tip-meme-creator";
-import { deleteMeme } from "@/ai/flows/delete-meme";
 import { deleteAllMemes } from "@/ai/flows/delete-all-memes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -48,8 +47,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db, storage } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, doc, addDoc, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { collection, query, orderBy, onSnapshot, doc, addDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -207,21 +206,31 @@ export default function LaughFactoryPage() {
         }
     };
 
-    const handleDelete = async (memeId: string) => {
+    const handleDelete = async (memeId: string, imageUrl: string) => {
         if (!user) {
             toast({ title: "Login Required", description: "You need to be logged in to delete memes.", variant: "destructive" });
             return;
         }
+
         setDeletingStatus(prev => ({ ...prev, [memeId]: true }));
         try {
-            const result = await deleteMeme({ memeId, userId: user.uid });
-            if (result.success) {
-                toast({ title: "Meme Deleted", description: result.message });
-            } else {
-                toast({ title: "Deletion Failed", description: result.message, variant: "destructive" });
-            }
+            // Delete Firestore document first
+            await deleteDoc(doc(db, "memes", memeId));
+
+            // Then, delete the file from Storage
+            // Use the full download URL to create the reference
+            const storageRef = ref(storage, imageUrl);
+            await deleteObject(storageRef);
+            
+            toast({ title: "Meme Deleted", description: "Your meme has been removed." });
         } catch (error: any) {
-            toast({ title: "Error", description: error.message || "Could not delete your meme.", variant: "destructive" });
+            console.error("Delete failed:", error);
+            // Check if the error is because the object doesn't exist (it might have been deleted already)
+            if (error.code === 'storage/object-not-found') {
+                 toast({ title: "Meme Deleted", description: "Record removed. The image was already gone." });
+            } else {
+                 toast({ title: "Deletion Failed", description: error.message || "Could not delete your meme.", variant: "destructive" });
+            }
         } finally {
             setDeletingStatus(prev => ({ ...prev, [memeId]: false }));
         }
@@ -782,7 +791,7 @@ export default function LaughFactoryPage() {
                                                                     </AlertDialogHeader>
                                                                     <AlertDialogFooter>
                                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                        <AlertDialogAction onClick={() => handleDelete(item.id)}>Delete</AlertDialogAction>
+                                                                        <AlertDialogAction onClick={() => handleDelete(item.id, item.imageUrl)}>Delete</AlertDialogAction>
                                                                     </AlertDialogFooter>
                                                                 </AlertDialogContent>
                                                             </AlertDialog>
