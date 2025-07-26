@@ -214,18 +214,16 @@ export default function LaughFactoryPage() {
 
         setDeletingStatus(prev => ({ ...prev, [memeId]: true }));
         try {
-            // Delete Firestore document first
             await deleteDoc(doc(db, "memes", memeId));
-
-            // Then, delete the file from Storage
-            // Use the full download URL to create the reference
-            const storageRef = ref(storage, imageUrl);
-            await deleteObject(storageRef);
+            
+            if (imageUrl) {
+                const storageRef = ref(storage, imageUrl);
+                await deleteObject(storageRef);
+            }
             
             toast({ title: "Meme Deleted", description: "Your meme has been removed." });
         } catch (error: any) {
             console.error("Delete failed:", error);
-            // Check if the error is because the object doesn't exist (it might have been deleted already)
             if (error.code === 'storage/object-not-found') {
                  toast({ title: "Meme Deleted", description: "Record removed. The image was already gone." });
             } else {
@@ -353,24 +351,18 @@ export default function LaughFactoryPage() {
 
         setIsSubmitting(true);
         try {
-            // 1. Convert data URI to Blob
             const response = await fetch(imageDataUri);
             const blob = await response.blob();
 
-            // 2. Create a unique storage path
             const imagePath = `memes/${user.uid}/${uuidv4()}.png`;
             const storageRef = ref(storage, imagePath);
 
-            // 3. Upload the blob to Firebase Storage
             await uploadBytes(storageRef, blob);
             
-            // 4. Get the public download URL for the uploaded image.
             const imageUrl = await getDownloadURL(storageRef);
             
-            // Log the URL to the console for verification
             console.log('Successfully uploaded! Public URL:', imageUrl);
 
-            // 5. Create document in Firestore with the correct imageUrl
             await addDoc(collection(db, 'memes'), {
                 userId: user.uid,
                 creatorHandle: user.displayName || user.email?.split('@')[0] || 'Anonymous',
@@ -383,7 +375,6 @@ export default function LaughFactoryPage() {
 
             toast({ title: "Meme Submitted!", description: "Your meme is now on the leaderboard!" });
             
-            // Reset state and switch to leaderboard
             setJoke(null);
             setMemeImage(null);
             setUploadedImage(null);
@@ -748,8 +739,9 @@ export default function LaughFactoryPage() {
                                                             className="w-full h-auto aspect-square object-cover cursor-pointer"
                                                             onError={(e) => {
                                                                 const target = e.target as HTMLImageElement;
-                                                                target.onerror = null; // prevents looping
-                                                                target.src = `https://placehold.co/600x600.png?text=Not+Found`;
+                                                                if (target.src !== `https://placehold.co/600x600.png?text=Not+Found`) {
+                                                                    target.src = `https://placehold.co/600x600.png?text=Not+Found`;
+                                                                }
                                                             }}
                                                         />
                                                     </DialogTrigger>
