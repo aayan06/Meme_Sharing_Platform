@@ -104,43 +104,27 @@ const createCustomMemeFlow = ai.defineFlow(
     };
     const { top, bottom } = splitJoke(joke);
 
-    const imageGenPrompt = input.imageDataUri 
-    ? [
-        {text: `Overlay the following text onto this image in a classic meme format (bold, white, all-caps font with black outline). Top: "${top}" Bottom: "${bottom}". Do not change the underlying image.`},
-        {media: {url: input.imageDataUri}}
-      ]
-    : `Generate a photorealistic image for a meme with the text: Top: "${top}", Bottom: "${bottom}". The text must be rendered on the image in a bold, white, all-caps font with a black outline. The image content must match the joke's theme.`;
-
-
-    let media;
-    const maxRetries = 3;
-    for (let i = 0; i < maxRetries; i++) {
-        try {
-            const response = await ai.generate({
-                model: 'googleai/gemini-2.0-flash-preview-image-generation',
-                prompt: imageGenPrompt,
-                config: {
-                    responseModalities: ['TEXT', 'IMAGE'],
-                    safetySettings,
-                },
-            });
-            media = response.media;
-            if (media?.url) {
-                break; // Success, exit loop
-            }
-        } catch (error) {
-            console.error(`Image generation attempt ${i + 1} failed:`, error);
-            if (i === maxRetries - 1) {
-                throw new Error(`Image generation failed after ${maxRetries} attempts.`);
-            }
-            // Wait for a second before retrying
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+    let imageGenPrompt;
+    if (input.imageDataUri) {
+        imageGenPrompt = [
+            {text: `Using the provided image, create a meme. Add the following text in a classic meme format (bold, white, all-caps font with a black outline). Do not change the underlying image. Top text: "${top}". Bottom text: "${bottom}".`},
+            {media: {url: input.imageDataUri}}
+        ];
+    } else {
+        imageGenPrompt = `Generate a photorealistic image for a meme. The image content must match the joke's theme: "${joke}". Then, render the text on the image in a bold, white, all-caps font with a black outline. Top text: "${top}". Bottom text: "${bottom}".`;
     }
+
+    const {media} = await ai.generate({
+        model: 'googleai/gemini-1.5-flash-latest',
+        prompt: imageGenPrompt,
+        config: {
+            safetySettings,
+        },
+    });
 
 
     if (!media?.url) {
-      throw new Error('Image generation failed: No media object returned after retries.');
+      throw new Error('Image generation failed: No media object was returned by the model.');
     }
 
     // Convert data URI to buffer for compression
