@@ -320,7 +320,7 @@ export default function LaughFactoryPage() {
     };
     
     const handleDownloadMeme = async () => {
-        const imageUrl = memeImage?.imageDataUri;
+        const imageUrl = memeImage?.imageDataUri || uploadedImage;
         if (!imageUrl) return;
 
         try {
@@ -353,24 +353,22 @@ export default function LaughFactoryPage() {
 
         setIsSubmitting(true);
         try {
-            // Convert data URI to Blob
+            // 1. Convert data URI to Blob
             const blob = await fetch(imageDataUri).then((res) => res.blob());
 
-            // Create a unique file name using uuid
+            // 2. Create a unique file name
             const fileName = `${uuidv4()}.png`;
-
-            // Reference to storage
             const storageRef = ref(storage, `memes/${user.uid}/${fileName}`);
 
-            // Upload file once
+            // 3. Upload the file
             await uploadBytes(storageRef, blob);
 
-            // Get download URL
+            // 4. Get the full public download URL
             const downloadURL = await getDownloadURL(storageRef);
 
-            // Save meme to Firestore with correct URL
+            // 5. Save meme to Firestore with the correct public URL
             await addDoc(collection(db, "memes"), {
-                imageUrl: downloadURL, // This is the public URL
+                imageUrl: downloadURL,
                 joke: jokeText,
                 userId: user.uid,
                 creatorHandle: user.displayName || user.email?.split('@')[0] || 'Anonymous',
