@@ -8,3 +8,4 @@ import '@/ai/flows/generate-audio.ts';
 import '@/ai/flows/create-custom-meme.ts';
 import '@/ai/flows/vote-on-meme.ts';
 import '@/ai/flows/delete-meme.ts';
+import '@/ai/flows/delete-all-memes.ts';
