@@ -217,7 +217,10 @@ export default function LaughFactoryPage() {
             await deleteDoc(doc(db, "memes", memeId));
             
             if (imageUrl) {
+                // Create a reference to the file to delete
                 const storageRef = ref(storage, imageUrl);
+
+                // Delete the file
                 await deleteObject(storageRef);
             }
             
@@ -351,18 +354,23 @@ export default function LaughFactoryPage() {
 
         setIsSubmitting(true);
         try {
+            // Convert the data URI (or any other format) to a Blob.
             const response = await fetch(imageDataUri);
             const blob = await response.blob();
 
+            // Create a unique file path for the image in Firebase Storage.
             const imagePath = `memes/${user.uid}/${uuidv4()}.png`;
             const storageRef = ref(storage, imagePath);
 
+            // Upload the Blob to Firebase Storage.
             await uploadBytes(storageRef, blob);
             
+            // Get the public download URL for the uploaded file.
             const imageUrl = await getDownloadURL(storageRef);
             
             console.log('Successfully uploaded! Public URL:', imageUrl);
 
+            // Save the meme data, including the public URL, to Firestore.
             await addDoc(collection(db, 'memes'), {
                 userId: user.uid,
                 creatorHandle: user.displayName || user.email?.split('@')[0] || 'Anonymous',
@@ -375,6 +383,7 @@ export default function LaughFactoryPage() {
 
             toast({ title: "Meme Submitted!", description: "Your meme is now on the leaderboard!" });
             
+            // Reset the UI state after successful submission.
             setJoke(null);
             setMemeImage(null);
             setUploadedImage(null);
@@ -939,3 +948,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
