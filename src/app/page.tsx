@@ -359,33 +359,25 @@ export default function LaughFactoryPage() {
 
         setIsSubmitting(true);
         try {
-            // 1. Generate canvas from the meme card
             const canvas = await html2canvas(memeCardRef.current, {
                 useCORS: true,
                 allowTaint: true,
-                backgroundColor: null, // Preserve transparency
+                backgroundColor: null,
             });
             const dataUrl = canvas.toDataURL("image/png");
-
-            // 2. Convert data URI to Blob
             const blob = await fetch(dataUrl).then((res) => res.blob());
-
-            // 3. Create a unique file name
+            
             const fileName = `${uuidv4()}.png`;
             const storageRef = ref(storage, `memes/${user.uid}/${fileName}`);
-
-            // 4. Upload the file
+            
             await uploadBytes(storageRef, blob);
-
-            // 5. Get the full public download URL
             const downloadURL = await getDownloadURL(storageRef);
-
-            // 6. Save meme to Firestore with the correct public URL
+            
             await addDoc(collection(db, "memes"), {
                 imageUrl: downloadURL,
                 joke: joke.joke,
                 userId: user.uid,
-                creatorHandle: user.displayName || user.email?.split('@')[0] || 'Anonymous',
+                creatorHandle: userData?.displayName || user.email?.split('@')[0] || 'Anonymous',
                 createdAt: serverTimestamp(),
                 voteCount: 0,
                 voters: [],
@@ -393,7 +385,6 @@ export default function LaughFactoryPage() {
 
             toast({ title: "Meme Submitted!", description: "Your meme is now on the leaderboard!" });
             
-            // Reset the UI state after successful submission
             setJoke(null);
             setMemeImage(null);
             setUploadedImage(null);
@@ -782,8 +773,9 @@ export default function LaughFactoryPage() {
                                                             className="w-full h-auto aspect-square object-cover cursor-pointer"
                                                             onError={(e) => {
                                                                 const target = e.target as HTMLImageElement;
-                                                                if (target.src !== `https://placehold.co/600x600.png?text=Not+Found`) {
-                                                                    target.src = `https://placehold.co/600x600.png?text=Not+Found`;
+                                                                if (target.src !== `https://placehold.co/600x600.png`) {
+                                                                    target.src = `https://placehold.co/600x600.png`;
+                                                                    target.setAttribute('data-ai-hint', 'image notFound');
                                                                 }
                                                             }}
                                                         />
