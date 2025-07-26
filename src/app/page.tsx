@@ -50,6 +50,7 @@ import { auth, db, storage } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, doc, addDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { v4 as uuidv4 } from 'uuid';
+import html2canvas from "html2canvas";
 
 
 const jokeCategories = [
@@ -320,13 +321,18 @@ export default function LaughFactoryPage() {
     };
     
     const handleDownloadMeme = async () => {
-        const imageUrl = memeImage?.imageDataUri || uploadedImage;
-        if (!imageUrl) return;
+        if (!memeCardRef.current) return;
 
         try {
+            const canvas = await html2canvas(memeCardRef.current, { 
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null,
+             });
+            const dataUrl = canvas.toDataURL("image/png");
             const link = document.createElement("a");
             link.download = "haha-launch-meme.png";
-            link.href = imageUrl;
+            link.href = dataUrl;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -340,36 +346,44 @@ export default function LaughFactoryPage() {
         }
     };
     
-    const handleSubmit = async (imageDataUri: string, jokeText: string) => {
+    const handleSubmit = async () => {
         if (!user) {
             toast({ title: "Not Logged In", description: "You must be logged in to submit a meme.", variant: "destructive" });
             return;
         }
 
-        if (!imageDataUri || !jokeText) {
+        if (!memeCardRef.current || !joke?.joke) {
             toast({ title: "Incomplete Meme", description: "Please generate a full meme before submitting.", variant: "destructive" });
             return;
         }
 
         setIsSubmitting(true);
         try {
-            // 1. Convert data URI to Blob
-            const blob = await fetch(imageDataUri).then((res) => res.blob());
+            // 1. Generate canvas from the meme card
+            const canvas = await html2canvas(memeCardRef.current, {
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null, // Preserve transparency
+            });
+            const dataUrl = canvas.toDataURL("image/png");
 
-            // 2. Create a unique file name
+            // 2. Convert data URI to Blob
+            const blob = await fetch(dataUrl).then((res) => res.blob());
+
+            // 3. Create a unique file name
             const fileName = `${uuidv4()}.png`;
             const storageRef = ref(storage, `memes/${user.uid}/${fileName}`);
 
-            // 3. Upload the file
+            // 4. Upload the file
             await uploadBytes(storageRef, blob);
 
-            // 4. Get the full public download URL
+            // 5. Get the full public download URL
             const downloadURL = await getDownloadURL(storageRef);
 
-            // 5. Save meme to Firestore with the correct public URL
+            // 6. Save meme to Firestore with the correct public URL
             await addDoc(collection(db, "memes"), {
                 imageUrl: downloadURL,
-                joke: jokeText,
+                joke: joke.joke,
                 userId: user.uid,
                 creatorHandle: user.displayName || user.email?.split('@')[0] || 'Anonymous',
                 createdAt: serverTimestamp(),
@@ -499,11 +513,35 @@ export default function LaughFactoryPage() {
         </DropdownMenu>
     );
 
-    const JokeCard = ({ children, className, innerRef }: { children: React.ReactNode, className?: string, innerRef?: React.Ref<HTMLDivElement> }) => (
-      <Card ref={innerRef} className={cn("w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl", className)}>
+    const JokeCard = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+      <Card className={cn("w-full animate-in fade-in-0 zoom-in-95 duration-500 bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl", className)}>
         {children}
       </Card>
     );
+
+    const MemeDisplayCard = ({ innerRef, children }: { innerRef?: React.Ref<HTMLDivElement>, children: React.ReactNode }) => (
+        <div ref={innerRef} className="relative w-full">
+            {children}
+        </div>
+    );
+
+    const splitJoke = (text: string): { top: string; bottom: string } => {
+        if (!text) return { top: '', bottom: '' };
+        const sentences = text.match(/[^.!?]+[.!?\n]+/g) || [];
+        if (sentences.length >= 2) {
+            const middleIndex = Math.ceil(sentences.length / 2);
+            const top = sentences.slice(0, middleIndex).join(' ').trim();
+            const bottom = sentences.slice(middleIndex).join(' ').trim();
+            return { top, bottom };
+        }
+        const words = text.split(' ');
+        if (words.length <= 1) return { top: text, bottom: '' };
+        const middleIndex = Math.ceil(words.length / 2);
+        const top = words.slice(0, middleIndex).join(' ');
+        const bottom = words.slice(middleIndex).join(' ');
+        return { top, bottom };
+    };
+
 
     const handleModeChange = (newMode: 'generate' | 'create' | 'leaderboard') => {
         setMode(newMode);
@@ -850,7 +888,7 @@ export default function LaughFactoryPage() {
                     )}
                     
                     {!isLoading && joke && (
-                        <JokeCard innerRef={memeCardRef}>
+                        <JokeCard>
                              <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-xl sm:text-2xl font-bold font-headline">
                                     {isMemeCategory || mode === 'create' ? "Meme Generated!" : "Here's a good one!"}
@@ -883,12 +921,26 @@ export default function LaughFactoryPage() {
                             </CardHeader>
                             <CardContent>
                                 {memeImage?.imageDataUri || uploadedImage ? (
-                                    <img 
-                                        src={memeImage?.imageDataUri || uploadedImage || ''} 
-                                        alt={joke.joke} 
-                                        className="w-full h-auto rounded-lg border-2" 
-                                        crossOrigin="anonymous"
-                                    />
+                                    <MemeDisplayCard innerRef={memeCardRef}>
+                                        <img 
+                                            src={memeImage?.imageDataUri || uploadedImage || ''} 
+                                            alt={joke.joke} 
+                                            className="w-full h-auto rounded-lg border-2" 
+                                            crossOrigin="anonymous"
+                                        />
+                                        <div 
+                                          className="absolute top-0 left-0 right-0 p-4 text-center text-white font-bold text-2xl"
+                                          style={{ textShadow: '2px 2px 4px #000000, -2px -2px 4px #000000, 2px -2px 4px #000000, -2px 2px 4px #000000' }}
+                                        >
+                                          {splitJoke(joke.joke).top}
+                                        </div>
+                                        <div 
+                                          className="absolute bottom-0 left-0 right-0 p-4 text-center text-white font-bold text-2xl"
+                                          style={{ textShadow: '2px 2px 4px #000000, -2px -2px 4px #000000, 2px -2px 4px #000000, -2px 2px 4px #000000' }}
+                                        >
+                                          {splitJoke(joke.joke).bottom}
+                                        </div>
+                                    </MemeDisplayCard>
                                 ) : (
                                     <>
                                         <p className="text-lg sm:text-xl font-medium leading-relaxed">{joke.joke}</p>
@@ -933,7 +985,7 @@ export default function LaughFactoryPage() {
                         </Button>
                         )}
                         {isMemeReady && (
-                         <Button onClick={() => handleSubmit(memeImage?.imageDataUri || uploadedImage!, joke!.joke)} disabled={isSubmitting || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
+                         <Button onClick={handleSubmit} disabled={isSubmitting || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
                              {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
                              Submit for Glory
                          </Button>

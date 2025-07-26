@@ -65,15 +65,15 @@ const createCustomMemeFlow = ai.defineFlow(
     ];
 
     let joke = input.topic;
+    let finalImageDataUri = input.imageDataUri;
 
     // Only generate a joke if the input seems like a topic, not pre-written text.
-    // A simple heuristic: if it's long or contains line breaks, it's likely pre-written.
     if (input.topic.length < 50 && !input.topic.includes('\n')) {
         const jokeResponse = await ai.generate({
             prompt: `You are a meme generator. A user has provided the following topic: "${input.topic}".
             
             **Rules of Engagement**:
-            1.  Generate a short, funny, two-part joke in classic meme format (setup and punchline) based on the topic.
+            1.  Generate a short, funny joke in classic meme format (e.g., a setup and punchline) based on the topic.
             2.  Output ONLY the joke text. Do not add any conversational text like "Here's a joke:".
             `,
             config: { 
@@ -83,52 +83,28 @@ const createCustomMemeFlow = ai.defineFlow(
         });
         joke = jokeResponse.text;
     }
-    
 
-    // Determine Top and Bottom text for the meme
-    const splitJoke = (text: string): { top: string; bottom: string } => {
-        if (!text) return { top: '', bottom: '' };
-        const sentences = text.match(/[^.!?]+[.!?\n]+/g) || [];
-        if (sentences.length >= 2) {
-            const middleIndex = Math.ceil(sentences.length / 2);
-            const top = sentences.slice(0, middleIndex).join(' ').trim();
-            const bottom = sentences.slice(middleIndex).join(' ').trim();
-            return { top, bottom };
+    // If the user did NOT upload an image, generate one based on the joke/topic.
+    if (!finalImageDataUri) {
+        const imageGenPrompt = `Generate a high-quality, photorealistic background image for a meme. The image content MUST directly relate to the theme of this joke: "${joke}". CRITICAL: The image MUST be a clean background with ABSOLUTELY NO TEXT, captions, or words.`;
+
+        const {media} = await ai.generate({
+            model: 'googleai/gemini-2.0-flash-preview-image-generation',
+            prompt: imageGenPrompt,
+            config: {
+                responseModalities: ['TEXT', 'IMAGE'],
+                safetySettings,
+            },
+        });
+
+        if (!media?.url) {
+          throw new Error('Image generation failed: No media object was returned by the model.');
         }
-        const words = text.split(' ');
-        if (words.length <= 1) return { top: text, bottom: '' };
-        const middleIndex = Math.ceil(words.length / 2);
-        const top = words.slice(0, middleIndex).join(' ');
-        const bottom = words.slice(middleIndex).join(' ');
-        return { top, bottom };
-    };
-    const { top, bottom } = splitJoke(joke);
-
-    let imageGenPrompt;
-    if (input.imageDataUri) {
-        imageGenPrompt = [
-            {text: `Using the provided image, create a meme. Add the following text in a classic meme format (bold, white, all-caps font with a black outline). Do not change the underlying image. Top text: "${top}". Bottom text: "${bottom}".`},
-            {media: {url: input.imageDataUri}}
-        ];
-    } else {
-        imageGenPrompt = `Generate a photorealistic image for a meme. The image content must match the joke's theme: "${joke}". Then, render the text on the image in a bold, white, all-caps font with a black outline. Top text: "${top}". Bottom text: "${bottom}".`;
+        finalImageDataUri = media.url;
     }
-
-    const {media} = await ai.generate({
-        model: 'googleai/gemini-1.5-flash-latest',
-        prompt: imageGenPrompt,
-        config: {
-            safetySettings,
-        },
-    });
-
-
-    if (!media?.url) {
-      throw new Error('Image generation failed: No media object was returned by the model.');
-    }
-
+    
     // Convert data URI to buffer for compression
-    const base64Data = media.url.split(',')[1];
+    const base64Data = finalImageDataUri.split(',')[1];
     const imageBuffer = Buffer.from(base64Data, 'base64');
     
     // Compress the image
