@@ -357,7 +357,6 @@ export default function LaughFactoryPage() {
             
             // 4. Get the public download URL for the uploaded image.
             const imageUrl = await getDownloadURL(storageRef);
-            console.log("FINAL URL:", imageUrl); // For debugging purposes.
 
             // 5. Create document in Firestore with the correct imageUrl
             await addDoc(collection(db, 'memes'), {
@@ -925,7 +924,7 @@ export default function LaughFactoryPage() {
                         </Button>
                         )}
                         {isMemeReady && (
-                         <Button onClick={() => handleSubmit(memeImage!.imageDataUri || uploadedImage!, joke!.joke)} disabled={isSubmitting || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
+                         <Button onClick={() => handleSubmit(memeImage?.imageDataUri || uploadedImage!, joke!.joke)} disabled={isSubmitting || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
                              {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
                              Submit for Glory
                          </Button>
@@ -936,3 +935,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
