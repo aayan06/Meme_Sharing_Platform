@@ -11,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import sharp from 'sharp';
 
 const CreateCustomMemeInputSchema = z.object({
   topic: z.string().describe("The user's description of the meme idea or the exact text for the meme."),
@@ -141,10 +142,22 @@ const createCustomMemeFlow = ai.defineFlow(
     if (!media?.url) {
       throw new Error('Image generation failed: No media object returned after retries.');
     }
+
+    // Convert data URI to buffer for compression
+    const base64Data = media.url.split(',')[1];
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    
+    // Compress the image
+    const compressedImageBuffer = await sharp(imageBuffer)
+        .jpeg({ quality: 80 }) // Compress to JPEG with 80% quality
+        .toBuffer();
+    
+    // Convert compressed buffer back to data URI
+    const compressedImageDataUri = `data:image/jpeg;base64,${compressedImageBuffer.toString('base64')}`;
     
     return {
         joke,
-        imageDataUri: media.url
+        imageDataUri: compressedImageDataUri,
     };
   }
 );
