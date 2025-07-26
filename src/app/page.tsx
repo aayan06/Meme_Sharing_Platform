@@ -362,39 +362,44 @@ export default function LaughFactoryPage() {
             const canvas = await html2canvas(memeCardRef.current, {
                 useCORS: true,
                 allowTaint: true,
-                backgroundColor: null,
-            });
-            const dataUrl = canvas.toDataURL("image/png");
-            const blob = await fetch(dataUrl).then((res) => res.blob());
-            
-            const fileName = `${uuidv4()}.png`;
-            const storageRef = ref(storage, `memes/${user.uid}/${fileName}`);
-            
-            await uploadBytes(storageRef, blob);
-            const downloadURL = await getDownloadURL(storageRef);
-            
-            await addDoc(collection(db, "memes"), {
-                imageUrl: downloadURL,
-                joke: joke.joke,
-                userId: user.uid,
-                creatorHandle: userData?.displayName || user.email?.split('@')[0] || 'Anonymous',
-                createdAt: serverTimestamp(),
-                voteCount: 0,
-                voters: [],
+                backgroundColor: null, // Use transparent background
             });
 
-            toast({ title: "Meme Submitted!", description: "Your meme is now on the leaderboard!" });
-            
-            setJoke(null);
-            setMemeImage(null);
-            setUploadedImage(null);
-            setCustomMemeText('');
-            setMode('leaderboard');
+            // Convert canvas to blob for upload
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    throw new Error("Failed to create blob from canvas.");
+                }
+
+                const fileName = `${uuidv4()}.png`;
+                const storageRef = ref(storage, `memes/${user.uid}/${fileName}`);
+                
+                await uploadBytes(storageRef, blob);
+                const downloadURL = await getDownloadURL(storageRef);
+                
+                await addDoc(collection(db, "memes"), {
+                    imageUrl: downloadURL,
+                    joke: joke.joke,
+                    userId: user.uid,
+                    creatorHandle: userData?.displayName || user.email?.split('@')[0] || 'Anonymous',
+                    createdAt: serverTimestamp(),
+                    voteCount: 0,
+                    voters: [],
+                });
+
+                toast({ title: "Meme Submitted!", description: "Your meme is now on the leaderboard!" });
+                
+                setJoke(null);
+                setMemeImage(null);
+                setUploadedImage(null);
+                setCustomMemeText('');
+                setMode('leaderboard');
+                setIsSubmitting(false);
+            }, 'image/png', 0.9); // Use 90% quality for PNG
 
         } catch (error: any) {
             console.error("Error submitting meme:", error);
             toast({ title: "Submission Error", description: error.message || "Could not submit your meme.", variant: "destructive" });
-        } finally {
             setIsSubmitting(false);
         }
     };
