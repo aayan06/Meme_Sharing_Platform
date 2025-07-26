@@ -944,5 +944,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
