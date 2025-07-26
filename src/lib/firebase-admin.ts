@@ -11,40 +11,51 @@ function getServiceAccount() {
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
   if (!privateKey) {
-    throw new Error("The FIREBASE_PRIVATE_KEY environment variable is not set. Please add it to your .env.local file.");
+    console.error("Firebase Admin SDK Error: The FIREBASE_PRIVATE_KEY environment variable is not set. Please add it to your .env.local file.");
+    return null;
   }
 
-  return {
-    projectId: "laugh-factory-j57tt",
-    clientEmail: "firebase-adminsdk-3y934@laugh-factory-j57tt.iam.gserviceaccount.com",
-    privateKey: privateKey.replace(/\\n/g, '\n'),
-  };
+  try {
+    return {
+      projectId: "laugh-factory-j57tt",
+      clientEmail: "firebase-adminsdk-3y934@laugh-factory-j57tt.iam.gserviceaccount.com",
+      privateKey: privateKey.replace(/\\n/g, '\n'),
+    };
+  } catch(e) {
+    console.error("Firebase Admin SDK Error: Could not parse FIREBASE_PRIVATE_KEY. Make sure it's correctly formatted in your .env.local file.");
+    return null;
+  }
 }
 
 let adminApp: App | null = null;
 let adminStorage: Storage | null = null;
 let adminDb: Firestore | null = null;
 
-try {
-  const serviceAccount = getServiceAccount();
-  if (!getApps().some(app => app?.name === 'admin')) {
-    adminApp = initializeApp({
-      credential: cert(serviceAccount),
-      storageBucket: "laugh-factory-j57tt.appspot.com"
-    }, 'admin');
-  } else {
-    adminApp = getApps().find(app => app?.name === 'admin') || null;
-  }
+const serviceAccount = getServiceAccount();
 
-  if (adminApp) {
-    adminStorage = getStorage(adminApp);
-    adminDb = getFirestore(adminApp);
-  }
+if (serviceAccount) {
+    try {
+        if (!getApps().some(app => app?.name === 'admin')) {
+            adminApp = initializeApp({
+            credential: cert(serviceAccount),
+            storageBucket: "laugh-factory-j57tt.appspot.com"
+            }, 'admin');
+        } else {
+            adminApp = getApps().find(app => app?.name === 'admin') || null;
+        }
 
-} catch (error: any) {
-  console.error("Firebase Admin SDK initialization failed:", error.message);
-  // We don't re-throw here to allow the app to run, but admin features will be disabled.
-  // The error message logged above will be sufficient for debugging.
+        if (adminApp) {
+            adminStorage = getStorage(adminApp);
+            adminDb = getFirestore(adminApp);
+        }
+    } catch (error: any) {
+        console.error("Firebase Admin SDK initialization failed:", error.message);
+        adminApp = null;
+        adminStorage = null;
+        adminDb = null;
+    }
+} else {
+    console.warn("Firebase Admin SDK is not initialized due to missing credentials. Server-side Firebase features will not work.");
 }
 
 
