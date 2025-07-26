@@ -108,15 +108,7 @@ const createCustomMemeFlow = ai.defineFlow(
         {text: `Overlay the following text onto this image in a classic meme format (bold, white, all-caps font with black outline). Top: "${top}" Bottom: "${bottom}". Do not change the underlying image.`},
         {media: {url: input.imageDataUri}}
       ]
-    : `You are a meme generator. Generate a single, high-quality, photo-realistic image for a meme. The meme text is:
-        - Top text: "${top}"
-        - Bottom text: "${bottom}"
-
-        **CRITICAL RULES:**
-        1.  **INCLUDE TEXT ON IMAGE**: The image MUST be a complete meme with the text rendered directly on it. Use a classic, bold, white, all-caps font (like Impact) with a black outline.
-        2.  **RELEVANCE**: The image content and emotion MUST directly relate to the joke's theme.
-        3.  **HIGH QUALITY**: The final image must be clear and high-resolution.
-        4.  **NO EXTRA TEXT**: Do not add any other text, watermarks, or artifacts.`;
+    : `Generate a photorealistic image for a meme with the text: Top: "${top}", Bottom: "${bottom}". The text must be rendered on the image in a bold, white, all-caps font with a black outline. The image content must match the joke's theme.`;
 
 
     let media;
