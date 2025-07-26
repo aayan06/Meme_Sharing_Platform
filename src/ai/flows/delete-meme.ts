@@ -77,15 +77,16 @@ const deleteMemeFlow = ai.defineFlow(
         if (memeData.imageUrl) {
             try {
                  // Extract the file path from the full HTTPS URL
-                 const url = new URL(memeData.imageUrl);
-                 const filePath = decodeURIComponent(url.pathname.split('/').slice(5).join('/'));
+                 // Example URL: https://firebasestorage.googleapis.com/v0/b/laugh-factory-j57tt.appspot.com/o/memes%2F...
+                 const decodedUrl = decodeURIComponent(memeData.imageUrl);
+                 const filePath = decodedUrl.substring(decodedUrl.indexOf('/o/') + 3, decodedUrl.indexOf('?alt=media'));
                  
                  const file = adminStorage.bucket().file(filePath);
                  await file.delete();
             } catch (storageError: any) {
                 // Log storage error but don't block firestore deletion
                 console.error(`Admin SDK failed to delete image from storage: ${storageError.message}`);
-                 // If the object doesn't exist, it's fine, we can continue.
+                 // If the object doesn't exist (e.g., already deleted), it's fine, we can continue.
                  // For other errors (like permission issues), we might want to stop.
                  if (storageError.code !== 404) { // 404 is the code for object-not-found
                     return {

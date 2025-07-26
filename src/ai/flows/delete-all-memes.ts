@@ -52,8 +52,8 @@ const deleteAllMemesFlow = ai.defineFlow(
           const memeData = doc.data();
           if (memeData.imageUrl) {
               try {
-                  const url = new URL(memeData.imageUrl);
-                  const filePath = decodeURIComponent(url.pathname.split('/').slice(5).join('/'));
+                  const decodedUrl = decodeURIComponent(memeData.imageUrl);
+                  const filePath = decodedUrl.substring(decodedUrl.indexOf('/o/') + 3, decodedUrl.indexOf('?alt=media'));
                   const file = adminStorage.bucket().file(filePath);
                   deletionPromises.push(file.delete());
               } catch (storageError: any) {
@@ -62,6 +62,7 @@ const deleteAllMemesFlow = ai.defineFlow(
               }
           }
       }
+      // Wait for all storage deletions to settle (either complete or fail)
       await Promise.allSettled(deletionPromises);
 
 
