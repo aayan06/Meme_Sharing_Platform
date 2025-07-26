@@ -214,13 +214,12 @@ export default function LaughFactoryPage() {
 
         setDeletingStatus(prev => ({ ...prev, [memeId]: true }));
         try {
+            // Delete Firestore document first
             await deleteDoc(doc(db, "memes", memeId));
             
+            // Then, delete file from Storage
             if (imageUrl) {
-                // Create a reference to the file to delete
                 const storageRef = ref(storage, imageUrl);
-
-                // Delete the file
                 await deleteObject(storageRef);
             }
             
@@ -948,5 +947,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
