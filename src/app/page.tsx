@@ -353,28 +353,27 @@ export default function LaughFactoryPage() {
 
         setIsSubmitting(true);
         try {
-            // Convert the data URI to a Blob. This is the only fetch needed.
-            const response = await fetch(imageDataUri);
-            const blob = await response.blob();
+            // Convert data URI to Blob
+            const blob = await fetch(imageDataUri).then((res) => res.blob());
 
-            // Create a unique file path for the image in Firebase Storage.
-            const imagePath = `memes/${user.uid}/${uuidv4()}.png`;
-            const storageRef = ref(storage, imagePath);
+            // Create a unique file name using uuid
+            const fileName = `${uuidv4()}.png`;
 
-            // Upload the Blob to Firebase Storage.
+            // Reference to storage
+            const storageRef = ref(storage, `memes/${user.uid}/${fileName}`);
+
+            // Upload file once
             await uploadBytes(storageRef, blob);
-            
-            // Get the public download URL for the uploaded file.
-            const imageUrl = await getDownloadURL(storageRef);
-            
-            console.log('Successfully uploaded! Public URL:', imageUrl);
 
-            // Save the meme data, including the public URL, to Firestore.
-            await addDoc(collection(db, 'memes'), {
+            // Get download URL
+            const downloadURL = await getDownloadURL(storageRef);
+
+            // Save meme to Firestore with correct URL
+            await addDoc(collection(db, "memes"), {
+                imageUrl: downloadURL, // This is the public URL
+                joke: jokeText,
                 userId: user.uid,
                 creatorHandle: user.displayName || user.email?.split('@')[0] || 'Anonymous',
-                joke: jokeText,
-                imageUrl: imageUrl, 
                 createdAt: serverTimestamp(),
                 voteCount: 0,
                 voters: [],
@@ -382,7 +381,7 @@ export default function LaughFactoryPage() {
 
             toast({ title: "Meme Submitted!", description: "Your meme is now on the leaderboard!" });
             
-            // Reset the UI state after successful submission.
+            // Reset the UI state after successful submission
             setJoke(null);
             setMemeImage(null);
             setUploadedImage(null);
@@ -390,7 +389,7 @@ export default function LaughFactoryPage() {
             setMode('leaderboard');
 
         } catch (error: any) {
-            console.error("Submission failed:", error);
+            console.error("Error submitting meme:", error);
             toast({ title: "Submission Error", description: error.message || "Could not submit your meme.", variant: "destructive" });
         } finally {
             setIsSubmitting(false);
