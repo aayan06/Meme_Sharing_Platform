@@ -354,7 +354,7 @@ export default function LaughFactoryPage() {
 
         setIsSubmitting(true);
         try {
-            // Convert the data URI (or any other format) to a Blob.
+            // Convert the data URI to a Blob.
             const response = await fetch(imageDataUri);
             const blob = await response.blob();
 
