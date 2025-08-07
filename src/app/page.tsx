@@ -255,18 +255,28 @@ export default function LaughFactoryPage() {
     }
 
 
-    const handleGenerateNew = async () => {
-        setIsLoading(true);
-        setJoke(null);
-        setMemeImage(null);
-        setAudio(null);
-        setSelectedReaction(null);
-        setUploadedImage(null);
-        setCustomMemeText('');
+    const handleGenerateNew = async (isNewImage = true) => {
+        if (isNewImage) {
+            setIsLoading(true);
+            setJoke(null);
+            setMemeImage(null);
+            setAudio(null);
+            setSelectedReaction(null);
+            setUploadedImage(null);
+            // In create mode, clearing the text allows for a new prompt
+            if (mode === 'create') {
+                setCustomMemeText(''); 
+            }
+        } else {
+            // This is for regenerating text only
+            setIsRegenerating(true);
+        }
         
         try {
-            if (mode === 'create') {
-                if (!customMemeText && !uploadedImage) {
+            let currentJoke = joke?.joke;
+
+            if (mode === 'create' && isNewImage) {
+                 if (!customMemeText && !uploadedImage) {
                      toast({
                         title: "Meme Idea Needed",
                         description: "Please describe your meme idea or upload an image before generating.",
@@ -282,21 +292,26 @@ export default function LaughFactoryPage() {
                 setJoke({ joke: result.joke });
                 setMemeImage({ imageDataUri: result.imageDataUri });
             } else {
+                // Logic for 'generate' mode OR for 'regenerating' text in any mode
                 const selectedCategory = jokeCategories.find(cat => cat.id === category);
-                if (!selectedCategory) {
-                    throw new Error("Category not found");
-                }
-
-                const isSfw = selectedCategory.sfw;
+                const isSfw = selectedCategory?.sfw ?? true;
                 const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
 
-                const jokeResult = await generateSafeJoke({ category, safeForWork: isSfw, usedJokes });
+                // Determine the prompt for regeneration
+                let promptTopic = category;
+                if (mode === 'create' && customMemeText) {
+                    promptTopic = `a different joke about: ${customMemeText}`;
+                } else if (!isNewImage && currentJoke) {
+                    promptTopic = `a variation of this joke: "${currentJoke}"`;
+                }
+                
+                const jokeResult = await generateSafeJoke({ category: promptTopic, safeForWork: isSfw, usedJokes });
                 setJoke(jokeResult);
                 setUsedJokes(prev => [...prev, jokeResult.joke]);
+                currentJoke = jokeResult.joke; // update for image generation
 
-
-                if (isMemeCategory) {
-                    const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
+                if (isNewImage && isMemeCategory) {
+                    const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: currentJoke });
                     if (memeResult) {
                         setMemeImage(memeResult);
                     }
@@ -312,33 +327,16 @@ export default function LaughFactoryPage() {
             });
         } finally {
             setIsLoading(false);
+            setIsRegenerating(false);
         }
     };
 
-    const handleRegenerateText = async () => {
+    const handleRegenerateText = () => {
         if (!joke || !(memeImage || uploadedImage)) {
             toast({ title: "Error", description: "No image available to regenerate text for.", variant: "destructive" });
             return;
         }
-        setIsRegenerating(true);
-        try {
-             const selectedCategory = jokeCategories.find(cat => cat.id === category);
-             const isSfw = mode === 'create' ? !customMemeText.toLowerCase().includes('edgy') : selectedCategory?.sfw ?? true;
-             const jokeCategory = mode === 'create' ? customMemeText || "a random meme" : category;
-            
-             const jokeResult = await generateSafeJoke({ category: jokeCategory, safeForWork: isSfw, usedJokes });
-             setJoke(jokeResult);
-             setUsedJokes(prev => [...prev, jokeResult.joke]);
-        } catch(error) {
-            console.error("Failed to regenerate text:", error);
-            toast({
-                title: "Error",
-                description: "Could not regenerate the joke text. Please try again.",
-                variant: "destructive",
-            });
-        } finally {
-            setIsRegenerating(false);
-        }
+        handleGenerateNew(false); // Call with isNewImage = false
     };
 
     const handleCopyToClipboard = (text: string) => {
@@ -956,11 +954,13 @@ export default function LaughFactoryPage() {
                                         />
                                         <div 
                                           className="absolute top-0 left-0 right-0 p-4 text-center text-white font-bold text-4xl"
+                                           style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}
                                         >
                                           {splitJoke(joke.joke).top}
                                         </div>
                                         <div 
                                           className="absolute bottom-0 left-0 right-0 p-4 text-center text-white font-bold text-4xl"
+                                           style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}
                                         >
                                           {splitJoke(joke.joke).bottom}
                                         </div>
@@ -987,7 +987,7 @@ export default function LaughFactoryPage() {
                                                 {isRegenerating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <RefreshCcw className="mr-2 h-5 w-5" />}
                                                 Regenerate
                                             </Button>
-                                            <Button onClick={handleGenerateNew} disabled={isLoading}>
+                                            <Button onClick={() => handleGenerateNew(true)} disabled={isLoading}>
                                                 {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileImage className="mr-2 h-5 w-5" />}
                                                 Generate New
                                             </Button>
@@ -1018,7 +1018,7 @@ export default function LaughFactoryPage() {
                  <div className="w-full flex justify-center p-2 sm:p-4">
                      <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-xl">
                         {mode !== 'leaderboard' && !isMemeReady && (
-                        <Button onClick={handleGenerateNew} disabled={isLoading || (mode === 'create' && !customMemeText && !uploadedImage)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
+                        <Button onClick={() => handleGenerateNew(true)} disabled={isLoading || (mode === 'create' && !customMemeText && !uploadedImage)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                             {isLoading ? (
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             ) : (
@@ -1036,3 +1036,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
