@@ -32,16 +32,18 @@ const generateJokePrompt = ai.definePrompt({
   name: 'generateJokePrompt',
   input: {schema: GenerateSafeJokeInputSchema},
   output: {schema: GenerateSafeJokeOutputSchema},
-  prompt: `You are a professional comedian who specializes in writing short, punchy jokes for memes.
+  prompt: `You are a professional comedian who specializes in writing short, punchy jokes for classic memes.
 
 **Category**: {{{category}}}
 
 **Rules for the Joke**:
-1.  **Natural Speech**: The joke must be returned as natural text, in one or two lines. Do NOT include labels like "Setup:" or "Punchline:".
-2.  **No Markdown**: Do NOT use any markdown formatting (like **bold**, *italic*, etc.).
-3.  **Concise & Clean**: The text must be very short (around 20-25 words), grammatically correct, and easy to read.
-4.  **Meme Humor**: The humor should be clever, visual, or sarcastic.
-5.  **Originality**: Do not repeat any of the "Used Jokes" below.
+1.  **ALL CAPS**: The entire joke must be in uppercase.
+2.  **Classic Format**: Return the text as one or two lines, suitable for top/bottom text on a meme. Use a newline character (\\n) to separate the top and bottom text if needed.
+3.  **No Markdown**: Do NOT use any markdown formatting (like **bold**, *italic*, etc.).
+4.  **Concise & Punchy**: The text must be very short (around 20-25 words total), grammatically correct, and easy to read.
+5.  **Meme Humor**: The humor should be ironic, sarcastic, observational, or relatable.
+6.  **Originality**: Do not repeat any of the "Used Jokes" below.
+7.  **Output ONLY the joke text.** Do not add any conversational text.
 
 **Used Jokes (Avoid These)**:
 {{#if usedJokes}}

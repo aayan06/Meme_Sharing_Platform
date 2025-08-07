@@ -571,19 +571,11 @@ export default function LaughFactoryPage() {
 
     const splitJoke = (text: string): { top: string; bottom: string } => {
         if (!text) return { top: '', bottom: '' };
-        const sentences = text.match(/[^.!?]+[.!?\n]+/g) || [];
-        if (sentences.length >= 2) {
-            const middleIndex = Math.ceil(sentences.length / 2);
-            const top = sentences.slice(0, middleIndex).join(' ').trim();
-            const bottom = sentences.slice(middleIndex).join(' ').trim();
-            return { top, bottom };
+        const parts = text.split('\n');
+        if (parts.length >= 2) {
+            return { top: parts[0], bottom: parts.slice(1).join('\n') };
         }
-        const words = text.split(' ');
-        if (words.length <= 1) return { top: text, bottom: '' };
-        const middleIndex = Math.ceil(words.length / 2);
-        const top = words.slice(0, middleIndex).join(' ');
-        const bottom = words.slice(middleIndex).join(' ');
-        return { top, bottom };
+        return { top: text, bottom: '' };
     };
 
 
@@ -599,7 +591,7 @@ export default function LaughFactoryPage() {
     
     const isMemeReady = (joke && (memeImage?.imageDataUri || uploadedImage));
     const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes'));
-    const dailyJoke = { joke: "I told my wife she should embrace her mistakes. She gave me a hug.", creator: "Comedian_AI", likes: 1337 };
+    const dailyJoke = { joke: "I TOLD MY WIFE SHE SHOULD EMBRACE HER MISTAKES.\nSHE GAVE ME A HUG.", creator: "Comedian_AI", likes: 1337 };
 
     const navButtonClass = (isActive: boolean) =>
     cn(
@@ -683,7 +675,7 @@ export default function LaughFactoryPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-lg sm:text-xl font-medium">{dailyJoke.joke}</p>
+                            <p className="text-lg sm:text-xl font-medium uppercase whitespace-pre-line">{dailyJoke.joke}</p>
                             <div className="flex items-center gap-4 mt-4">
                                 <p className="text-sm text-muted-foreground">- by {dailyJoke.creator}</p>
                                 <div className="flex items-center gap-1 text-lg font-bold text-green-400">
@@ -974,9 +966,9 @@ export default function LaughFactoryPage() {
                                             crossOrigin="anonymous"
                                         />
                                         <div
-                                            className="absolute p-4 text-center text-white font-bold"
+                                            className="absolute p-4 text-center text-white font-bold uppercase"
                                             style={{
-                                                top: `${joke.textPlacement?.top?.y ?? 0}%`,
+                                                top: `${joke.textPlacement?.top?.y ?? 2}%`,
                                                 left: `${joke.textPlacement?.top?.x ?? 5}%`,
                                                 width: `${joke.textPlacement?.top?.width ?? 90}%`,
                                                 height: `${joke.textPlacement?.top?.height ?? 48}%`,
@@ -990,9 +982,9 @@ export default function LaughFactoryPage() {
                                           {splitJoke(joke.joke).top}
                                         </div>
                                         <div
-                                            className="absolute p-4 text-center text-white font-bold"
+                                            className="absolute p-4 text-center text-white font-bold uppercase"
                                             style={{
-                                                top: `${joke.textPlacement?.bottom?.y ?? 52}%`,
+                                                top: `${joke.textPlacement?.bottom?.y ?? 50}%`,
                                                 left: `${joke.textPlacement?.bottom?.x ?? 5}%`,
                                                 width: `${joke.textPlacement?.bottom?.width ?? 90}%`,
                                                 height: `${joke.textPlacement?.bottom?.height ?? 48}%`,
@@ -1008,7 +1000,7 @@ export default function LaughFactoryPage() {
                                     </MemeDisplayCard>
                                 ) : (
                                     <>
-                                        <p className="text-lg sm:text-xl font-medium leading-relaxed">{joke.joke}</p>
+                                        <p className="text-lg sm:text-xl font-medium leading-relaxed uppercase whitespace-pre-line">{joke.joke}</p>
                                         {audio?.media && (
                                             <div className="mt-4">
                                                 <audio controls autoPlay className="w-full">
@@ -1118,6 +1110,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-
-    
