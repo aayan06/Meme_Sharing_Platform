@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/generate-safe-joke";
 import { generateMemeImage, type GenerateMemeImageOutput } from "@/ai/flows/generate-meme-image";
+import { generateCustomMemeImage } from "@/ai/flows/generate-custom-meme-image";
 import { createCustomMeme } from "@/ai/flows/create-custom-meme";
 import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-audio";
 import { voteOnMeme } from "@/ai/flows/vote-on-meme";
@@ -266,7 +267,7 @@ export default function LaughFactoryPage() {
         if (mode === 'create') {
             setCustomMemeText('');
             setUploadedImage(null);
-            setIsLoading(false); // Stop loading as we are just resetting the UI
+            setIsLoading(false); 
             return;
         }
         
@@ -287,7 +288,7 @@ export default function LaughFactoryPage() {
                 setJoke({ joke: jokeResult.joke });
 
                 if (!uploadedImage) {
-                     const memeResult = await generateMemeImage({ category: 'ai jokes', safeForWork: true, joke: jokeResult.joke });
+                    const memeResult = await generateCustomMemeImage(jokeResult.joke);
                     if (memeResult) {
                         setMemeImage(memeResult);
                     }
@@ -327,42 +328,40 @@ export default function LaughFactoryPage() {
         setIsRegenerating(true);
         setAudio(null);
         try {
-            // Case 1: Create mode. Regenerate based on the original custom text.
-            // If user uploaded an image, keep it. Otherwise, generate a new image.
-            if (mode === 'create') {
-                const jokeResult = await createCustomMeme({
-                    topic: customMemeText || 'A funny meme about technology',
-                });
-                setJoke({ joke: jokeResult.joke });
-
-                if (!uploadedImage) {
-                     const memeResult = await generateMemeImage({ category: 'ai jokes', safeForWork: true, joke: jokeResult.joke });
-                    if (memeResult) {
-                        setMemeImage(memeResult);
-                    }
-                }
+            const topic = mode === 'create' ? customMemeText : category;
+             if (!topic) {
+                toast({ title: "Error", description: "No topic or category to regenerate from.", variant: "destructive" });
+                return;
             }
-            // Case 2: Generate mode. Regenerate based on the selected category.
-            else {
-                const selectedCategory = jokeCategories.find(cat => cat.id === category);
-                if (!selectedCategory) return;
-                
-                const isSfw = selectedCategory.sfw;
-                const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
-                
-                // Generate a new joke from the same category
-                const jokeResult = await generateSafeJoke({ category, safeForWork: isSfw, usedJokes });
-                setJoke(jokeResult);
+
+            // Regenerate the joke based on the original topic/category
+            const jokeResult = mode === 'create'
+                ? await createCustomMeme({ topic })
+                : await generateSafeJoke({ category: topic, safeForWork: jokeCategories.find(c => c.id === topic)?.sfw ?? true, usedJokes });
+
+            setJoke(jokeResult);
+            if (mode !== 'create') {
                 setUsedJokes(prev => [...prev, jokeResult.joke]);
-
-                // If it's a meme category, generate a new image to go with the new joke
-                if (isMemeCategory) {
-                    const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
-                    if (memeResult) {
-                        setMemeImage(memeResult);
-                    }
-                }
             }
+
+            // If user has uploaded an image, we are done. New text is ready.
+            if (uploadedImage) {
+                return;
+            }
+
+            // Otherwise, generate a new image for the new joke
+            const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
+            if (mode === 'create') {
+                 const memeResult = await generateCustomMemeImage(jokeResult.joke);
+                 if (memeResult) setMemeImage(memeResult);
+            } else if (isMemeCategory) {
+                 const selectedCategory = jokeCategories.find(cat => cat.id === category);
+                 const isSfw = selectedCategory?.sfw ?? true;
+                 const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
+                 if (memeResult) setMemeImage(memeResult);
+            }
+
+
         } catch (error) {
             console.error("Failed to regenerate:", error);
             toast({ title: "Error", description: "Could not regenerate. Please try again.", variant: "destructive" });
@@ -1047,7 +1046,38 @@ export default function LaughFactoryPage() {
                  <div className="w-full flex justify-center p-2 sm:p-4">
                      <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-xl">
                         {mode !== 'leaderboard' && !isMemeReady && (
-                        <Button onClick={handleGenerateNew} disabled={isLoading || (mode === 'create' && !customMemeText && !uploadedImage)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
+                        <Button onClick={async () => {
+                            if (mode === 'create') {
+                                 if (!customMemeText && !uploadedImage) {
+                                    toast({
+                                        title: "Meme Idea Needed",
+                                        description: "Please describe your meme idea or upload an image before generating.",
+                                        variant: "destructive",
+                                    });
+                                    return;
+                                }
+                                setIsLoading(true);
+                                try {
+                                    const jokeResult = await createCustomMeme({
+                                        topic: customMemeText || 'A funny meme about technology',
+                                    });
+                                    setJoke({ joke: jokeResult.joke });
+
+                                    if (!uploadedImage) {
+                                        const memeResult = await generateCustomMemeImage(jokeResult.joke);
+                                        if (memeResult) {
+                                            setMemeImage(memeResult);
+                                        }
+                                    }
+                                } catch (e) {
+                                     toast({ title: "Error", description: "Could not create meme.", variant: "destructive" });
+                                } finally {
+                                    setIsLoading(false);
+                                }
+                            } else {
+                                handleGenerateNew();
+                            }
+                        }} disabled={isLoading || (mode === 'create' && !customMemeText && !uploadedImage)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                             {isLoading ? (
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             ) : (
@@ -1065,5 +1095,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
