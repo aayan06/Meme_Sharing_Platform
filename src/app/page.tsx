@@ -381,31 +381,36 @@ export default function LaughFactoryPage() {
             return;
         }
 
-        const imageDataUri = memeImage?.imageDataUri || uploadedImage;
-
-        if (!imageDataUri || !joke?.joke) {
-            toast({ title: "Incomplete Meme", description: "Please generate a full meme before submitting.", variant: "destructive" });
+        if (!memeCardRef.current) {
+            toast({ title: "Error", description: "Meme element not found.", variant: "destructive" });
             return;
         }
 
         setIsSubmitting(true);
         try {
-            // ✅ Convert data URI to Blob
-            const blob = await fetch(imageDataUri).then((res) => res.blob());
+            const canvas = await html2canvas(memeCardRef.current, { 
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null,
+            });
+            const dataUrl = canvas.toDataURL("image/png");
+
+            // Convert data URI to Blob
+            const blob = await fetch(dataUrl).then((res) => res.blob());
 
             const fileName = `${uuidv4()}.png`;
             const storageRef = ref(storage, `memes/${user.uid}/${fileName}`);
             
-            // ✅ Upload file once
+            // Upload file once
             await uploadBytes(storageRef, blob);
             
-            // ✅ Get download URL
+            // Get download URL
             const downloadURL = await getDownloadURL(storageRef);
             
-            // ✅ Save the correct downloadURL to Firestore
+            // Save the correct downloadURL to Firestore
             await addDoc(collection(db, "memes"), {
                 imageUrl: downloadURL,
-                joke: joke.joke,
+                joke: joke?.joke || '',
                 userId: user.uid,
                 creatorHandle: userData?.displayName || user.email?.split('@')[0] || 'Anonymous',
                 createdAt: serverTimestamp(),
@@ -950,14 +955,12 @@ export default function LaughFactoryPage() {
                                             crossOrigin="anonymous"
                                         />
                                         <div 
-                                          className="absolute top-0 left-0 right-0 p-4 text-center text-white font-bold text-2xl"
-                                          style={{ textShadow: '2px 2px 4px #000000, -2px -2px 4px #000000, 2px -2px 4px #000000, -2px 2px 4px #000000' }}
+                                          className="absolute top-0 left-0 right-0 p-4 text-center text-white font-bold text-4xl"
                                         >
                                           {splitJoke(joke.joke).top}
                                         </div>
                                         <div 
-                                          className="absolute bottom-0 left-0 right-0 p-4 text-center text-white font-bold text-2xl"
-                                          style={{ textShadow: '2px 2px 4px #000000, -2px -2px 4px #000000, 2px -2px 4px #000000, -2px 2px 4px #000000' }}
+                                          className="absolute bottom-0 left-0 right-0 p-4 text-center text-white font-bold text-4xl"
                                         >
                                           {splitJoke(joke.joke).bottom}
                                         </div>
