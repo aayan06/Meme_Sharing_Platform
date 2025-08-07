@@ -14,6 +14,9 @@ import {z} from 'genkit';
 
 const CreateCustomMemeInputSchema = z.object({
   topic: z.string().describe("The user's description of the meme idea or the exact text for the meme."),
+   imageDataUri: z.string().optional().describe(
+      "A photo of a plant, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
 });
 export type CreateCustomMemeInput = z.infer<typeof CreateCustomMemeInputSchema>;
 
@@ -26,7 +29,6 @@ export type CreateCustomMemeOutput = z.infer<typeof CreateCustomMemeOutputSchema
 export async function createCustomMeme(input: CreateCustomMemeInput): Promise<CreateCustomMemeOutput> {
     return createCustomMemeFlow(input);
 }
-
 
 const createCustomMemeFlow = ai.defineFlow(
   {
@@ -54,6 +56,27 @@ const createCustomMemeFlow = ai.defineFlow(
           threshold: 'BLOCK_NONE',
         },
     ];
+
+    // If an image is provided, the prompt is about the image.
+    if (input.imageDataUri) {
+         const jokeResponse = await ai.generate({
+            prompt: [
+                {text: `You are a meme generator. A user has provided an image and the following topic: "${input.topic}".
+                
+                **Rules of Engagement**:
+                1.  Analyze the image provided.
+                2.  Generate a short, funny joke in classic meme format (e.g., a setup and punchline) that relates to BOTH the image and the topic.
+                3.  Output ONLY the joke text. Do not add any conversational text like "Here's a joke:".
+                `},
+                {media: {url: input.imageDataUri}},
+            ],
+            config: { 
+                temperature: 0.8,
+                safetySettings,
+            },
+        });
+        return { joke: jokeResponse.text };
+    }
 
     let joke = input.topic;
     

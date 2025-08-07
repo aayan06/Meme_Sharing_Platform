@@ -334,7 +334,14 @@ export default function LaughFactoryPage() {
                 return;
             }
 
-            // Regenerate the joke based on the original topic/category
+            // If user has uploaded an image, generate new text based on the image
+            if (uploadedImage) {
+                const jokeResult = await createCustomMeme({ topic, imageDataUri: uploadedImage });
+                setJoke(jokeResult);
+                return;
+            }
+            
+            // Otherwise, regenerate a new joke based on the original topic/category
             const jokeResult = mode === 'create'
                 ? await createCustomMeme({ topic })
                 : await generateSafeJoke({ category: topic, safeForWork: jokeCategories.find(c => c.id === topic)?.sfw ?? true, usedJokes });
@@ -344,12 +351,7 @@ export default function LaughFactoryPage() {
                 setUsedJokes(prev => [...prev, jokeResult.joke]);
             }
 
-            // If user has uploaded an image, we are done. New text is ready.
-            if (uploadedImage) {
-                return;
-            }
-
-            // Otherwise, generate a new image for the new joke
+            // And generate a new image for the new joke
             const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
             if (mode === 'create') {
                  const memeResult = await generateCustomMemeImage(jokeResult.joke);
