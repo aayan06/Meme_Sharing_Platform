@@ -38,12 +38,12 @@ const generateJokePrompt = ai.definePrompt({
 
 **Rules for the Joke**:
 1.  **ALL CAPS**: The entire joke must be in uppercase.
-2.  **Classic Format**: Return the text as one or two lines, suitable for top/bottom text on a meme. Use a newline character (\\n) to separate the top and bottom text if needed.
-3.  **No Markdown**: Do NOT use any markdown formatting (like **bold**, *italic*, etc.).
+2.  **Classic Format**: Return the text as one or two lines. If the joke has a setup and a punchline, use a newline character (\\n) to separate the top text (setup) from the bottom text (punchline).
+3.  **No Markdown/Special Characters**: Do NOT use any markdown formatting (like **bold**, *italic*, etc.) and do not include any other escape characters.
 4.  **Concise & Punchy**: The text must be very short (around 20-25 words total), grammatically correct, and easy to read.
 5.  **Meme Humor**: The humor should be ironic, sarcastic, observational, or relatable.
 6.  **Originality**: Do not repeat any of the "Used Jokes" below.
-7.  **Output ONLY the joke text.** Do not add any conversational text.
+7.  **Output ONLY the joke text.** Do not add any conversational text or labels like "TOP TEXT:".
 
 **Used Jokes (Avoid These)**:
 {{#if usedJokes}}
