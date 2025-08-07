@@ -266,6 +266,8 @@ export default function LaughFactoryPage() {
         if (mode === 'create') {
             setCustomMemeText('');
             setUploadedImage(null);
+            setIsLoading(false); // Stop loading as we are just resetting the UI
+            return;
         }
         
         try {
@@ -316,37 +318,37 @@ export default function LaughFactoryPage() {
 
     const handleRegenerateText = async () => {
         if (!joke) return;
-
         setIsRegenerating(true);
+        setAudio(null);
         try {
-            // Case 1: User uploaded their own image. Generate new text for it.
-            if (uploadedImage) {
-                 const result = await createCustomMeme({
-                    topic: customMemeText, // The original topic
-                    imageDataUri: uploadedImage, // The user's image
-                    regenerateTopic: joke.joke // Ask for a variation of the last joke
+            // Case 1: Create mode. Regenerate based on the original custom text.
+            // If user uploaded an image, keep it. Otherwise, generate a new image.
+            if (mode === 'create') {
+                const result = await createCustomMeme({
+                    topic: customMemeText,
+                    imageDataUri: uploadedImage || undefined,
                 });
                 setJoke({ joke: result.joke });
-                // The image doesn't change, so we don't set MemeImage
-            } 
-            // Case 2: AI generated the image. Generate a new joke AND a new image.
+                // Only set the image if one was generated (i.e., user didn't upload one)
+                if (!uploadedImage) {
+                    setMemeImage({ imageDataUri: result.imageDataUri });
+                }
+            }
+            // Case 2: Generate mode. Regenerate based on the selected category.
             else {
                 const selectedCategory = jokeCategories.find(cat => cat.id === category);
-                const isSfw = selectedCategory?.sfw ?? true;
+                if (!selectedCategory) return;
                 
-                let promptTopic = category;
-                if (mode === 'create' && customMemeText) {
-                    promptTopic = `a different joke about: ${customMemeText}`;
-                } else {
-                    promptTopic = `a variation of this joke: "${joke.joke}"`;
-                }
-
-                const jokeResult = await generateSafeJoke({ category: promptTopic, safeForWork: isSfw, usedJokes });
+                const isSfw = selectedCategory.sfw;
+                const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
+                
+                // Generate a new joke from the same category
+                const jokeResult = await generateSafeJoke({ category, safeForWork: isSfw, usedJokes });
                 setJoke(jokeResult);
                 setUsedJokes(prev => [...prev, jokeResult.joke]);
 
-                // Only generate a new image if it's a meme category or create mode
-                if ((mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes')) || mode === 'create') {
+                // If it's a meme category, generate a new image to go with the new joke
+                if (isMemeCategory) {
                     const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
                     if (memeResult) {
                         setMemeImage(memeResult);
@@ -360,6 +362,7 @@ export default function LaughFactoryPage() {
             setIsRegenerating(false);
         }
     };
+
 
     const handleCopyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);

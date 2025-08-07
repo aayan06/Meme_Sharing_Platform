@@ -18,7 +18,6 @@ const CreateCustomMemeInputSchema = z.object({
   imageDataUri: z.string().optional().describe(
     "An optional user-uploaded image as a data URI. Format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
-  regenerateTopic: z.string().optional().describe('An optional topic to regenerate a joke from, ensuring the new joke is a variation of the old one.')
 });
 export type CreateCustomMemeInput = z.infer<typeof CreateCustomMemeInputSchema>;
 
@@ -68,18 +67,8 @@ const createCustomMemeFlow = ai.defineFlow(
     let joke = input.topic;
     let finalImageDataUri = input.imageDataUri;
     
-    // If regenerating, create a variation. Otherwise, generate a new joke if needed.
-    if (input.regenerateTopic) {
-         const jokeResponse = await ai.generate({
-            prompt: `You are a meme generator. A user wants a new joke based on this topic: "${input.regenerateTopic}". 
-            Generate a short, funny joke in classic meme format. Output ONLY the joke text. Make it different from the original but on the same theme.`,
-            config: { 
-                temperature: 0.9,
-                safetySettings,
-             },
-        });
-        joke = jokeResponse.text;
-    } else if (input.topic.length < 50 && !input.topic.includes('\n')) {
+    // If the topic seems like a prompt rather than finished text, generate a joke.
+    if (input.topic.length < 50 && !input.topic.includes('\n')) {
         const jokeResponse = await ai.generate({
             prompt: `You are a meme generator. A user has provided the following topic: "${input.topic}".
             
