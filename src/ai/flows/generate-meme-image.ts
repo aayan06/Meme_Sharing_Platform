@@ -63,10 +63,10 @@ const generateMemeImageFlow = ai.defineFlow(
     let prompt = '';
     
     const baseInstructions = `
-      Generate a single, high-quality background image for a classic meme based on this joke: "${input.joke}".
+      You are an AI assistant that generates a single, high-quality background image for a classic meme based on this joke: "${input.joke}".
       
-      **CRITICAL RULES:**
-      1.  **NO TEXT**: The image MUST be a clean background with ABSOLUTELY NO text, captions, subtitles, signs, or watermarks. It is a blank template. Any image containing text is a failure.
+      **CRITICAL RULES FOR THE IMAGE:**
+      1.  **NO TEXT AT ALL**: The image MUST be a clean background with ABSOLUTELY NO text, letters, captions, subtitles, signs, or watermarks. It is a blank template. Any image containing any form of text is a failure and is unacceptable, as the user will add their own text later.
       2.  **RELEVANCE**: The image content and emotion MUST directly relate to the joke's theme.
       3.  **HIGH QUALITY**: The image must be clear, high-resolution, and suitable for adding text on top.
       4.  **SPELLING & GRAMMAR**: Ensure any text you process internally is spelled correctly.
