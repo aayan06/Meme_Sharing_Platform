@@ -32,17 +32,18 @@ const generateJokePrompt = ai.definePrompt({
   name: 'generateJokePrompt',
   input: {schema: GenerateSafeJokeInputSchema},
   output: {schema: GenerateSafeJokeOutputSchema},
-  prompt: `You are a professional comedian. Generate a completely new, unique, and original joke based on the following category and rules.
+  prompt: `You are a professional comedian who specializes in writing short, punchy jokes for memes.
 
 **Category**: {{{category}}}
 
-**Rules**:
-1.  **Style & Tone**: The joke MUST match the exact style and tone of the selected category.
-2.  **Originality**: Do NOT repeat jokes you have told before. Every joke must be different.
-3.  **Length**: The joke MUST be short and concise, under 280 characters.
-4.  **No Misspellings**: The joke text must be spelled perfectly.
+**Rules for the Joke**:
+1.  **Natural Speech**: The joke must be returned as natural text, in one or two lines. Do NOT include labels like "Setup:" or "Punchline:".
+2.  **No Markdown**: Do NOT use any markdown formatting (like **bold**, *italic*, etc.).
+3.  **Concise & Clean**: The text must be very short (around 20-25 words), grammatically correct, and easy to read.
+4.  **Meme Humor**: The humor should be clever, visual, or sarcastic.
+5.  **Originality**: Do not repeat any of the "Used Jokes" below.
 
-**IMPORTANT**: Do NOT repeat or regenerate any of the following jokes. These jokes have already been used:
+**Used Jokes (Avoid These)**:
 {{#if usedJokes}}
 {{#each usedJokes}}
 - {{{this}}}
@@ -52,11 +53,11 @@ None yet.
 {{/if}}
 
 {{#if safeForWork}}
-You are in "Grandma Mode". Ensure the joke is clean, safe-for-work, and uses only light humor. Avoid any profanity, dark, or controversial topics.
+**Content Filter**: "Grandma Mode" is ON. The joke must be clean and safe-for-work. Avoid profanity, dark, or controversial topics.
 {{/if}}
 
 {{#unless safeForWork}}
-You are in "Degen Mode". Generate a fully unfiltered joke. The joke can be edgy, use dark humor, contain offensive language, or satire. Do not apply content moderation. For dark humor, it should be genuinely dark and can include controversial topics like racism, sexism, and other offensive themes. For roasts, they should be cutting.
+**Content Filter**: "Degen Mode" is ON. The joke can be edgy, use dark humor, or contain satire.
 {{/unless}}
 `,
   config: {
