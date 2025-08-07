@@ -968,14 +968,14 @@ export default function LaughFactoryPage() {
                                         <div
                                             className="absolute p-4 text-center text-white font-bold uppercase"
                                             style={{
-                                                top: `${joke.textPlacement?.top?.y ?? 2}%`,
+                                                top: `${joke.textPlacement?.top?.y ?? 0}%`,
                                                 left: `${joke.textPlacement?.top?.x ?? 5}%`,
                                                 width: `${joke.textPlacement?.top?.width ?? 90}%`,
-                                                height: `${joke.textPlacement?.top?.height ?? 48}%`,
+                                                height: `${joke.textPlacement?.top?.height ?? 50}%`,
                                                 fontSize: 'clamp(1rem, 5vw, 2.5rem)',
                                                 textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
                                                 display: 'flex',
-                                                alignItems: 'center',
+                                                alignItems: 'flex-start',
                                                 justifyContent: 'center',
                                             }}
                                         >
@@ -987,11 +987,11 @@ export default function LaughFactoryPage() {
                                                 top: `${joke.textPlacement?.bottom?.y ?? 50}%`,
                                                 left: `${joke.textPlacement?.bottom?.x ?? 5}%`,
                                                 width: `${joke.textPlacement?.bottom?.width ?? 90}%`,
-                                                height: `${joke.textPlacement?.bottom?.height ?? 48}%`,
+                                                height: `${joke.textPlacement?.bottom?.height ?? 50}%`,
                                                 fontSize: 'clamp(1rem, 5vw, 2.5rem)',
                                                 textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
                                                 display: 'flex',
-                                                alignItems: 'center',
+                                                alignItems: 'flex-end',
                                                 justifyContent: 'center',
                                             }}
                                         >
