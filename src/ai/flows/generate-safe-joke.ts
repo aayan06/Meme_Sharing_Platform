@@ -40,6 +40,7 @@ const generateJokePrompt = ai.definePrompt({
 1.  **Style & Tone**: The joke MUST match the exact style and tone of the selected category.
 2.  **Originality**: Do NOT repeat jokes you have told before. Every joke must be different.
 3.  **Length**: The joke MUST be short and concise, under 280 characters.
+4.  **No Misspellings**: The joke text must be spelled perfectly.
 
 **IMPORTANT**: Do NOT repeat or regenerate any of the following jokes. These jokes have already been used:
 {{#if usedJokes}}

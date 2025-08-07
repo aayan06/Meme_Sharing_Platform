@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins, Trash2 } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins, Trash2, RefreshCcw, FileImage } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -92,6 +92,7 @@ export default function LaughFactoryPage() {
     const [memeImage, setMemeImage] = useState<GenerateMemeImageOutput | null>(null);
     const [audio, setAudio] = useState<GenerateAudioOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isRegenerating, setIsRegenerating] = useState(false);
     const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
@@ -99,7 +100,7 @@ export default function LaughFactoryPage() {
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const { toast } = useToast();
     const memeCardRef = useRef<HTMLDivElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    fileInputRef = useRef<HTMLInputElement>(null);
 
     // Leaderboard State
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -254,12 +255,14 @@ export default function LaughFactoryPage() {
     }
 
 
-    const handleGenerateJoke = async () => {
+    const handleGenerateNew = async () => {
         setIsLoading(true);
         setJoke(null);
         setMemeImage(null);
         setAudio(null);
         setSelectedReaction(null);
+        setUploadedImage(null);
+        setCustomMemeText('');
         
         try {
             if (mode === 'create') {
@@ -309,6 +312,32 @@ export default function LaughFactoryPage() {
             });
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleRegenerateText = async () => {
+        if (!joke || !(memeImage || uploadedImage)) {
+            toast({ title: "Error", description: "No image available to regenerate text for.", variant: "destructive" });
+            return;
+        }
+        setIsRegenerating(true);
+        try {
+             const selectedCategory = jokeCategories.find(cat => cat.id === category);
+             const isSfw = mode === 'create' ? !customMemeText.toLowerCase().includes('edgy') : selectedCategory?.sfw ?? true;
+             const jokeCategory = mode === 'create' ? customMemeText || "a random meme" : category;
+            
+             const jokeResult = await generateSafeJoke({ category: jokeCategory, safeForWork: isSfw, usedJokes });
+             setJoke(jokeResult);
+             setUsedJokes(prev => [...prev, jokeResult.joke]);
+        } catch(error) {
+            console.error("Failed to regenerate text:", error);
+            toast({
+                title: "Error",
+                description: "Could not regenerate the joke text. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsRegenerating(false);
         }
     };
 
@@ -955,8 +984,26 @@ export default function LaughFactoryPage() {
                                     </>
                                 )}
                             </CardContent>
-                             {!(isMemeCategory || mode === 'create') && (
-                                <CardFooter className="flex justify-end items-center space-x-2">
+                             <CardFooter className="flex justify-end items-center space-x-2">
+                                {isMemeReady ? (
+                                    <div className="flex w-full justify-between">
+                                        <div className="flex gap-2">
+                                            <Button onClick={handleRegenerateText} disabled={isRegenerating} variant="outline">
+                                                {isRegenerating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <RefreshCcw className="mr-2 h-5 w-5" />}
+                                                Regenerate
+                                            </Button>
+                                            <Button onClick={handleGenerateNew} disabled={isLoading}>
+                                                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileImage className="mr-2 h-5 w-5" />}
+                                                Generate New
+                                            </Button>
+                                        </div>
+                                        <Button onClick={handleSubmit} disabled={isSubmitting || !user}>
+                                             {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
+                                             Submit for Glory
+                                         </Button>
+                                    </div>
+                                ) : (
+                                    <>
                                      <Button variant={selectedReaction === 'laugh' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('laugh')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
                                         <span>😂</span>
                                     </Button>
@@ -966,16 +1013,17 @@ export default function LaughFactoryPage() {
                                     <Button variant={selectedReaction === 'unamused' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('unamused')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
                                         <span>🙄</span>
                                     </Button>
-                                </CardFooter>
-                            )}
+                                    </>
+                                )}
+                            </CardFooter>
                         </JokeCard>
                     )}
                 </div>
 
                  <div className="w-full flex justify-center p-2 sm:p-4">
                      <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-xl">
-                        {mode !== 'leaderboard' && (
-                        <Button onClick={handleGenerateJoke} disabled={isLoading || (mode === 'create' && !customMemeText && !uploadedImage)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
+                        {mode !== 'leaderboard' && !isMemeReady && (
+                        <Button onClick={handleGenerateNew} disabled={isLoading || (mode === 'create' && !customMemeText && !uploadedImage)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                             {isLoading ? (
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             ) : (
@@ -985,10 +1033,7 @@ export default function LaughFactoryPage() {
                         </Button>
                         )}
                         {isMemeReady && (
-                         <Button onClick={handleSubmit} disabled={isSubmitting || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14 bg-green-500 hover:bg-green-600">
-                             {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
-                             Submit for Glory
-                         </Button>
+                            <p className="text-sm text-muted-foreground">Happy with your creation? Use the buttons above to submit or try again.</p>
                         )}
                      </div>
                 </div>
@@ -996,5 +1041,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
