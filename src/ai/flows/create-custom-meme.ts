@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview An AI agent that creates a custom meme from a user's topic and optional image.
+ * @fileOverview An AI agent that creates a custom meme from a user's topic.
  *
  * - createCustomMeme - A function that handles the custom meme creation process.
  * - CreateCustomMemeInput - The input type for the createCustomMeme function.
@@ -11,23 +11,14 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import sharp from 'sharp';
 
 const CreateCustomMemeInputSchema = z.object({
   topic: z.string().describe("The user's description of the meme idea or the exact text for the meme."),
-  imageDataUri: z.string().optional().describe(
-    "An optional user-uploaded image as a data URI. Format: 'data:<mimetype>;base64,<encoded_data>'."
-  ),
 });
 export type CreateCustomMemeInput = z.infer<typeof CreateCustomMemeInputSchema>;
 
 const CreateCustomMemeOutputSchema = z.object({
   joke: z.string().describe('The generated joke or the original text.'),
-  imageDataUri: z
-    .string()
-    .describe(
-      "The generated or provided meme image as a data URI."
-    ),
 });
 export type CreateCustomMemeOutput = z.infer<typeof CreateCustomMemeOutputSchema>;
 
@@ -65,7 +56,6 @@ const createCustomMemeFlow = ai.defineFlow(
     ];
 
     let joke = input.topic;
-    let finalImageDataUri = input.imageDataUri;
     
     // If the topic seems like a prompt rather than finished text, generate a joke.
     if (input.topic.length < 50 && !input.topic.includes('\n')) {
@@ -83,41 +73,9 @@ const createCustomMemeFlow = ai.defineFlow(
         });
         joke = jokeResponse.text;
     }
-
-    // If the user did NOT upload an image, generate one based on the joke/topic.
-    if (!finalImageDataUri) {
-        const imageGenPrompt = `Generate a high-quality, photorealistic background image for a meme. The image content MUST directly relate to the theme of this joke: "${joke}". CRITICAL: The image MUST be a clean background with ABSOLUTELY NO TEXT, captions, or words.`;
-
-        const {media} = await ai.generate({
-            model: 'googleai/gemini-2.0-flash-preview-image-generation',
-            prompt: imageGenPrompt,
-            config: {
-                responseModalities: ['TEXT', 'IMAGE'],
-                safetySettings,
-            },
-        });
-
-        if (!media?.url) {
-          throw new Error('Image generation failed: No media object was returned by the model.');
-        }
-        finalImageDataUri = media.url;
-    }
-    
-    // Convert data URI to buffer for compression
-    const base64Data = finalImageDataUri.split(',')[1];
-    const imageBuffer = Buffer.from(base64Data, 'base64');
-    
-    // Compress the image
-    const compressedImageBuffer = await sharp(imageBuffer)
-        .jpeg({ quality: 80 }) // Compress to JPEG with 80% quality
-        .toBuffer();
-    
-    // Convert compressed buffer back to data URI
-    const compressedImageDataUri = `data:image/jpeg;base64,${compressedImageBuffer.toString('base64')}`;
     
     return {
         joke,
-        imageDataUri: compressedImageDataUri,
     };
   }
 );

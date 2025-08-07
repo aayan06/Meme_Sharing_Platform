@@ -281,12 +281,18 @@ export default function LaughFactoryPage() {
                     setIsLoading(false);
                     return;
                 }
-                const result = await createCustomMeme({
-                    topic: customMemeText || 'A funny meme',
-                    imageDataUri: uploadedImage || undefined
+                const jokeResult = await createCustomMeme({
+                    topic: customMemeText || 'A funny meme about technology',
                 });
-                setJoke({ joke: result.joke });
-                setMemeImage({ imageDataUri: result.imageDataUri });
+                setJoke({ joke: jokeResult.joke });
+
+                if (!uploadedImage) {
+                     const memeResult = await generateMemeImage({ category: 'ai jokes', safeForWork: true, joke: jokeResult.joke });
+                    if (memeResult) {
+                        setMemeImage(memeResult);
+                    }
+                }
+
             } else {
                 const selectedCategory = jokeCategories.find(cat => cat.id === category);
                 const isSfw = selectedCategory?.sfw ?? true;
@@ -324,14 +330,16 @@ export default function LaughFactoryPage() {
             // Case 1: Create mode. Regenerate based on the original custom text.
             // If user uploaded an image, keep it. Otherwise, generate a new image.
             if (mode === 'create') {
-                const result = await createCustomMeme({
-                    topic: customMemeText,
-                    imageDataUri: uploadedImage || undefined,
+                const jokeResult = await createCustomMeme({
+                    topic: customMemeText || 'A funny meme about technology',
                 });
-                setJoke({ joke: result.joke });
-                // Only set the image if one was generated (i.e., user didn't upload one)
+                setJoke({ joke: jokeResult.joke });
+
                 if (!uploadedImage) {
-                    setMemeImage({ imageDataUri: result.imageDataUri });
+                     const memeResult = await generateMemeImage({ category: 'ai jokes', safeForWork: true, joke: jokeResult.joke });
+                    if (memeResult) {
+                        setMemeImage(memeResult);
+                    }
                 }
             }
             // Case 2: Generate mode. Regenerate based on the selected category.
