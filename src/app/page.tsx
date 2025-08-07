@@ -571,11 +571,11 @@ export default function LaughFactoryPage() {
 
     const splitJoke = (text: string): { top: string; bottom: string } => {
         if (!text) return { top: '', bottom: '' };
-        const parts = text.split('\n');
+        const parts = text.split('||');
         if (parts.length >= 2) {
-            return { top: parts[0], bottom: parts.slice(1).join('\n') };
+            return { top: parts[0].trim(), bottom: parts.slice(1).join('||').trim() };
         }
-        return { top: text, bottom: '' };
+        return { top: text.trim(), bottom: '' };
     };
 
 
@@ -591,7 +591,7 @@ export default function LaughFactoryPage() {
     
     const isMemeReady = (joke && (memeImage?.imageDataUri || uploadedImage));
     const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes'));
-    const dailyJoke = { joke: "I TOLD MY WIFE SHE SHOULD EMBRACE HER MISTAKES.\nSHE GAVE ME A HUG.", creator: "Comedian_AI", likes: 1337 };
+    const dailyJoke = { joke: "I TOLD MY WIFE SHE SHOULD EMBRACE HER MISTAKES.||SHE GAVE ME A HUG.", creator: "Comedian_AI", likes: 1337 };
 
     const navButtonClass = (isActive: boolean) =>
     cn(
@@ -675,7 +675,7 @@ export default function LaughFactoryPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-lg sm:text-xl font-medium uppercase whitespace-pre-line">{dailyJoke.joke}</p>
+                            <p className="text-lg sm:text-xl font-medium uppercase whitespace-pre-line">{dailyJoke.joke.replace('||', '\n')}</p>
                             <div className="flex items-center gap-4 mt-4">
                                 <p className="text-sm text-muted-foreground">- by {dailyJoke.creator}</p>
                                 <div className="flex items-center gap-1 text-lg font-bold text-green-400">
@@ -942,14 +942,14 @@ export default function LaughFactoryPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => handleGenerateAudio(joke.joke)}
+                                                onClick={() => handleGenerateAudio(joke.joke.replace('||', '\n'))}
                                                 disabled={isGeneratingAudio}
                                                 aria-label="Read joke aloud"
                                                 className="rounded-full"
                                             >
                                                 {isGeneratingAudio ? <Loader2 className="h-5 w-5 animate-spin" /> : <Volume2 className="h-5 w-5" />}
                                             </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleCopyToClipboard(joke.joke)} aria-label="Copy joke" className="rounded-full">
+                                            <Button variant="ghost" size="icon" onClick={() => handleCopyToClipboard(joke.joke.replace('||', '\n'))} aria-label="Copy joke" className="rounded-full">
                                                 <Copy className="h-5 w-5" />
                                             </Button>
                                         </>
@@ -1000,7 +1000,7 @@ export default function LaughFactoryPage() {
                                     </MemeDisplayCard>
                                 ) : (
                                     <>
-                                        <p className="text-lg sm:text-xl font-medium leading-relaxed uppercase whitespace-pre-line">{joke.joke}</p>
+                                        <p className="text-lg sm:text-xl font-medium leading-relaxed uppercase whitespace-pre-line">{joke.joke.replace('||', '\n')}</p>
                                         {audio?.media && (
                                             <div className="mt-4">
                                                 <audio controls autoPlay className="w-full">
