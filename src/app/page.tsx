@@ -327,40 +327,35 @@ export default function LaughFactoryPage() {
         }
     };
 
-    const handleRegenerateText = async () => {
+    const handleRegenerate = async (type: 'text' | 'image' | 'both') => {
         if (!joke) return;
         setIsRegenerating(true);
-        setAudio(null);
+        
         try {
-            const topic = mode === 'create' ? customMemeText : category;
-             if (!topic) {
-                toast({ title: "Error", description: "No topic or category to regenerate from.", variant: "destructive" });
-                return;
-            }
+            const topic = mode === 'create' ? (customMemeText || 'A funny meme about technology') : category;
+            const isSfw = mode === 'generate' ? (jokeCategories.find(c => c.id === topic)?.sfw ?? true) : true;
             
-            const jokeResult = mode === 'create'
-                ? await createCustomMeme({ topic, imageDataUri: uploadedImage || undefined })
-                : await generateSafeJoke({ category: topic, safeForWork: jokeCategories.find(c => c.id === topic)?.sfw ?? true, usedJokes });
-
-            setJoke(jokeResult);
-
-            if (mode !== 'create') {
-                setUsedJokes(prev => [...prev, jokeResult.joke]);
-            }
-            
-            if (!uploadedImage) {
-                const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
-                if (mode === 'create') {
-                     const memeResult = await generateCustomMemeImage(jokeResult.joke);
-                     if (memeResult) setMemeImage(memeResult);
-                } else if (isMemeCategory) {
-                     const selectedCategory = jokeCategories.find(cat => cat.id === category);
-                     const isSfw = selectedCategory?.sfw ?? true;
-                     const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
-                     if (memeResult) setMemeImage(memeResult);
+            // Regenerate Text
+            if (type === 'text' || type === 'both') {
+                setAudio(null);
+                const jokeResult = mode === 'create'
+                    ? await createCustomMeme({ topic, imageDataUri: uploadedImage || undefined })
+                    : await generateSafeJoke({ category: topic, safeForWork: isSfw, usedJokes });
+                setJoke(jokeResult);
+                if (mode !== 'create') {
+                    setUsedJokes(prev => [...prev, jokeResult.joke]);
                 }
             }
-
+    
+            // Regenerate Image
+            if ((type === 'image' || type === 'both') && !uploadedImage) {
+                 const currentJokeText = joke.joke; // Use existing joke text for new image
+                 const memeResult = mode === 'create'
+                    ? await generateCustomMemeImage(currentJokeText)
+                    : await generateMemeImage({ category: topic, safeForWork: isSfw, joke: currentJokeText });
+                 if (memeResult) setMemeImage(memeResult);
+            }
+    
         } catch (error) {
             console.error("Failed to regenerate:", error);
             toast({ title: "Error", description: "Could not regenerate. Please try again.", variant: "destructive" });
@@ -981,10 +976,10 @@ export default function LaughFactoryPage() {
                                         <div
                                             className="absolute p-4 text-center text-white font-bold"
                                             style={{
-                                                top: `${joke.textPlacement?.top?.y ?? 2}%`,
+                                                top: `${joke.textPlacement?.top?.y ?? 0}%`,
                                                 left: `${joke.textPlacement?.top?.x ?? 5}%`,
                                                 width: `${joke.textPlacement?.top?.width ?? 90}%`,
-                                                height: `${joke.textPlacement?.top?.height ?? 45}%`,
+                                                height: `${joke.textPlacement?.top?.height ?? 48}%`,
                                                 fontSize: 'clamp(1rem, 5vw, 2.5rem)',
                                                 textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
                                                 display: 'flex',
@@ -997,10 +992,10 @@ export default function LaughFactoryPage() {
                                         <div
                                             className="absolute p-4 text-center text-white font-bold"
                                             style={{
-                                                top: `${joke.textPlacement?.bottom?.y ?? 53}%`,
+                                                top: `${joke.textPlacement?.bottom?.y ?? 52}%`,
                                                 left: `${joke.textPlacement?.bottom?.x ?? 5}%`,
                                                 width: `${joke.textPlacement?.bottom?.width ?? 90}%`,
-                                                height: `${joke.textPlacement?.bottom?.height ?? 45}%`,
+                                                height: `${joke.textPlacement?.bottom?.height ?? 48}%`,
                                                 fontSize: 'clamp(1rem, 5vw, 2.5rem)',
                                                 textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
                                                 display: 'flex',
@@ -1029,10 +1024,19 @@ export default function LaughFactoryPage() {
                                 {isMemeReady ? (
                                     <div className="flex w-full justify-between">
                                         <div className="flex gap-2">
-                                            <Button onClick={handleRegenerateText} disabled={isRegenerating} variant="outline">
-                                                {isRegenerating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <RefreshCcw className="mr-2 h-5 w-5" />}
-                                                Regenerate
-                                            </Button>
+                                             <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="outline" disabled={isRegenerating}>
+                                                        {isRegenerating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <RefreshCcw className="mr-2 h-5 w-5" />}
+                                                        Regenerate
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent>
+                                                    <DropdownMenuItem onClick={() => handleRegenerate('text')} disabled={isRegenerating}>Regenerate Text</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleRegenerate('image')} disabled={isRegenerating || !!uploadedImage}>Regenerate Image</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleRegenerate('both')} disabled={isRegenerating || !!uploadedImage}>Regenerate Both</DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                             <Button onClick={handleGenerateNew} disabled={isLoading}>
                                                 {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileImage className="mr-2 h-5 w-5" />}
                                                 Generate New
@@ -1114,3 +1118,6 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+
+    
