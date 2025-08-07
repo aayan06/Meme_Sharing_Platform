@@ -986,12 +986,10 @@ export default function LaughFactoryPage() {
                                                 width: `${joke.textPlacement?.top?.width ?? 90}%`,
                                                 height: `${joke.textPlacement?.top?.height ?? 45}%`,
                                                 fontSize: 'clamp(1rem, 5vw, 2.5rem)',
-                                                textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
+                                                textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                                                borderRadius: '10px',
                                             }}
                                         >
                                           {splitJoke(joke.joke).top}
@@ -1004,12 +1002,10 @@ export default function LaughFactoryPage() {
                                                 width: `${joke.textPlacement?.bottom?.width ?? 90}%`,
                                                 height: `${joke.textPlacement?.bottom?.height ?? 45}%`,
                                                 fontSize: 'clamp(1rem, 5vw, 2.5rem)',
-                                                textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
+                                                textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                                                borderRadius: '10px',
                                             }}
                                         >
                                           {splitJoke(joke.joke).bottom}
