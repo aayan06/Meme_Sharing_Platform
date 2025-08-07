@@ -334,29 +334,30 @@ export default function LaughFactoryPage() {
         try {
             const topic = mode === 'create' ? (customMemeText || 'A funny meme about technology') : category;
             const isSfw = mode === 'generate' ? (jokeCategories.find(c => c.id === topic)?.sfw ?? true) : true;
-            let newJoke = joke; // Keep track of the newly generated joke
+            let newJoke = joke;
             
             // Regenerate Text
             if (type === 'text' || type === 'both') {
                 setAudio(null);
-                const jokeResult = mode === 'create'
-                    ? await createCustomMeme({ topic, imageDataUri: uploadedImage || undefined })
-                    : await generateSafeJoke({ category: topic, safeForWork: isSfw, usedJokes });
+                const jokeResult = await createCustomMeme({ 
+                    topic, 
+                    imageDataUri: uploadedImage || (type === 'text' ? (memeImage?.imageDataUri) : undefined),
+                });
                 setJoke(jokeResult);
-                newJoke = jokeResult; // Store the new joke
-                if (mode !== 'create') {
-                    setUsedJokes(prev => [...prev, jokeResult.joke]);
-                }
+                newJoke = jokeResult;
             }
     
             // Regenerate Image
-            if ((type === 'image' || type === 'both') && !uploadedImage) {
-                 // If we regenerated both, use the *new* joke text for the image prompt. Otherwise, use existing.
-                 const imagePromptText = (type === 'both' && newJoke) ? newJoke.joke : joke.joke;
-                 const memeResult = mode === 'create'
-                    ? await generateCustomMemeImage(imagePromptText)
-                    : await generateMemeImage({ category: topic, safeForWork: isSfw, joke: imagePromptText });
-                 if (memeResult) setMemeImage(memeResult);
+            if (type === 'image' || type === 'both') {
+                 if (uploadedImage) {
+                    toast({ title: "Action Not Allowed", description: "Cannot regenerate a user-uploaded image.", variant: "destructive" });
+                 } else {
+                     const imagePromptText = newJoke.joke;
+                     const memeResult = mode === 'create'
+                        ? await generateCustomMemeImage(imagePromptText)
+                        : await generateMemeImage({ category: topic, safeForWork: isSfw, joke: imagePromptText });
+                     if (memeResult) setMemeImage(memeResult);
+                 }
             }
     
         } catch (error) {
@@ -1113,5 +1114,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
