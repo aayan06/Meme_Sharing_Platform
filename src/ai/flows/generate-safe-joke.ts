@@ -32,19 +32,21 @@ const generateJokePrompt = ai.definePrompt({
   name: 'generateJokePrompt',
   input: {schema: GenerateSafeJokeInputSchema},
   output: {schema: GenerateSafeJokeOutputSchema},
-  prompt: `You are a professional comedian who specializes in writing short, punchy jokes for classic memes.
+  prompt: `Generate a meme caption in classic meme format using these rules:
+
+- Return only one caption with two parts: top and bottom text.
+- Do NOT include the same text twice. Return only the final result once.
+- Use ALL CAPS for both lines.
+- Use plain text only — no escape characters like \\n, \\\\n, or markdown.
+- Separate top and bottom text with || (double pipe) ONLY.
+- Output format should be: "TOP TEXT HERE || BOTTOM TEXT HERE"
+- Keep the joke under 25 words total.
+- Use meme-style humor: sarcastic, ironic, observational, or relatable.
+- DO NOT return both a top caption and a rendered version — just the formatted meme caption.
 
 **Category**: {{{category}}}
 
-**Rules for the Joke**:
-1.  **ALL CAPS**: The entire joke must be in uppercase.
-2.  **Classic Format**: Return the text as one or two lines. If the joke has a setup and a punchline, use a double pipe (||) to separate the top text (setup) from the bottom text (punchline). Example: "TOP TEXT || BOTTOM TEXT"
-3.  **No Markdown/Special Characters**: Do NOT use any markdown formatting or escape characters like \\n.
-4.  **Concise & Punchy**: The text must be very short (around 20-25 words total), grammatically correct, and easy to read.
-5.  **Meme Humor**: The humor should be ironic, sarcastic, observational, or relatable.
-6.  **Originality**: Do not repeat any of the "Used Jokes" below.
-7.  **Output ONLY the joke text.** Do not add any conversational text or labels like "TOP TEXT:".
-
+**Originality**: Do not repeat any of the "Used Jokes" below.
 **Used Jokes (Avoid These)**:
 {{#if usedJokes}}
 {{#each usedJokes}}
@@ -74,43 +76,25 @@ const generateSafeJokeFlow = ai.defineFlow(
     outputSchema: GenerateSafeJokeOutputSchema,
   },
   async (input) => {
-    const safetySettings = input.safeForWork
-      ? [
-          {
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_LOW_AND_ABOVE',
-          },
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_LOW_AND_ABOVE',
-          },
-          {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_LOW_AND_ABOVE',
-          },
-          {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_LOW_AND_ABOVE',
-          },
-        ]
-      : [
-          {
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_NONE',
-          },
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE',
-          },
-          {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_NONE',
-          },
-          {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_NONE',
-          },
-        ];
+    // Looser safety settings to prevent the model from breaking the format.
+    const safetySettings = [
+        {
+          category: 'HARM_CATEGORY_HATE_SPEECH',
+          threshold: 'BLOCK_NONE',
+        },
+        {
+          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+          threshold: 'BLOCK_NONE',
+        },
+        {
+          category: 'HARM_CATEGORY_HARASSMENT',
+          threshold: 'BLOCK_NONE',
+        },
+        {
+          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+          threshold: 'BLOCK_NONE',
+        },
+    ];
 
     const {output} = await generateJokePrompt(input, {
       config: { safetySettings },
