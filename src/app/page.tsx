@@ -334,6 +334,7 @@ export default function LaughFactoryPage() {
         try {
             const topic = mode === 'create' ? (customMemeText || 'A funny meme about technology') : category;
             const isSfw = mode === 'generate' ? (jokeCategories.find(c => c.id === topic)?.sfw ?? true) : true;
+            let newJoke = joke; // Keep track of the newly generated joke
             
             // Regenerate Text
             if (type === 'text' || type === 'both') {
@@ -342,6 +343,7 @@ export default function LaughFactoryPage() {
                     ? await createCustomMeme({ topic, imageDataUri: uploadedImage || undefined })
                     : await generateSafeJoke({ category: topic, safeForWork: isSfw, usedJokes });
                 setJoke(jokeResult);
+                newJoke = jokeResult; // Store the new joke
                 if (mode !== 'create') {
                     setUsedJokes(prev => [...prev, jokeResult.joke]);
                 }
@@ -349,10 +351,11 @@ export default function LaughFactoryPage() {
     
             // Regenerate Image
             if ((type === 'image' || type === 'both') && !uploadedImage) {
-                 const currentJokeText = joke.joke; // Use existing joke text for new image
+                 // If we regenerated both, use the *new* joke text for the image prompt. Otherwise, use existing.
+                 const imagePromptText = (type === 'both' && newJoke) ? newJoke.joke : joke.joke;
                  const memeResult = mode === 'create'
-                    ? await generateCustomMemeImage(currentJokeText)
-                    : await generateMemeImage({ category: topic, safeForWork: isSfw, joke: currentJokeText });
+                    ? await generateCustomMemeImage(imagePromptText)
+                    : await generateMemeImage({ category: topic, safeForWork: isSfw, joke: imagePromptText });
                  if (memeResult) setMemeImage(memeResult);
             }
     
@@ -968,10 +971,10 @@ export default function LaughFactoryPage() {
                                         <div
                                             className="absolute p-4 text-center text-white font-bold uppercase"
                                             style={{
-                                                top: `${joke.textPlacement?.top?.y ?? 0}%`,
-                                                left: `${joke.textPlacement?.top?.x ?? 5}%`,
-                                                width: `${joke.textPlacement?.top?.width ?? 90}%`,
-                                                height: `${joke.textPlacement?.top?.height ?? 50}%`,
+                                                top: '0%',
+                                                left: '5%',
+                                                width: '90%',
+                                                height: '50%',
                                                 fontSize: 'clamp(1rem, 5vw, 2.5rem)',
                                                 textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
                                                 display: 'flex',
@@ -984,10 +987,10 @@ export default function LaughFactoryPage() {
                                         <div
                                             className="absolute p-4 text-center text-white font-bold uppercase"
                                             style={{
-                                                top: `${joke.textPlacement?.bottom?.y ?? 50}%`,
-                                                left: `${joke.textPlacement?.bottom?.x ?? 5}%`,
-                                                width: `${joke.textPlacement?.bottom?.width ?? 90}%`,
-                                                height: `${joke.textPlacement?.bottom?.height ?? 50}%`,
+                                                top: '50%',
+                                                left: '5%',
+                                                width: '90%',
+                                                height: '50%',
                                                 fontSize: 'clamp(1rem, 5vw, 2.5rem)',
                                                 textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
                                                 display: 'flex',
@@ -1110,3 +1113,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
