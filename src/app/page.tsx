@@ -6,7 +6,7 @@ import Link from "next/link";
 import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/generate-safe-joke";
 import { generateMemeImage, type GenerateMemeImageOutput } from "@/ai/flows/generate-meme-image";
 import { generateCustomMemeImage } from "@/ai/flows/generate-custom-meme-image";
-import { createCustomMeme } from "@/ai/flows/create-custom-meme";
+import { createCustomMeme, type CreateCustomMemeOutput } from "@/ai/flows/create-custom-meme";
 import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-audio";
 import { voteOnMeme } from "@/ai/flows/vote-on-meme";
 import { tipMemeCreator } from "@/ai/flows/tip-meme-creator";
@@ -88,7 +88,7 @@ export default function LaughFactoryPage() {
     const { user, userData, setUserData } = useAuth();
     const [mode, setMode] = useState<'generate' | 'create' | 'leaderboard'>('generate');
     const [category, setCategory] = useState(jokeCategories[0].id);
-    const [joke, setJoke] = useState<GenerateSafeJokeOutput | null>(null);
+    const [joke, setJoke] = useState<CreateCustomMemeOutput | GenerateSafeJokeOutput | null>(null);
     const [usedJokes, setUsedJokes] = useState<string[]>([]);
     const [memeImage, setMemeImage] = useState<GenerateMemeImageOutput | null>(null);
     const [audio, setAudio] = useState<GenerateAudioOutput | null>(null);
@@ -267,6 +267,9 @@ export default function LaughFactoryPage() {
         if (mode === 'create') {
             setCustomMemeText('');
             setUploadedImage(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
             setIsLoading(false); 
             return;
         }
@@ -284,8 +287,9 @@ export default function LaughFactoryPage() {
                 }
                 const jokeResult = await createCustomMeme({
                     topic: customMemeText || 'A funny meme about technology',
+                    imageDataUri: uploadedImage || undefined,
                 });
-                setJoke({ joke: jokeResult.joke });
+                setJoke(jokeResult);
 
                 if (!uploadedImage) {
                     const memeResult = await generateCustomMemeImage(jokeResult.joke);
@@ -333,36 +337,29 @@ export default function LaughFactoryPage() {
                 toast({ title: "Error", description: "No topic or category to regenerate from.", variant: "destructive" });
                 return;
             }
-
-            // If user has uploaded an image, generate new text based on the image
-            if (uploadedImage) {
-                const jokeResult = await createCustomMeme({ topic, imageDataUri: uploadedImage });
-                setJoke(jokeResult);
-                return;
-            }
             
-            // Otherwise, regenerate a new joke based on the original topic/category
             const jokeResult = mode === 'create'
-                ? await createCustomMeme({ topic })
+                ? await createCustomMeme({ topic, imageDataUri: uploadedImage || undefined })
                 : await generateSafeJoke({ category: topic, safeForWork: jokeCategories.find(c => c.id === topic)?.sfw ?? true, usedJokes });
 
             setJoke(jokeResult);
+
             if (mode !== 'create') {
                 setUsedJokes(prev => [...prev, jokeResult.joke]);
             }
-
-            // And generate a new image for the new joke
-            const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
-            if (mode === 'create') {
-                 const memeResult = await generateCustomMemeImage(jokeResult.joke);
-                 if (memeResult) setMemeImage(memeResult);
-            } else if (isMemeCategory) {
-                 const selectedCategory = jokeCategories.find(cat => cat.id === category);
-                 const isSfw = selectedCategory?.sfw ?? true;
-                 const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
-                 if (memeResult) setMemeImage(memeResult);
+            
+            if (!uploadedImage) {
+                const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
+                if (mode === 'create') {
+                     const memeResult = await generateCustomMemeImage(jokeResult.joke);
+                     if (memeResult) setMemeImage(memeResult);
+                } else if (isMemeCategory) {
+                     const selectedCategory = jokeCategories.find(cat => cat.id === category);
+                     const isSfw = selectedCategory?.sfw ?? true;
+                     const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
+                     if (memeResult) setMemeImage(memeResult);
+                }
             }
-
 
         } catch (error) {
             console.error("Failed to regenerate:", error);
@@ -432,9 +429,8 @@ export default function LaughFactoryPage() {
             const fileName = `${uuidv4()}.png`;
             const storageRef = ref(storage, `memes/${user.uid}/${fileName}`);
             
-            await uploadBytes(storageRef, blob);
-            
-            const downloadURL = await getDownloadURL(storageRef);
+            const uploadResult = await uploadBytes(storageRef, blob);
+            const downloadURL = await getDownloadURL(uploadResult.ref);
             
             await addDoc(collection(db, "memes"), {
                 imageUrl: downloadURL,
@@ -982,15 +978,39 @@ export default function LaughFactoryPage() {
                                             className="w-full h-auto rounded-lg border-2" 
                                             crossOrigin="anonymous"
                                         />
-                                        <div 
-                                          className="absolute top-0 left-0 right-0 p-4 text-center text-white font-bold text-4xl"
-                                           style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}
+                                        <div
+                                            className="absolute p-4 text-center text-white font-bold"
+                                            style={{
+                                                top: `${joke.textPlacement?.top?.y ?? 2}%`,
+                                                left: `${joke.textPlacement?.top?.x ?? 5}%`,
+                                                width: `${joke.textPlacement?.top?.width ?? 90}%`,
+                                                height: `${joke.textPlacement?.top?.height ?? 45}%`,
+                                                fontSize: 'clamp(1rem, 5vw, 2.5rem)',
+                                                textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                                                borderRadius: '10px',
+                                            }}
                                         >
                                           {splitJoke(joke.joke).top}
                                         </div>
-                                        <div 
-                                          className="absolute bottom-0 left-0 right-0 p-4 text-center text-white font-bold text-4xl"
-                                           style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}
+                                        <div
+                                            className="absolute p-4 text-center text-white font-bold"
+                                            style={{
+                                                top: `${joke.textPlacement?.bottom?.y ?? 53}%`,
+                                                left: `${joke.textPlacement?.bottom?.x ?? 5}%`,
+                                                width: `${joke.textPlacement?.bottom?.width ?? 90}%`,
+                                                height: `${joke.textPlacement?.bottom?.height ?? 45}%`,
+                                                fontSize: 'clamp(1rem, 5vw, 2.5rem)',
+                                                textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                                                borderRadius: '10px',
+                                            }}
                                         >
                                           {splitJoke(joke.joke).bottom}
                                         </div>
@@ -1062,8 +1082,9 @@ export default function LaughFactoryPage() {
                                 try {
                                     const jokeResult = await createCustomMeme({
                                         topic: customMemeText || 'A funny meme about technology',
+                                        imageDataUri: uploadedImage || undefined,
                                     });
-                                    setJoke({ joke: jokeResult.joke });
+                                    setJoke(jokeResult);
 
                                     if (!uploadedImage) {
                                         const memeResult = await generateCustomMemeImage(jokeResult.joke);

@@ -22,6 +22,20 @@ export type CreateCustomMemeInput = z.infer<typeof CreateCustomMemeInputSchema>;
 
 const CreateCustomMemeOutputSchema = z.object({
   joke: z.string().describe('The generated joke or the original text.'),
+  textPlacement: z.object({
+        top: z.object({
+            x: z.number().describe("X coordinate for top text block (percentage)."),
+            y: z.number().describe("Y coordinate for top text block (percentage)."),
+            width: z.number().describe("Width of the top text block (percentage)."),
+            height: z.number().describe("Height of the top text block (percentage)."),
+        }),
+        bottom: z.object({
+            x: z.number().describe("X coordinate for bottom text block (percentage)."),
+            y: z.number().describe("Y coordinate for bottom text block (percentage)."),
+            width: z.number().describe("Width of the bottom text block (percentage)."),
+            height: z.number().describe("Height of the bottom text block (percentage)."),
+        }),
+    }).describe("Coordinates for placing the text on the image to avoid key features.").optional(),
 });
 export type CreateCustomMemeOutput = z.infer<typeof CreateCustomMemeOutputSchema>;
 
