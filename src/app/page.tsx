@@ -255,27 +255,21 @@ export default function LaughFactoryPage() {
     }
 
 
-    const handleGenerateNew = async (isNewImage = true) => {
-        if (isNewImage) {
-            setIsLoading(true);
-            setJoke(null);
-            setMemeImage(null);
-            setAudio(null);
-            setSelectedReaction(null);
+    const handleGenerateNew = async () => {
+        setIsLoading(true);
+        setJoke(null);
+        setMemeImage(null);
+        setAudio(null);
+        setSelectedReaction(null);
+        
+        // In create mode, also clear the user's input to allow for a fresh start.
+        if (mode === 'create') {
+            setCustomMemeText('');
             setUploadedImage(null);
-            // In create mode, clearing the text allows for a new prompt
-            if (mode === 'create') {
-                setCustomMemeText(''); 
-            }
-        } else {
-            // This is for regenerating text only
-            setIsRegenerating(true);
         }
         
         try {
-            let currentJoke = joke?.joke;
-
-            if (mode === 'create' && isNewImage) {
+            if (mode === 'create') {
                  if (!customMemeText && !uploadedImage) {
                      toast({
                         title: "Meme Idea Needed",
@@ -292,26 +286,16 @@ export default function LaughFactoryPage() {
                 setJoke({ joke: result.joke });
                 setMemeImage({ imageDataUri: result.imageDataUri });
             } else {
-                // Logic for 'generate' mode OR for 'regenerating' text in any mode
                 const selectedCategory = jokeCategories.find(cat => cat.id === category);
                 const isSfw = selectedCategory?.sfw ?? true;
                 const isMemeCategory = category === 'crypto memes' || category === 'edgy memes';
-
-                // Determine the prompt for regeneration
-                let promptTopic = category;
-                if (mode === 'create' && customMemeText) {
-                    promptTopic = `a different joke about: ${customMemeText}`;
-                } else if (!isNewImage && currentJoke) {
-                    promptTopic = `a variation of this joke: "${currentJoke}"`;
-                }
                 
-                const jokeResult = await generateSafeJoke({ category: promptTopic, safeForWork: isSfw, usedJokes });
+                const jokeResult = await generateSafeJoke({ category: category, safeForWork: isSfw, usedJokes });
                 setJoke(jokeResult);
                 setUsedJokes(prev => [...prev, jokeResult.joke]);
-                currentJoke = jokeResult.joke; // update for image generation
 
-                if (isNewImage && isMemeCategory) {
-                    const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: currentJoke });
+                if (isMemeCategory) {
+                    const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
                     if (memeResult) {
                         setMemeImage(memeResult);
                     }
@@ -327,16 +311,54 @@ export default function LaughFactoryPage() {
             });
         } finally {
             setIsLoading(false);
-            setIsRegenerating(false);
         }
     };
 
-    const handleRegenerateText = () => {
-        if (!joke || !(memeImage || uploadedImage)) {
-            toast({ title: "Error", description: "No image available to regenerate text for.", variant: "destructive" });
-            return;
+    const handleRegenerateText = async () => {
+        if (!joke) return;
+
+        setIsRegenerating(true);
+        try {
+            // Case 1: User uploaded their own image. Generate new text for it.
+            if (uploadedImage) {
+                 const result = await createCustomMeme({
+                    topic: customMemeText, // The original topic
+                    imageDataUri: uploadedImage, // The user's image
+                    regenerateTopic: joke.joke // Ask for a variation of the last joke
+                });
+                setJoke({ joke: result.joke });
+                // The image doesn't change, so we don't set MemeImage
+            } 
+            // Case 2: AI generated the image. Generate a new joke AND a new image.
+            else {
+                const selectedCategory = jokeCategories.find(cat => cat.id === category);
+                const isSfw = selectedCategory?.sfw ?? true;
+                
+                let promptTopic = category;
+                if (mode === 'create' && customMemeText) {
+                    promptTopic = `a different joke about: ${customMemeText}`;
+                } else {
+                    promptTopic = `a variation of this joke: "${joke.joke}"`;
+                }
+
+                const jokeResult = await generateSafeJoke({ category: promptTopic, safeForWork: isSfw, usedJokes });
+                setJoke(jokeResult);
+                setUsedJokes(prev => [...prev, jokeResult.joke]);
+
+                // Only generate a new image if it's a meme category or create mode
+                if ((mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes')) || mode === 'create') {
+                    const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: jokeResult.joke });
+                    if (memeResult) {
+                        setMemeImage(memeResult);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Failed to regenerate:", error);
+            toast({ title: "Error", description: "Could not regenerate. Please try again.", variant: "destructive" });
+        } finally {
+            setIsRegenerating(false);
         }
-        handleGenerateNew(false); // Call with isNewImage = false
     };
 
     const handleCopyToClipboard = (text: string) => {
@@ -393,19 +415,15 @@ export default function LaughFactoryPage() {
             });
             const dataUrl = canvas.toDataURL("image/png");
 
-            // Convert data URI to Blob
             const blob = await fetch(dataUrl).then((res) => res.blob());
 
             const fileName = `${uuidv4()}.png`;
             const storageRef = ref(storage, `memes/${user.uid}/${fileName}`);
             
-            // Upload file once
             await uploadBytes(storageRef, blob);
             
-            // Get download URL
             const downloadURL = await getDownloadURL(storageRef);
             
-            // Save the correct downloadURL to Firestore
             await addDoc(collection(db, "memes"), {
                 imageUrl: downloadURL,
                 joke: joke?.joke || '',
@@ -987,7 +1005,7 @@ export default function LaughFactoryPage() {
                                                 {isRegenerating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <RefreshCcw className="mr-2 h-5 w-5" />}
                                                 Regenerate
                                             </Button>
-                                            <Button onClick={() => handleGenerateNew(true)} disabled={isLoading}>
+                                            <Button onClick={handleGenerateNew} disabled={isLoading}>
                                                 {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileImage className="mr-2 h-5 w-5" />}
                                                 Generate New
                                             </Button>
@@ -1018,7 +1036,7 @@ export default function LaughFactoryPage() {
                  <div className="w-full flex justify-center p-2 sm:p-4">
                      <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-xl">
                         {mode !== 'leaderboard' && !isMemeReady && (
-                        <Button onClick={() => handleGenerateNew(true)} disabled={isLoading || (mode === 'create' && !customMemeText && !uploadedImage)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
+                        <Button onClick={handleGenerateNew} disabled={isLoading || (mode === 'create' && !customMemeText && !uploadedImage)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                             {isLoading ? (
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             ) : (
