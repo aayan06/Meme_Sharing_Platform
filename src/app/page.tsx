@@ -100,7 +100,7 @@ export default function LaughFactoryPage() {
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const { toast } = useToast();
     const memeCardRef = useRef<HTMLDivElement>(null);
-    fileInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Leaderboard State
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -381,36 +381,28 @@ export default function LaughFactoryPage() {
             return;
         }
 
-        if (!memeCardRef.current || !joke?.joke) {
+        const imageDataUri = memeImage?.imageDataUri || uploadedImage;
+
+        if (!imageDataUri || !joke?.joke) {
             toast({ title: "Incomplete Meme", description: "Please generate a full meme before submitting.", variant: "destructive" });
             return;
         }
 
         setIsSubmitting(true);
         try {
-            const canvas = await html2canvas(memeCardRef.current, {
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: null, // Use transparent background
-            });
-
-            // Convert canvas to blob for upload
-            const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png', 0.9));
-
-            if (!blob) {
-                throw new Error("Failed to create blob from canvas.");
-            }
+            // ✅ Convert data URI to Blob
+            const blob = await fetch(imageDataUri).then((res) => res.blob());
 
             const fileName = `${uuidv4()}.png`;
             const storageRef = ref(storage, `memes/${user.uid}/${fileName}`);
             
-            // Upload the file
+            // ✅ Upload file once
             await uploadBytes(storageRef, blob);
             
-            // Get the full public download URL
+            // ✅ Get download URL
             const downloadURL = await getDownloadURL(storageRef);
             
-            // Save the correct downloadURL to Firestore
+            // ✅ Save the correct downloadURL to Firestore
             await addDoc(collection(db, "memes"), {
                 imageUrl: downloadURL,
                 joke: joke.joke,
