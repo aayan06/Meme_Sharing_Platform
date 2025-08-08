@@ -1046,7 +1046,7 @@ export default function LaughFactoryPage() {
                                                     fontSize: 'clamp(1.25rem, 5vw, 2.75rem)',
                                                     fontWeight: 'bold',
                                                     lineHeight: '1.1',
-                                                    WebkitTextStroke: '2px black',
+                                                    textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 5px #000',
                                                     display: 'flex',
                                                     alignItems: 'flex-start',
                                                     justifyContent: 'center',
@@ -1060,7 +1060,7 @@ export default function LaughFactoryPage() {
                                                     fontSize: 'clamp(1.25rem, 5vw, 2.75rem)',
                                                     fontWeight: 'bold',
                                                     lineHeight: '1.1',
-                                                    WebkitTextStroke: '2px black',
+                                                    textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 5px #000',
                                                     display: 'flex',
                                                     alignItems: 'flex-end',
                                                     justifyContent: 'center',
@@ -1129,5 +1129,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
