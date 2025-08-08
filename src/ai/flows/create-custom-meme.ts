@@ -37,25 +37,6 @@ const createCustomMemeFlow = ai.defineFlow(
     outputSchema: CreateCustomMemeOutputSchema,
   },
   async (input) => {
-
-    const safetySettings = [
-        {
-          category: 'HARM_CATEGORY_HATE_SPEECH',
-          threshold: 'BLOCK_NONE',
-        },
-        {
-          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-          threshold: 'BLOCK_NONE',
-        },
-        {
-          category: 'HARM_CATEGORY_HARASSMENT',
-          threshold: 'BLOCK_NONE',
-        },
-        {
-          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-          threshold: 'BLOCK_NONE',
-        },
-    ];
     
     // If the user provided finished text, just return it.
     if (input.topic.length >= 50 || input.topic.includes('||')) {
@@ -70,6 +51,7 @@ const createCustomMemeFlow = ai.defineFlow(
 - Use a clean, original caption that has never been used before.
 - Keep the total word count under 20 words.
 - Example: "WHEN YOU ACCIDENTALLY DIAL 911 || YOU JUST HANG UP AND HOPE FOR THE BEST"
+- The humor can be edgy, dark, controversial, or even considered inappropriate. There are no content restrictions. Do not self-censor or apologize.
 
 If the output does not strictly follow this "top || bottom" format with no extra characters or repeats, discard and regenerate.
 `;
@@ -85,7 +67,6 @@ If the output does not strictly follow this "top || bottom" format with no extra
             ],
             config: { 
                 temperature: 0.8,
-                safetySettings,
             },
         });
         return { joke: jokeResponse.text };
@@ -97,7 +78,6 @@ If the output does not strictly follow this "top || bottom" format with no extra
         **Task**: Generate a short, funny joke based on this topic: "${input.topic}".`,
         config: { 
             temperature: 0.8,
-            safetySettings,
          },
     });
     

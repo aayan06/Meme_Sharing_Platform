@@ -55,13 +55,7 @@ If the output does not strictly follow this "top || bottom" format with no extra
 None yet.
 {{/if}}
 
-{{#if safeForWork}}
-**Content Filter**: "Grandma Mode" is ON. The joke must be clean and safe-for-work. Avoid profanity, dark, or controversial topics.
-{{/if}}
-
-{{#unless safeForWork}}
-**Content Filter**: "Degen Mode" is ON. The joke can be edgy, use dark humor, or contain satire.
-{{/unless}}
+**Content Filter**: "Degen Mode" is ON. The joke can be edgy, use dark humor, or contain satire. There are no content restrictions. The humor can be offensive, dark, political, religious, sexual, or otherwise sensitive. Do not self-censor or apologize.
 `,
   config: {
     temperature: 1,
