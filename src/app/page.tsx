@@ -1020,10 +1020,21 @@ export default function LaughFactoryPage() {
                                     </>
                                 )}
                             </CardContent>
-                             <CardFooter className="flex justify-end items-center space-x-2">
+                             <CardFooter className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-2">
                                 {isMemeReady ? (
-                                    <div className="flex w-full justify-between">
-                                        <div className="flex gap-2">
+                                    <>
+                                        <div className="flex items-center space-x-2">
+                                            <MessageSquareOff className="h-5 w-5 text-muted-foreground" />
+                                            <Label htmlFor="show-caption-switch" className="text-sm font-medium">
+                                                Remove Caption
+                                            </Label>
+                                            <Switch
+                                                id="show-caption-switch"
+                                                checked={!showCaption}
+                                                onCheckedChange={(checked) => setShowCaption(!checked)}
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-2">
                                              <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button variant="outline" disabled={isRegenerating}>
@@ -1037,27 +1048,27 @@ export default function LaughFactoryPage() {
                                                     <DropdownMenuItem onClick={() => handleRegenerate('both')} disabled={isRegenerating || !!uploadedImage}>Regenerate Both</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
-                                            <Button onClick={handleGenerateNew} disabled={isLoading}>
-                                                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileImage className="mr-2 h-5 w-5" />}
-                                                New Blank Meme
-                                            </Button>
+                                             <Button onClick={handleSubmit} disabled={isSubmitting || !user}>
+                                                 {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
+                                                 Submit for Glory
+                                             </Button>
                                         </div>
-                                        <Button onClick={handleSubmit} disabled={isSubmitting || !user}>
-                                             {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
-                                             Submit for Glory
-                                         </Button>
-                                    </div>
+                                    </>
                                 ) : (
                                     <>
-                                     <Button variant={selectedReaction === 'laugh' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('laugh')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
-                                        <span>😂</span>
-                                    </Button>
-                                    <Button variant={selectedReaction === 'neutral' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('neutral')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
-                                        <span>😐</span>
-                                    </Button>
-                                    <Button variant={selectedReaction === 'unamused' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('unamused')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
-                                        <span>🙄</span>
-                                    </Button>
+                                    <div className="flex-grow"/>
+                                     <div className="flex items-center gap-2">
+                                        <Button variant={selectedReaction === 'laugh' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('laugh')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
+                                            <span>😂</span>
+                                        </Button>
+                                        <Button variant={selectedReaction === 'neutral' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('neutral')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
+                                            <span>😐</span>
+                                        </Button>
+                                        <Button variant={selectedReaction === 'unamused' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('unamused')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
+                                            <span>🙄</span>
+                                        </Button>
+                                     </div>
+                                     <div className="flex-grow"/>
                                     </>
                                 )}
                             </CardFooter>
@@ -1067,7 +1078,7 @@ export default function LaughFactoryPage() {
 
                  <div className="w-full flex flex-col items-center justify-center p-2 sm:p-4 gap-4">
                      <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-xl">
-                        {mode !== 'leaderboard' && !isMemeReady && (
+                        {!isMemeReady && (
                         <Button onClick={async () => {
                             if (mode === 'create') {
                                  if (!customMemeText && !uploadedImage) {
@@ -1110,17 +1121,10 @@ export default function LaughFactoryPage() {
                         </Button>
                         )}
                         {isMemeReady && (
-                            <div className="flex items-center space-x-2 bg-card border rounded-full px-4 py-2">
-                                <MessageSquareOff className="h-5 w-5 text-muted-foreground" />
-                                <Label htmlFor="show-caption-switch" className="text-sm font-medium">
-                                    Remove generated text
-                                </Label>
-                                <Switch
-                                    id="show-caption-switch"
-                                    checked={!showCaption}
-                                    onCheckedChange={(checked) => setShowCaption(!checked)}
-                                />
-                            </div>
+                           <Button onClick={handleGenerateNew} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
+                                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileImage className="mr-2 h-5 w-5" />}
+                                New Blank Meme
+                            </Button>
                         )}
                      </div>
 
@@ -1136,5 +1140,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
