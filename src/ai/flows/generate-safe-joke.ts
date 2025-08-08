@@ -32,18 +32,16 @@ const generateJokePrompt = ai.definePrompt({
   name: 'generateJokePrompt',
   input: {schema: GenerateSafeJokeInputSchema},
   output: {schema: GenerateSafeJokeOutputSchema},
-  prompt: `Generate a meme caption in classic meme format using these rules:
+  prompt: `Generate a single meme caption using this exact format:
 
-- Return only one caption with two parts: top and bottom text.
-- Do NOT include the same text twice. Return only the final result once.
-- Use ALL CAPS for both lines.
-- Use plain text only — no escape characters like \\n, \\\\n, or markdown.
-- Separate top and bottom text with || (double pipe) ONLY.
-- Output format should be: "TOP TEXT HERE || BOTTOM TEXT HERE"
-- Keep the joke under 25 words total.
-- Use meme-style humor: sarcastic, ironic, observational, or relatable.
-- DO NOT return both a top caption and a rendered version — just the formatted meme caption.
-- Output ONLY the joke text. This text will be drawn on a clean image later.
+- Return one string only, formatted as: "TOP TEXT || BOTTOM TEXT"
+- Do NOT include duplicate lines, repeated phrases, or text used in both top and bottom.
+- Do NOT include escape characters like \\n, \\r, or any markdown or punctuation symbols.
+- Use a clean, original caption that has never been used before.
+- Keep the total word count under 20 words.
+- Example: "WHEN YOU ACCIDENTALLY DIAL 911 || YOU JUST HANG UP AND HOPE FOR THE BEST"
+
+If the output does not strictly follow this "top || bottom" format with no extra characters or repeats, discard and regenerate.
 
 **Category**: {{{category}}}
 
@@ -103,5 +101,3 @@ const generateSafeJokeFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
