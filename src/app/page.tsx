@@ -333,6 +333,7 @@ export default function LaughFactoryPage() {
         setSelectedReaction(null);
         setCustomMemeText('');
         setUploadedImage(null);
+        setShowCaption(true);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -959,28 +960,30 @@ export default function LaughFactoryPage() {
                                             className="w-full h-auto rounded-lg border-2" 
                                             crossOrigin="anonymous"
                                         />
-                                        {joke && (
+                                        {joke && showCaption && (
                                           <>
                                             <div
-                                                className="absolute top-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-bold uppercase"
+                                                className="absolute top-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-black uppercase"
                                                 style={{
-                                                    fontSize: 'clamp(1rem, 5vw, 2.5rem)',
-                                                    textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
+                                                    fontSize: 'clamp(1.25rem, 5vw, 2.75rem)',
+                                                    textShadow: '3px 3px 6px #000, -3px -3px 6px #000, 3px -3px 6px #000, -3px 3px 6px #000',
                                                     display: 'flex',
                                                     alignItems: 'flex-start',
                                                     justifyContent: 'center',
+                                                    lineHeight: '1.1',
                                                 }}
                                             >
                                               {splitJoke(joke.joke).top}
                                             </div>
                                             <div
-                                                className="absolute bottom-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-bold uppercase"
+                                                className="absolute bottom-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-black uppercase"
                                                 style={{
-                                                    fontSize: 'clamp(1rem, 5vw, 2.5rem)',
-                                                    textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
+                                                    fontSize: 'clamp(1.25rem, 5vw, 2.75rem)',
+                                                    textShadow: '3px 3px 6px #000, -3px -3px 6px #000, 3px -3px 6px #000, -3px 3px 6px #000',
                                                     display: 'flex',
                                                     alignItems: 'flex-end',
                                                     justifyContent: 'center',
+                                                    lineHeight: '1.1',
                                                 }}
                                             >
                                               {splitJoke(joke.joke).bottom}
@@ -1002,23 +1005,30 @@ export default function LaughFactoryPage() {
                                     </>
                                 )}
                             </CardContent>
-                             <CardFooter className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-2">
+                            <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
                                 {isMemeReady ? (
                                     <>
-                                         <Button variant="outline" onClick={() => handleRegenerate('image')} disabled={isLoading || !!uploadedImage}>
-                                            <Palette className="mr-2 h-5 w-5" /> Regenerate Image
-                                        </Button>
-                                         <Button variant="outline" onClick={() => handleRegenerate('text')} disabled={isLoading}>
-                                            <PenSquare className="mr-2 h-5 w-5" /> Regenerate Text
-                                        </Button>
-                                         <Button onClick={handleSubmit} disabled={isSubmitting || !user}>
-                                             {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
-                                             Submit for Glory
-                                         </Button>
+                                        <div className="flex-1 w-full sm:w-auto">
+                                            <Button variant="outline" onClick={handleStartOver} className="w-full">
+                                                <FileUp className="mr-2 h-5 w-5" /> Start Over
+                                            </Button>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <Switch id="show-caption" checked={showCaption} onCheckedChange={setShowCaption} />
+                                            <Label htmlFor="show-caption" className="text-sm font-medium">Show Caption</Label>
+                                        </div>
+                                        <div className="flex-1 w-full sm:w-auto">
+                                            <Button onClick={handleSubmit} disabled={isSubmitting || !user} className="w-full">
+                                                {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
+                                                Submit for Glory
+                                            </Button>
+                                        </div>
                                     </>
                                 ) : (
-                                    <>
-                                     <div className="flex-grow"/>
+                                     <>
+                                      <Button variant="outline" onClick={handleStartOver} className="w-full sm:w-auto">
+                                          <FileUp className="mr-2 h-5 w-5" /> Start Over
+                                      </Button>
                                       {joke && (
                                         <div className="flex items-center gap-2">
                                             <Button variant={selectedReaction === 'laugh' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('laugh')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
@@ -1039,16 +1049,6 @@ export default function LaughFactoryPage() {
                         </JokeCard>
                     )}
                 </div>
-
-                {!isLoading && (isMemeReady || isJokeOnly) && (
-                     <div className="w-full flex items-center justify-center p-4">
-                        <Button onClick={handleStartOver} variant="outline" disabled={isLoading}>
-                            <FileUp className="mr-2 h-5 w-5" />
-                            Start Over
-                        </Button>
-                     </div>
-                )}
-
             </main>
         </div>
     );
