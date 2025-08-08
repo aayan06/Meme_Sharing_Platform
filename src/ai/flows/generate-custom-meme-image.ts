@@ -38,8 +38,9 @@ const generateCustomMemeImageFlow = ai.defineFlow(
   async (topic) => {
     
     const prompt = `
-      **Critical rule: The generated image MUST NOT contain any text, letters, or numbers.**
-      The image should be a visual representation of this topic: "${topic}"
+      **Critical rule: You must generate an image ONLY. The image MUST NOT contain any text, letters, or numbers.**
+      The user will add text later. Your job is to create a background image.
+      The user's topic is: "${topic}". Use this topic for visual inspiration for the background image, but DO NOT write the topic text on the image.
     `;
 
     const {media} = await ai.generate({

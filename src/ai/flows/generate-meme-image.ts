@@ -48,22 +48,21 @@ const generateMemeImageFlow = ai.defineFlow(
   async (input) => {
     
     const baseInstructions = `
-      **Critical rule: The generated image MUST NOT contain any text, letters, or numbers.**
-      The image should be a visual representation of the following joke:
-      "${input.joke}"
+      **Critical rule: You must generate an image ONLY. The image MUST NOT contain any text, letters, or numbers.**
+      The user will add text later. Your job is to create a background image.
     `;
 
     let prompt = '';
     if (input.category === 'crypto memes') {
       prompt = `
         ${baseInstructions}
-        **Theme**: Cryptocurrency. Visuals can include charts, crypto symbols like Doge or Pepe, or characters representing traders, capturing the high-energy, volatile spirit of crypto culture.
+        **Theme**: Generate a background image suitable for a cryptocurrency meme. Visuals can include charts, crypto symbols like Doge or Pepe, or characters representing traders, capturing the high-energy, volatile spirit of crypto culture.
         ${input.safeForWork ? 'The image must be safe-for-work.' : ''}
       `;
     } else if (input.category === 'edgy memes') {
       prompt = `
         ${baseInstructions}
-        **Theme**: Edgy & Dark Humor. The image should be surreal, grim, satirical, or darkly humorous to match the joke's tone.
+        **Theme**: Generate a background image for an Edgy & Dark Humor meme. The image should be surreal, grim, satirical, or darkly humorous.
         ${input.safeForWork ? 'The image must be safe-for-work.' : 'The image can be visually dark or unsettling to match the edgy theme.'}
       `;
     }
