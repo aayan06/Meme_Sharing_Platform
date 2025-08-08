@@ -970,12 +970,8 @@ export default function LaughFactoryPage() {
                                             crossOrigin="anonymous"
                                         />
                                         <div
-                                            className="absolute p-4 text-center text-white font-bold uppercase"
+                                            className="absolute top-0 left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-bold uppercase"
                                             style={{
-                                                top: `${(joke as CreateCustomMemeOutput)?.textPlacement?.top?.y ?? 0}%`,
-                                                left: `${(joke as CreateCustomMemeOutput)?.textPlacement?.top?.x ?? 5}%`,
-                                                width: `${(joke as CreateCustomMemeOutput)?.textPlacement?.top?.width ?? 90}%`,
-                                                height: `${(joke as CreateCustomMemeOutput)?.textPlacement?.top?.height ?? 50}%`,
                                                 fontSize: 'clamp(1rem, 5vw, 2.5rem)',
                                                 textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
                                                 display: 'flex',
@@ -986,12 +982,8 @@ export default function LaughFactoryPage() {
                                           {splitJoke(joke.joke).top}
                                         </div>
                                         <div
-                                            className="absolute p-4 text-center text-white font-bold uppercase"
+                                            className="absolute bottom-0 left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-bold uppercase"
                                             style={{
-                                                top: `${(joke as CreateCustomMemeOutput)?.textPlacement?.bottom?.y ?? 50}%`,
-                                                left: `${(joke as CreateCustomMemeOutput)?.textPlacement?.bottom?.x ?? 5}%`,
-                                                width: `${(joke as CreateCustomMemeOutput)?.textPlacement?.bottom?.width ?? 90}%`,
-                                                height: `${(joke as CreateCustomMemeOutput)?.textPlacement?.bottom?.height ?? 50}%`,
                                                 fontSize: 'clamp(1rem, 5vw, 2.5rem)',
                                                 textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
                                                 display: 'flex',

@@ -18,20 +18,6 @@ const GenerateMemeImageOutputSchema = z.object({
     .describe(
       "The generated meme background image as a data URI."
     ),
-   textPlacement: z.object({
-        top: z.object({
-            x: z.number().describe("X coordinate for top text block (percentage)."),
-            y: z.number().describe("Y coordinate for top text block (percentage)."),
-            width: z.number().describe("Width of the top text block (percentage)."),
-            height: z.number().describe("Height of the top text block (percentage)."),
-        }),
-        bottom: z.object({
-            x: z.number().describe("X coordinate for bottom text block (percentage)."),
-            y: z.number().describe("Y coordinate for bottom text block (percentage)."),
-            width: z.number().describe("Width of the bottom text block (percentage)."),
-            height: z.number().describe("Height of the bottom text block (percentage)."),
-        }),
-    }).describe("Coordinates for placing the text on the image to avoid key features.").optional(),
 });
 export type GenerateMemeImageOutput = z.infer<typeof GenerateMemeImageOutputSchema>;
 
