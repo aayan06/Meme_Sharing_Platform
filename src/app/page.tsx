@@ -5,7 +5,6 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { generateSafeJoke, type GenerateSafeJokeOutput } from "@/ai/flows/generate-safe-joke";
 import { generateMemeImage, type GenerateMemeImageOutput } from "@/ai/flows/generate-meme-image";
-import { generateCustomMemeImage } from "@/ai/flows/generate-custom-meme-image";
 import { createCustomMeme, type CreateCustomMemeOutput } from "@/ai/flows/create-custom-meme";
 import { generateAudio, type GenerateAudioOutput } from "@/ai/flows/generate-audio";
 import { voteOnMeme } from "@/ai/flows/vote-on-meme";
@@ -91,7 +90,7 @@ export default function LaughFactoryPage() {
     const [category, setCategory] = useState(jokeCategories[0].id);
     const [joke, setJoke] = useState<CreateCustomMemeOutput | GenerateSafeJokeOutput | null>(null);
     const [usedJokes, setUsedJokes] = useState<string[]>([]);
-    const [memeImage, setMemeImage] = useState<GenerateMemeImageOutput | null>(null);
+    const [memeImage, setMemeImage] = useState<GenerateMemeImageOutput | { imageDataUri: string } | null>(null);
     const [audio, setAudio] = useState<GenerateAudioOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
@@ -284,17 +283,13 @@ export default function LaughFactoryPage() {
                     setIsLoading(false);
                     return;
                 }
-                const jokeResult = await createCustomMeme({
+                const result = await createCustomMeme({
                     topic: customMemeText || 'A funny meme about technology',
                     imageDataUri: uploadedImage || undefined,
                 });
-                setJoke(jokeResult);
-
-                if (!uploadedImage) {
-                    const memeResult = await generateCustomMemeImage(jokeResult.joke);
-                    if (memeResult) {
-                        setMemeImage(memeResult);
-                    }
+                setJoke(result);
+                if (result.imageDataUri) {
+                    setMemeImage({ imageDataUri: result.imageDataUri });
                 }
 
             } else {
@@ -346,13 +341,11 @@ export default function LaughFactoryPage() {
         
         try {
              if (type === 'text') {
-                const currentCategory = mode === 'create' ? 'custom' : category;
-                const selectedCategory = jokeCategories.find(c => c.id === currentCategory);
-                const isSfw = selectedCategory?.sfw ?? true;
+                const isSfw = jokeCategories.find(c => c.id === category)?.sfw ?? true;
 
                 let jokeResult;
                 if (mode === 'create') {
-                    jokeResult = await createCustomMeme({ 
+                     jokeResult = await createCustomMeme({ 
                         topic: customMemeText || 'A funny meme about technology', 
                         imageDataUri: uploadedImage || undefined 
                     });
@@ -368,7 +361,10 @@ export default function LaughFactoryPage() {
                  } else {
                     let memeResult;
                      if (mode === 'create') {
-                        memeResult = await generateCustomMemeImage(joke.joke);
+                        const result = await createCustomMeme({ topic: joke.joke });
+                        if (result.imageDataUri) {
+                            setMemeImage({imageDataUri: result.imageDataUri});
+                        }
                     } else {
                         const selectedCategory = jokeCategories.find(c => c.id === category);
                         const isSfw = selectedCategory?.sfw ?? true;

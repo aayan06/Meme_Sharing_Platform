@@ -11,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { generateCustomMemeImage } from './generate-custom-meme-image';
 
 const CreateCustomMemeInputSchema = z.object({
   topic: z.string().describe("The user's description of the meme idea or the exact text for the meme."),
@@ -22,6 +23,7 @@ export type CreateCustomMemeInput = z.infer<typeof CreateCustomMemeInputSchema>;
 
 const CreateCustomMemeOutputSchema = z.object({
   joke: z.string().describe('The generated joke or the original text.'),
+  imageDataUri: z.string().optional().describe("The generated background image, if one was created."),
 });
 export type CreateCustomMemeOutput = z.infer<typeof CreateCustomMemeOutputSchema>;
 
@@ -55,23 +57,6 @@ const createCustomMemeFlow = ai.defineFlow(
 If the output does not strictly follow this "top || bottom" format with no extra characters or repeats, discard and regenerate.
 `;
 
-    // If an image is provided, generate text for that image.
-    if (input.imageDataUri) {
-         const jokeResponse = await ai.generate({
-            prompt: [
-                {text: `${basePrompt}
-                **Task**: Analyze the provided image and generate a funny joke that relates to BOTH the image and this topic: "${input.topic}".
-                `},
-                {media: {url: input.imageDataUri}},
-            ],
-            config: { 
-                temperature: 0.8,
-            },
-        });
-        return { joke: jokeResponse.text };
-    }
-    
-    // Otherwise, generate a joke from the topic alone.
     const jokeResponse = await ai.generate({
         prompt: `${basePrompt}
         **Task**: Generate a short, funny joke based on this topic: "${input.topic}".`,
@@ -79,11 +64,21 @@ If the output does not strictly follow this "top || bottom" format with no extra
             temperature: 0.8,
          },
     });
+
+    const joke = jokeResponse.text;
+    let imageDataUri: string | undefined = undefined;
+
+    // If no image was uploaded, generate one now.
+    if (!input.imageDataUri) {
+        const imageResult = await generateCustomMemeImage(joke);
+        if (imageResult) {
+            imageDataUri = imageResult.imageDataUri;
+        }
+    }
     
     return {
-        joke: jokeResponse.text,
+        joke: joke,
+        imageDataUri: imageDataUri,
     };
   }
 );
-
-    
