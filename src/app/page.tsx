@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins, Trash2, RefreshCcw, FileImage, MessageSquareOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1112,5 +1113,3 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
-
-    
