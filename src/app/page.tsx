@@ -413,21 +413,33 @@ export default function LaughFactoryPage() {
             return;
         }
 
-        if (!memeCardRef.current) {
+        if (!memeCardRef.current && !uploadedImage) {
             toast({ title: "Error", description: "Meme element not found.", variant: "destructive" });
             return;
         }
 
         setIsSubmitting(true);
         try {
-            const canvas = await html2canvas(memeCardRef.current, { 
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: null,
-            });
-            const dataUrl = canvas.toDataURL("image/png");
+            let blob: Blob | null = null;
 
-            const blob = await fetch(dataUrl).then((res) => res.blob());
+            if (uploadedImage && !joke) {
+                // This is a direct upload of a finished meme
+                blob = await fetch(uploadedImage).then((res) => res.blob());
+            } else if (memeCardRef.current) {
+                // This is a generated meme that needs to be canvas-rendered
+                const canvas = await html2canvas(memeCardRef.current, { 
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: null,
+                });
+                const dataUrl = canvas.toDataURL("image/png");
+                blob = await fetch(dataUrl).then((res) => res.blob());
+            }
+
+            if (!blob) {
+                throw new Error("Could not create meme image data.");
+            }
+
 
             const fileName = `${uuidv4()}.png`;
             const storageRef = ref(storage, `memes/${user.uid}/${fileName}`);
@@ -437,7 +449,7 @@ export default function LaughFactoryPage() {
             
             await addDoc(collection(db, "memes"), {
                 imageUrl: downloadURL,
-                joke: showCaption ? (joke?.joke || '') : '', // Submit empty joke if caption is removed
+                joke: joke ? (showCaption ? (joke.joke || '') : '') : '',
                 userId: user.uid,
                 creatorHandle: userData?.displayName || user.email?.split('@')[0] || 'Anonymous',
                 createdAt: serverTimestamp(),
@@ -610,7 +622,7 @@ export default function LaughFactoryPage() {
         "flex-1 rounded-full text-sm sm:text-base font-semibold transition-colors duration-200",
         isActive
             ? "bg-primary text-primary-foreground"
-            : "bg-card text-foreground hover:bg-green-500/80"
+            : "bg-card text-foreground hover:bg-muted"
     );
 
     const getRankClass = (index: number) => {
@@ -690,7 +702,7 @@ export default function LaughFactoryPage() {
                             <p className="text-lg sm:text-xl font-medium uppercase whitespace-pre-line">{dailyJoke.joke.replace('||', '\n')}</p>
                             <div className="flex items-center gap-4 mt-4">
                                 <p className="text-sm text-muted-foreground">- by {dailyJoke.creator}</p>
-                                <div className="flex items-center gap-1 text-lg font-bold text-green-400">
+                                <div className="flex items-center gap-1 text-lg font-bold text-primary">
                                    <span>😂</span>
                                    <span>{dailyJoke.likes}</span>
                                 </div>
@@ -709,7 +721,7 @@ export default function LaughFactoryPage() {
                                 data-state={category === cat.id ? 'active' : 'inactive'}
                                 className={cn(
                                     "px-3 py-3 sm:px-4 text-sm font-semibold rounded-full transition-all duration-200 ease-out transform active:scale-95",
-                                    "text-foreground bg-card shadow-md hover:bg-green-500/90",
+                                    "text-foreground bg-card shadow-md hover:bg-muted",
                                     category === cat.id && "bg-primary text-primary-foreground scale-105"
                                 )}
                               >
@@ -726,47 +738,62 @@ export default function LaughFactoryPage() {
                      <Card className="w-full max-w-3xl bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl animate-in fade-in-0 zoom-in-95 duration-300">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold">
-                               <Palette className="h-7 w-7" /> 2. Create Your Masterpiece
+                               <Palette className="h-7 w-7" /> Meme Editor
                             </CardTitle>
-                            <CardDescription>Upload an image and describe your meme, or just generate one from an idea!</CardDescription>
+                            <CardDescription>Create a meme from a topic, or upload your own image and text.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                              <div>
-                                <Label htmlFor="custom-text" className="font-semibold">Meme Idea or Text</Label>
+                                <Label htmlFor="custom-text" className="font-semibold">Meme Idea or Text (Top || Bottom)</Label>
                                 <Textarea
                                     id="custom-text"
-                                    placeholder="e.g., Clumsy cats, politicians trying to be cool, or the exact text for your meme..."
+                                    placeholder="e.g., A meme about cats || that are bad at math"
                                     value={customMemeText}
-                                    onChange={(e) => setCustomMemeText(e.target.value)}
+                                    onChange={(e) => {
+                                        setCustomMemeText(e.target.value)
+                                        setJoke({ joke: e.target.value.toUpperCase() })
+                                    }}
                                     className="mt-2"
                                     rows={3}
                                 />
                             </div>
                             <div className="flex items-center justify-center gap-4">
-                                <Button onClick={() => fileInputRef.current?.click()} className="flex-1">
-                                    <FileUp className="mr-2 h-5 w-5" />
-                                    Upload Image
-                                </Button>
-                                <Input
+                                 <Input
                                     type="file"
                                     ref={fileInputRef}
                                     onChange={handleImageUpload}
                                     className="hidden"
                                     accept="image/*"
                                 />
-                                 {uploadedImage && (
-                                    <div className="relative w-24 h-24 rounded-md overflow-hidden border-2 border-primary">
-                                        <img src={uploadedImage} alt="Uploaded preview" className="w-full h-full object-cover" />
-                                        <Button
-                                            variant="destructive"
-                                            size="icon"
-                                            className="absolute top-0 right-0 h-6 w-6 rounded-full"
-                                            onClick={() => setUploadedImage(null)}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                )}
+                                <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="flex-1">
+                                    <FileUp className="mr-2 h-5 w-5" />
+                                    {uploadedImage ? "Change Image" : "Upload Image"}
+                                </Button>
+                                 <Button onClick={async () => {
+                                    if (!customMemeText && !uploadedImage) {
+                                        toast({ title: "Meme Idea Needed", description: "Please describe your meme idea or upload an image.", variant: "destructive" });
+                                        return;
+                                    }
+                                    setIsLoading(true);
+                                    try {
+                                        const jokeResult = await createCustomMeme({
+                                            topic: customMemeText || 'A funny meme about technology',
+                                            imageDataUri: uploadedImage || undefined,
+                                        });
+                                        setJoke(jokeResult);
+                                        if (!uploadedImage) {
+                                            const memeResult = await generateCustomMemeImage(jokeResult.joke);
+                                            if (memeResult) setMemeImage(memeResult);
+                                        }
+                                    } catch (e) {
+                                        toast({ title: "Error", description: "Could not create meme.", variant: "destructive" });
+                                    } finally {
+                                        setIsLoading(false);
+                                    }
+                                }} disabled={isLoading} className="flex-1">
+                                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
+                                    Generate AI Meme
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -936,11 +963,11 @@ export default function LaughFactoryPage() {
                         </JokeCard>
                     )}
                     
-                    {!isLoading && joke && (
+                    {!isLoading && (joke || uploadedImage) && (
                         <JokeCard>
                              <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-xl sm:text-2xl font-bold font-headline">
-                                    {isMemeCategory || mode === 'create' ? "Meme Generated!" : "Here's a good one!"}
+                                    {isMemeCategory || mode === 'create' ? "Your Meme" : "Here's a good one!"}
                                 </CardTitle>
                                 <div className="flex items-center">
                                     <ShareMenu />
@@ -949,7 +976,7 @@ export default function LaughFactoryPage() {
                                             <Download className="h-5 w-5" />
                                         </Button>
                                     )}
-                                    {!(isMemeCategory || mode === 'create') && (
+                                    {!(isMemeCategory || mode === 'create') && joke && (
                                         <>
                                             <Button
                                                 variant="ghost"
@@ -973,11 +1000,11 @@ export default function LaughFactoryPage() {
                                     <MemeDisplayCard innerRef={memeCardRef}>
                                         <img 
                                             src={memeImage?.imageDataUri || uploadedImage || ''} 
-                                            alt={joke.joke} 
+                                            alt={joke?.joke || 'Meme background'} 
                                             className="w-full h-auto rounded-lg border-2" 
                                             crossOrigin="anonymous"
                                         />
-                                        {showCaption && (
+                                        {showCaption && joke && (
                                           <>
                                             <div
                                                 className="absolute top-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-bold uppercase"
@@ -1008,7 +1035,7 @@ export default function LaughFactoryPage() {
                                     </MemeDisplayCard>
                                 ) : (
                                     <>
-                                        <p className="text-lg sm:text-xl font-medium leading-relaxed uppercase whitespace-pre-line">{joke.joke.replace('||', '\n')}</p>
+                                       {joke && <p className="text-lg sm:text-xl font-medium leading-relaxed uppercase whitespace-pre-line">{joke.joke.replace('||', '\n')}</p>}
                                         {audio?.media && (
                                             <div className="mt-4">
                                                 <audio controls autoPlay className="w-full">
@@ -1021,17 +1048,17 @@ export default function LaughFactoryPage() {
                                 )}
                             </CardContent>
                              <CardFooter className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-2">
-                                {isMemeReady ? (
+                                {isMemeReady || uploadedImage ? (
                                     <>
                                         <div className="flex items-center space-x-2">
                                             <MessageSquareOff className="h-5 w-5 text-muted-foreground" />
                                             <Label htmlFor="show-caption-switch" className="text-sm font-medium">
-                                                Remove Caption
+                                                Show Caption
                                             </Label>
                                             <Switch
                                                 id="show-caption-switch"
-                                                checked={!showCaption}
-                                                onCheckedChange={(checked) => setShowCaption(!checked)}
+                                                checked={showCaption}
+                                                onCheckedChange={setShowCaption}
                                             />
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -1056,18 +1083,20 @@ export default function LaughFactoryPage() {
                                     </>
                                 ) : (
                                     <>
-                                    <div className="flex-grow"/>
-                                     <div className="flex items-center gap-2">
-                                        <Button variant={selectedReaction === 'laugh' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('laugh')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
-                                            <span>😂</span>
-                                        </Button>
-                                        <Button variant={selectedReaction === 'neutral' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('neutral')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
-                                            <span>😐</span>
-                                        </Button>
-                                        <Button variant={selectedReaction === 'unamused' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('unamused')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
-                                            <span>🙄</span>
-                                        </Button>
-                                     </div>
+                                     <div className="flex-grow"/>
+                                      {joke && (
+                                        <div className="flex items-center gap-2">
+                                            <Button variant={selectedReaction === 'laugh' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('laugh')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
+                                                <span>😂</span>
+                                            </Button>
+                                            <Button variant={selectedReaction === 'neutral' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('neutral')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
+                                                <span>😐</span>
+                                            </Button>
+                                            <Button variant={selectedReaction === 'unamused' ? 'secondary' : 'ghost'} size="icon" onClick={() => setSelectedReaction('unamused')} className="rounded-full text-2xl transform transition-transform duration-200 hover:scale-125 active:scale-100">
+                                                <span>🙄</span>
+                                            </Button>
+                                        </div>
+                                      )}
                                      <div className="flex-grow"/>
                                     </>
                                 )}
@@ -1078,63 +1107,23 @@ export default function LaughFactoryPage() {
 
                  <div className="w-full flex flex-col items-center justify-center p-2 sm:p-4 gap-4">
                      <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-xl">
-                        {!isMemeReady && (
-                        <Button onClick={async () => {
-                            if (mode === 'create') {
-                                 if (!customMemeText && !uploadedImage) {
-                                    toast({
-                                        title: "Meme Idea Needed",
-                                        description: "Please describe your meme idea or upload an image before generating.",
-                                        variant: "destructive",
-                                    });
-                                    return;
-                                }
-                                setIsLoading(true);
-                                try {
-                                    const jokeResult = await createCustomMeme({
-                                        topic: customMemeText || 'A funny meme about technology',
-                                        imageDataUri: uploadedImage || undefined,
-                                    });
-                                    setJoke(jokeResult);
-
-                                    if (!uploadedImage) {
-                                        const memeResult = await generateCustomMemeImage(jokeResult.joke);
-                                        if (memeResult) {
-                                            setMemeImage(memeResult);
-                                        }
-                                    }
-                                } catch (e) {
-                                     toast({ title: "Error", description: "Could not create meme.", variant: "destructive" });
-                                } finally {
-                                    setIsLoading(false);
-                                }
-                            } else {
-                                handleGenerateNew();
-                            }
-                        }} disabled={isLoading || (mode === 'create' && !customMemeText && !uploadedImage)} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
+                        {mode === 'generate' && !isMemeReady && (
+                        <Button onClick={handleGenerateNew} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                             {isLoading ? (
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             ) : (
                                 <Sparkles className="mr-2 h-5 w-5" />
                             )}
-                            {mode === 'create' ? 'Create Meme' : 'Generate Joke'}
+                            Generate Joke
                         </Button>
                         )}
-                        {isMemeReady && (
+                        {(isMemeReady || uploadedImage) && (
                            <Button onClick={handleGenerateNew} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                                 {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileImage className="mr-2 h-5 w-5" />}
-                                New Blank Meme
+                                Start Over
                             </Button>
                         )}
                      </div>
-
-                     {mode !== 'leaderboard' && (
-                        <div className="w-full max-w-3xl p-4 bg-card/80 border-l-4 border-primary/50 rounded-lg shadow-sm">
-                            <p className="text-xs sm:text-sm text-muted-foreground">
-                                <strong>Note:</strong> If you don’t upload your own image, the generator will find one for you — but some of those may already have text baked in. If that happens, you can click <strong>"Regenerate Image"</strong> until you find a clean one, or use the <strong>"Remove Caption"</strong> option if you like the image as-is.
-                            </p>
-                        </div>
-                     )}
                 </div>
             </main>
         </div>
