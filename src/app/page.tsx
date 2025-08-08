@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins, Trash2 } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins, Trash2, RefreshCw, PenLine, ImageIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -345,10 +345,20 @@ export default function LaughFactoryPage() {
         setIsLoading(true);
         
         try {
-            if (type === 'text') {
-                const selectedCategory = jokeCategories.find(c => c.id === category);
+             if (type === 'text') {
+                const currentCategory = mode === 'create' ? 'custom' : category;
+                const selectedCategory = jokeCategories.find(c => c.id === currentCategory);
                 const isSfw = selectedCategory?.sfw ?? true;
-                const jokeResult = await generateSafeJoke({ category, safeForWork: isSfw, usedJokes });
+
+                let jokeResult;
+                if (mode === 'create') {
+                    jokeResult = await createCustomMeme({ 
+                        topic: customMemeText || 'A funny meme about technology', 
+                        imageDataUri: uploadedImage || undefined 
+                    });
+                } else {
+                    jokeResult = await generateSafeJoke({ category, safeForWork: isSfw, usedJokes });
+                }
                 setJoke(jokeResult);
                 setUsedJokes(prev => [...prev, jokeResult.joke]);
                 setAudio(null);
@@ -356,10 +366,15 @@ export default function LaughFactoryPage() {
                  if (uploadedImage) {
                     toast({ title: "Action Not Allowed", description: "Cannot regenerate a user-uploaded image.", variant: "destructive" });
                  } else {
-                     const selectedCategory = jokeCategories.find(c => c.id === category);
-                     const isSfw = selectedCategory?.sfw ?? true;
-                     const memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: joke.joke });
-                     if (memeResult) setMemeImage(memeResult);
+                    let memeResult;
+                     if (mode === 'create') {
+                        memeResult = await generateCustomMemeImage(joke.joke);
+                    } else {
+                        const selectedCategory = jokeCategories.find(c => c.id === category);
+                        const isSfw = selectedCategory?.sfw ?? true;
+                        memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: joke.joke });
+                    }
+                    if (memeResult) setMemeImage(memeResult);
                  }
             }
         } catch (error) {
@@ -922,11 +937,30 @@ export default function LaughFactoryPage() {
                     
                     {!isLoading && (isMemeReady || isJokeOnly) && (
                         <JokeCard>
-                             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-xl sm:text-2xl font-bold font-headline">
-                                    {isMemeReady ? "Your Masterpiece" : "Here's a good one!"}
-                                </CardTitle>
-                                <div className="flex items-center">
+                            <CardHeader className="flex flex-row items-start justify-between pb-2">
+                                <div>
+                                    <CardTitle className="text-xl sm:text-2xl font-bold font-headline">
+                                        {isMemeReady ? "Your Masterpiece" : "Here's a good one!"}
+                                    </CardTitle>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" size="sm" className="ml-auto">
+                                                <RefreshCw className="mr-2 h-4 w-4" /> Regenerate
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleRegenerate('text')} disabled={isLoading}>
+                                                <PenLine className="mr-2 h-4 w-4" />
+                                                <span>Text</span>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleRegenerate('image')} disabled={isLoading || !isMemeReady || !!uploadedImage}>
+                                                <ImageIcon className="mr-2 h-4 w-4" />
+                                                <span>Image</span>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                     <ShareMenu />
                                     {isMemeReady && (
                                         <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme">
@@ -1053,3 +1087,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
