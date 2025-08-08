@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -12,6 +13,7 @@ export default {
       fontFamily: {
         body: ['Inter', 'sans-serif'],
         headline: ['Poppins', 'sans-serif'],
+        meme: ['Impact', 'Charcoal', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {

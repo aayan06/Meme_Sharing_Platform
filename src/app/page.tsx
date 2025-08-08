@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins, Trash2, RefreshCw, PenLine, ImageIcon } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins, Trash2, RefreshCw, PenLine, ImageIcon, Info } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -592,7 +592,7 @@ export default function LaughFactoryPage() {
         if (parts.length < 2) {
              return { top: parts[0]?.trim() || '', bottom: '' };
         }
-        return { top: parts[0].trim(), bottom: parts.slice(1).join('||').trim() };
+        return { top: parts[0].trim(), bottom: parts[1].trim() };
     };
 
 
@@ -625,7 +625,7 @@ export default function LaughFactoryPage() {
 
 
     return (
-        <div className="flex flex-col items-center min-h-screen p-4 sm:p-6 dark bg-background">
+        <div className="flex flex-col items-center min-h-screen p-4 sm:p-6 dark bg-background font-body">
             <main className="w-full max-w-6xl mx-auto flex flex-col items-center space-y-8">
                  <header className="flex justify-between items-center w-full pt-4 sm:pt-2">
                     <div className="flex items-center gap-2">
@@ -688,7 +688,7 @@ export default function LaughFactoryPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-lg sm:text-xl font-medium uppercase whitespace-pre-line">{dailyJoke.joke.replace('||', '\n')}</p>
+                            <p className="text-lg sm:text-xl font-medium uppercase whitespace-pre-line font-meme">{dailyJoke.joke.replace('||', '\n')}</p>
                             <div className="flex items-center gap-4 mt-4">
                                 <p className="text-sm text-muted-foreground">- by {dailyJoke.creator}</p>
                                 <div className="flex items-center gap-1 text-lg font-bold text-primary">
@@ -732,18 +732,62 @@ export default function LaughFactoryPage() {
 
                 {mode === 'create' && (
                      <Card className="w-full max-w-2xl bg-card/90 backdrop-blur-sm shadow-lg border-2 rounded-2xl">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold">
-                               <Palette className="h-7 w-7" /> Create Your Own Meme
-                            </CardTitle>
-                            <CardDescription>Generate a meme from a topic, or upload your own image.</CardDescription>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div className="space-y-1.5">
+                                <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl font-bold">
+                                <Palette className="h-7 w-7" /> Create Your Own Meme
+                                </CardTitle>
+                                <CardDescription>Generate a meme from a topic, or upload your own image.</CardDescription>
+                            </div>
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" size="icon" className="animate-pulse">
+                                        <Info className="h-5 w-5" />
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-2xl">
+                                    <DialogHeader>
+                                        <DialogTitle className="text-2xl">💡 How Meme Generation Works</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="grid gap-4 py-4 text-sm text-muted-foreground">
+                                        <div>
+                                            <h4 className="font-semibold text-foreground mb-2">Image Behavior</h4>
+                                            <p>If you don’t upload your own image, the system will fetch one automatically. <br/>⚠️ Some of those images may **already have text baked into them**.</p>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-foreground mb-2">What You Can Do</h4>
+                                            <ul className="list-disc pl-5 space-y-1">
+                                                <li>✅ Use **Regenerate Image** to get a new random image</li>
+                                                <li>✅ Use the **“Remove Caption”** toggle if you want to keep the image but remove the text overlay</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-foreground mb-2">Caption Format</h4>
+                                            <p>You can write memes using this format: `Top text || Bottom text`</p>
+                                            <p className="mt-1 p-2 bg-muted rounded-md text-xs font-mono">Example: ME ON MONDAY || ME STILL ON MONDAY, JUST TIRED</p>
+                                            <p className="mt-2">Or if you have no idea what to write you can even give it a single word and the AI will generate the text for you.</p>
+                                        </div>
+                                         <div>
+                                            <h4 className="font-semibold text-foreground mb-2">Regenerate Controls</h4>
+                                            <ul className="list-disc pl-5 space-y-1">
+                                                <li>🔁 **Regenerate Text** → same image, new caption</li>
+                                                <li>🔁 **Regenerate Image** → same caption, new image</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-foreground mb-2">Leaderboard</h4>
+                                             <p>After creating a meme, you can **submit it to the leaderboard** <br/>🕐 You may be limited to 1 submission per day (check your pass status)</p>
+                                        </div>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
                         </CardHeader>
                         <CardContent className="space-y-4">
                              <div>
-                                <Label htmlFor="custom-text" className="font-semibold">Describe your meme idea</Label>
+                                <Label htmlFor="custom-text" className="font-semibold">Describe your meme idea or write the text</Label>
                                 <Textarea
                                     id="custom-text"
-                                    placeholder="e.g., A cat discovering it has thumbs"
+                                    placeholder="e.g., A cat discovering it has thumbs OR That feeling when... || You realize it's only Tuesday"
                                     value={customMemeText}
                                     onChange={(e) => setCustomMemeText(e.target.value)}
                                     className="mt-2"
@@ -997,27 +1041,29 @@ export default function LaughFactoryPage() {
                                         {joke && showCaption && (
                                           <>
                                             <div
-                                                className="absolute top-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-black uppercase"
+                                                className="absolute top-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-meme uppercase"
                                                 style={{
                                                     fontSize: 'clamp(1.25rem, 5vw, 2.75rem)',
-                                                    textShadow: '3px 3px 6px #000, -3px -3px 6px #000, 3px -3px 6px #000, -3px 3px 6px #000',
+                                                    fontWeight: 'bold',
+                                                    lineHeight: '1.1',
+                                                    WebkitTextStroke: '2px black',
                                                     display: 'flex',
                                                     alignItems: 'flex-start',
                                                     justifyContent: 'center',
-                                                    lineHeight: '1.1',
                                                 }}
                                             >
                                               {splitJoke(joke.joke).top}
                                             </div>
                                             <div
-                                                className="absolute bottom-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-black uppercase"
+                                                className="absolute bottom-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-meme uppercase"
                                                 style={{
                                                     fontSize: 'clamp(1.25rem, 5vw, 2.75rem)',
-                                                    textShadow: '3px 3px 6px #000, -3px -3px 6px #000, 3px -3px 6px #000, -3px 3px 6px #000',
+                                                    fontWeight: 'bold',
+                                                    lineHeight: '1.1',
+                                                    WebkitTextStroke: '2px black',
                                                     display: 'flex',
                                                     alignItems: 'flex-end',
                                                     justifyContent: 'center',
-                                                    lineHeight: '1.1',
                                                 }}
                                             >
                                               {splitJoke(joke.joke).bottom}
@@ -1027,7 +1073,7 @@ export default function LaughFactoryPage() {
                                     </MemeDisplayCard>
                                 ) : (
                                     <>
-                                       {joke && <p className="text-lg sm:text-xl font-medium leading-relaxed uppercase whitespace-pre-line">{joke.joke.replace('||', '\n')}</p>}
+                                       {joke && <p className="text-lg sm:text-xl font-medium leading-relaxed uppercase whitespace-pre-line font-meme">{joke.joke.replace('||', '\n')}</p>}
                                         {audio?.media && (
                                             <div className="mt-4">
                                                 <audio controls autoPlay className="w-full">
@@ -1042,21 +1088,17 @@ export default function LaughFactoryPage() {
                             <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
                                 {isMemeReady ? (
                                     <>
-                                        <div className="flex-1 w-full sm:w-auto">
-                                            <Button variant="outline" onClick={handleStartOver} className="w-full">
-                                                <FileUp className="mr-2 h-5 w-5" /> Start Over
-                                            </Button>
-                                        </div>
+                                        <Button variant="outline" onClick={handleStartOver} className="w-full sm:w-auto flex-1 sm:flex-none">
+                                            <FileUp className="mr-2 h-5 w-5" /> Start Over
+                                        </Button>
                                         <div className="flex items-center space-x-2">
                                             <Switch id="show-caption" checked={showCaption} onCheckedChange={setShowCaption} />
                                             <Label htmlFor="show-caption" className="text-sm font-medium">Show Caption</Label>
                                         </div>
-                                        <div className="flex-1 w-full sm:w-auto">
-                                            <Button onClick={handleSubmit} disabled={isSubmitting || !user} className="w-full">
-                                                {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
-                                                Submit for Glory
-                                            </Button>
-                                        </div>
+                                        <Button onClick={handleSubmit} disabled={isSubmitting || !user} className="w-full sm:w-auto flex-1 sm:flex-none">
+                                            {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
+                                            Submit for Glory
+                                        </Button>
                                     </>
                                 ) : (
                                      <>
