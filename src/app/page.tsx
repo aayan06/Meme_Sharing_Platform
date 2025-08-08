@@ -266,15 +266,13 @@ export default function LaughFactoryPage() {
         setSelectedReaction(null);
         setShowCaption(true);
         
-        // In create mode, also clear the user's input to allow for a fresh start.
-        if (mode === 'create') {
+        // In create mode, if starting fresh, also clear the user's input.
+        if (mode === 'create' && !customMemeText && !uploadedImage) {
             setCustomMemeText('');
             setUploadedImage(null);
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
-            setIsLoading(false); 
-            return;
         }
         
         try {
@@ -329,6 +327,20 @@ export default function LaughFactoryPage() {
             setIsLoading(false);
         }
     };
+    
+    const handleStartOver = () => {
+        setJoke(null);
+        setMemeImage(null);
+        setAudio(null);
+        setSelectedReaction(null);
+        setShowCaption(true);
+        setCustomMemeText('');
+        setUploadedImage(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    }
+
 
     const handleRegenerate = async (type: 'text' | 'image' | 'both') => {
         if (!joke) return;
@@ -422,7 +434,7 @@ export default function LaughFactoryPage() {
         try {
             let blob: Blob | null = null;
 
-            if (uploadedImage && !joke) {
+            if (uploadedImage && (!joke || !showCaption)) {
                 // This is a direct upload of a finished meme
                 blob = await fetch(uploadedImage).then((res) => res.blob());
             } else if (memeCardRef.current) {
@@ -449,7 +461,7 @@ export default function LaughFactoryPage() {
             
             await addDoc(collection(db, "memes"), {
                 imageUrl: downloadURL,
-                joke: joke ? (showCaption ? (joke.joke || '') : '') : '',
+                joke: joke && showCaption ? (joke.joke || '') : '',
                 userId: user.uid,
                 creatorHandle: userData?.displayName || user.email?.split('@')[0] || 'Anonymous',
                 createdAt: serverTimestamp(),
@@ -459,11 +471,7 @@ export default function LaughFactoryPage() {
 
             toast({ title: "Meme Submitted!", description: "Your meme is now on the leaderboard!" });
             
-            setJoke(null);
-            setMemeImage(null);
-            setUploadedImage(null);
-            setCustomMemeText('');
-            setShowCaption(true);
+            handleStartOver();
             setMode('leaderboard');
         } catch (error: any) {
             console.error("Error submitting meme:", error);
@@ -492,8 +500,8 @@ export default function LaughFactoryPage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setUploadedImage(reader.result as string);
-                setMemeImage(null); // Clear any generated image
-                setJoke(null); // Clear joke as well, since it's a new meme context
+                setMemeImage(null);
+                setJoke(null);
                 setShowCaption(true);
             };
             reader.readAsDataURL(file);
@@ -604,16 +612,11 @@ export default function LaughFactoryPage() {
 
     const handleModeChange = (newMode: 'generate' | 'create' | 'leaderboard') => {
         setMode(newMode);
-        setJoke(null);
-        setMemeImage(null);
-        setAudio(null);
-        setSelectedReaction(null);
-        setCustomMemeText('');
-        setUploadedImage(null);
-        setShowCaption(true);
+        handleStartOver();
     };
     
-    const isMemeReady = (joke && (memeImage?.imageDataUri || uploadedImage));
+    const isMemeReady = !!(joke && (memeImage?.imageDataUri || uploadedImage));
+    const isJokeOnly = !!(joke && !memeImage?.imageDataUri && !uploadedImage);
     const isMemeCategory = (mode === 'generate' && (category === 'crypto memes' || category === 'edgy memes'));
     const dailyJoke = { joke: "I TOLD MY WIFE SHE SHOULD EMBRACE HER MISTAKES.||SHE GAVE ME A HUG.", creator: "Comedian_AI", likes: 1337 };
 
@@ -749,51 +752,25 @@ export default function LaughFactoryPage() {
                                     id="custom-text"
                                     placeholder="e.g., A meme about cats || that are bad at math"
                                     value={customMemeText}
-                                    onChange={(e) => {
-                                        setCustomMemeText(e.target.value)
-                                        setJoke({ joke: e.target.value.toUpperCase() })
-                                    }}
+                                    onChange={(e) => setCustomMemeText(e.target.value)}
                                     className="mt-2"
                                     rows={3}
                                 />
                             </div>
-                            <div className="flex items-center justify-center gap-4">
-                                 <Input
+                            <div className="relative flex items-center justify-center my-4">
+                               <Separator className="w-full absolute" />
+                               <span className="bg-card px-2 z-10 text-sm text-muted-foreground">OR</span>
+                            </div>
+                             <div>
+                                <Label htmlFor="custom-image" className="font-semibold">Upload Finished Meme</Label>
+                                <Input
+                                    id="custom-image"
                                     type="file"
                                     ref={fileInputRef}
                                     onChange={handleImageUpload}
-                                    className="hidden"
+                                    className="mt-2"
                                     accept="image/*"
                                 />
-                                <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="flex-1">
-                                    <FileUp className="mr-2 h-5 w-5" />
-                                    {uploadedImage ? "Change Image" : "Upload Image"}
-                                </Button>
-                                 <Button onClick={async () => {
-                                    if (!customMemeText && !uploadedImage) {
-                                        toast({ title: "Meme Idea Needed", description: "Please describe your meme idea or upload an image.", variant: "destructive" });
-                                        return;
-                                    }
-                                    setIsLoading(true);
-                                    try {
-                                        const jokeResult = await createCustomMeme({
-                                            topic: customMemeText || 'A funny meme about technology',
-                                            imageDataUri: uploadedImage || undefined,
-                                        });
-                                        setJoke(jokeResult);
-                                        if (!uploadedImage) {
-                                            const memeResult = await generateCustomMemeImage(jokeResult.joke);
-                                            if (memeResult) setMemeImage(memeResult);
-                                        }
-                                    } catch (e) {
-                                        toast({ title: "Error", description: "Could not create meme.", variant: "destructive" });
-                                    } finally {
-                                        setIsLoading(false);
-                                    }
-                                }} disabled={isLoading} className="flex-1">
-                                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
-                                    Generate AI Meme
-                                </Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -963,20 +940,20 @@ export default function LaughFactoryPage() {
                         </JokeCard>
                     )}
                     
-                    {!isLoading && (joke || uploadedImage) && (
+                    {!isLoading && (isMemeReady || isJokeOnly || uploadedImage) && (
                         <JokeCard>
                              <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-xl sm:text-2xl font-bold font-headline">
-                                    {isMemeCategory || mode === 'create' ? "Your Meme" : "Here's a good one!"}
+                                    {isMemeReady || uploadedImage ? "Your Masterpiece" : "Here's a good one!"}
                                 </CardTitle>
                                 <div className="flex items-center">
                                     <ShareMenu />
-                                    {(isMemeCategory || mode === 'create') && (memeImage?.imageDataUri || uploadedImage) && (
+                                    {(isMemeReady || uploadedImage) && (
                                         <Button variant="ghost" size="icon" onClick={handleDownloadMeme} aria-label="Download meme" className="rounded-full">
                                             <Download className="h-5 w-5" />
                                         </Button>
                                     )}
-                                    {!(isMemeCategory || mode === 'create') && joke && (
+                                    {isJokeOnly && (
                                         <>
                                             <Button
                                                 variant="ghost"
@@ -1048,18 +1025,22 @@ export default function LaughFactoryPage() {
                                 )}
                             </CardContent>
                              <CardFooter className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-2">
-                                {isMemeReady || uploadedImage ? (
+                                {(isMemeReady || uploadedImage) ? (
                                     <>
                                         <div className="flex items-center space-x-2">
-                                            <MessageSquareOff className="h-5 w-5 text-muted-foreground" />
-                                            <Label htmlFor="show-caption-switch" className="text-sm font-medium">
-                                                Show Caption
-                                            </Label>
-                                            <Switch
-                                                id="show-caption-switch"
-                                                checked={showCaption}
-                                                onCheckedChange={setShowCaption}
-                                            />
+                                            {joke && (
+                                                <>
+                                                <MessageSquareOff className="h-5 w-5 text-muted-foreground" />
+                                                <Label htmlFor="show-caption-switch" className="text-sm font-medium">
+                                                    Show Caption
+                                                </Label>
+                                                <Switch
+                                                    id="show-caption-switch"
+                                                    checked={showCaption}
+                                                    onCheckedChange={setShowCaption}
+                                                />
+                                                </>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-2">
                                              <DropdownMenu>
@@ -1070,7 +1051,7 @@ export default function LaughFactoryPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent>
-                                                    <DropdownMenuItem onClick={() => handleRegenerate('text')} disabled={isRegenerating}>Regenerate Text</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleRegenerate('text')} disabled={isRegenerating || !joke}>Regenerate Text</DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => handleRegenerate('image')} disabled={isRegenerating || !!uploadedImage}>Regenerate Image</DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => handleRegenerate('both')} disabled={isRegenerating || !!uploadedImage}>Regenerate Both</DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -1107,20 +1088,22 @@ export default function LaughFactoryPage() {
 
                  <div className="w-full flex flex-col items-center justify-center p-2 sm:p-4 gap-4">
                      <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-xl">
-                        {mode === 'generate' && !isMemeReady && (
-                        <Button onClick={handleGenerateNew} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
-                            {isLoading ? (
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            ) : (
-                                <Sparkles className="mr-2 h-5 w-5" />
-                            )}
-                            Generate Joke
-                        </Button>
+                        {(mode === 'generate' || (mode === 'create' && !uploadedImage)) && !isMemeReady && !isJokeOnly && (
+                            <Button onClick={handleGenerateNew} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
+                                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
+                                {mode === 'create' ? 'Generate AI Meme' : 'Generate Joke'}
+                            </Button>
                         )}
-                        {(isMemeReady || uploadedImage) && (
-                           <Button onClick={handleGenerateNew} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
+                        {(isMemeReady || isJokeOnly || uploadedImage) && (
+                           <Button onClick={handleStartOver} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
                                 {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileImage className="mr-2 h-5 w-5" />}
                                 Start Over
+                            </Button>
+                        )}
+                        {mode === 'create' && uploadedImage && !isMemeReady && (
+                            <Button onClick={handleSubmit} disabled={isSubmitting || !user} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
+                                {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Send className="mr-2 h-5 w-5" />}
+                                Submit Your Meme
                             </Button>
                         )}
                      </div>
@@ -1129,3 +1112,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
