@@ -573,7 +573,7 @@ export default function LaughFactoryPage() {
         </div>
     );
 
-    const splitJoke = (text: string): { top: string; bottom: string } => {
+    const splitJoke = (text: string | undefined): { top: string; bottom: string } => {
         if (!text) return { top: '', bottom: '' };
         const parts = text.split('||');
         if (parts.length >= 2) {
@@ -970,7 +970,7 @@ export default function LaughFactoryPage() {
                                             crossOrigin="anonymous"
                                         />
                                         <div
-                                            className="absolute top-0 left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-bold uppercase"
+                                            className="absolute top-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-bold uppercase"
                                             style={{
                                                 fontSize: 'clamp(1rem, 5vw, 2.5rem)',
                                                 textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
@@ -982,7 +982,7 @@ export default function LaughFactoryPage() {
                                           {splitJoke(joke.joke).top}
                                         </div>
                                         <div
-                                            className="absolute bottom-0 left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-bold uppercase"
+                                            className="absolute bottom-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-bold uppercase"
                                             style={{
                                                 fontSize: 'clamp(1rem, 5vw, 2.5rem)',
                                                 textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
