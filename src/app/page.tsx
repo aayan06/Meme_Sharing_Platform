@@ -17,8 +17,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins, Trash2, RefreshCcw, FileImage } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins, Trash2, RefreshCcw, FileImage, MessageSquareOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,6 +100,7 @@ export default function LaughFactoryPage() {
     const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
     const [customMemeText, setCustomMemeText] = useState("");
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+    const [showCaption, setShowCaption] = useState(true);
     const { toast } = useToast();
     const memeCardRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -262,6 +264,7 @@ export default function LaughFactoryPage() {
         setMemeImage(null);
         setAudio(null);
         setSelectedReaction(null);
+        setShowCaption(true);
         
         // In create mode, also clear the user's input to allow for a fresh start.
         if (mode === 'create') {
@@ -330,6 +333,7 @@ export default function LaughFactoryPage() {
     const handleRegenerate = async (type: 'text' | 'image' | 'both') => {
         if (!joke) return;
         setIsRegenerating(true);
+        setShowCaption(true);
         
         try {
             const topic = mode === 'create' ? (customMemeText || 'A funny meme about technology') : category;
@@ -433,7 +437,7 @@ export default function LaughFactoryPage() {
             
             await addDoc(collection(db, "memes"), {
                 imageUrl: downloadURL,
-                joke: joke?.joke || '',
+                joke: showCaption ? (joke?.joke || '') : '', // Submit empty joke if caption is removed
                 userId: user.uid,
                 creatorHandle: userData?.displayName || user.email?.split('@')[0] || 'Anonymous',
                 createdAt: serverTimestamp(),
@@ -447,6 +451,7 @@ export default function LaughFactoryPage() {
             setMemeImage(null);
             setUploadedImage(null);
             setCustomMemeText('');
+            setShowCaption(true);
             setMode('leaderboard');
         } catch (error: any) {
             console.error("Error submitting meme:", error);
@@ -465,6 +470,7 @@ export default function LaughFactoryPage() {
             setMemeImage(null);
             setAudio(null);
             setSelectedReaction(null);
+            setShowCaption(true);
         }
     };
     
@@ -476,6 +482,7 @@ export default function LaughFactoryPage() {
                 setUploadedImage(reader.result as string);
                 setMemeImage(null); // Clear any generated image
                 setJoke(null); // Clear joke as well, since it's a new meme context
+                setShowCaption(true);
             };
             reader.readAsDataURL(file);
         } else {
@@ -591,6 +598,7 @@ export default function LaughFactoryPage() {
         setSelectedReaction(null);
         setCustomMemeText('');
         setUploadedImage(null);
+        setShowCaption(true);
     };
     
     const isMemeReady = (joke && (memeImage?.imageDataUri || uploadedImage));
@@ -969,30 +977,34 @@ export default function LaughFactoryPage() {
                                             className="w-full h-auto rounded-lg border-2" 
                                             crossOrigin="anonymous"
                                         />
-                                        <div
-                                            className="absolute top-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-bold uppercase"
-                                            style={{
-                                                fontSize: 'clamp(1rem, 5vw, 2.5rem)',
-                                                textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
-                                                display: 'flex',
-                                                alignItems: 'flex-start',
-                                                justifyContent: 'center',
-                                            }}
-                                        >
-                                          {splitJoke(joke.joke).top}
-                                        </div>
-                                        <div
-                                            className="absolute bottom-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-bold uppercase"
-                                            style={{
-                                                fontSize: 'clamp(1rem, 5vw, 2.5rem)',
-                                                textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
-                                                display: 'flex',
-                                                alignItems: 'flex-end',
-                                                justifyContent: 'center',
-                                            }}
-                                        >
-                                          {splitJoke(joke.joke).bottom}
-                                        </div>
+                                        {showCaption && (
+                                          <>
+                                            <div
+                                                className="absolute top-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-bold uppercase"
+                                                style={{
+                                                    fontSize: 'clamp(1rem, 5vw, 2.5rem)',
+                                                    textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
+                                                    display: 'flex',
+                                                    alignItems: 'flex-start',
+                                                    justifyContent: 'center',
+                                                }}
+                                            >
+                                              {splitJoke(joke.joke).top}
+                                            </div>
+                                            <div
+                                                className="absolute bottom-[2%] left-[5%] w-[90%] h-1/2 p-4 text-center text-white font-bold uppercase"
+                                                style={{
+                                                    fontSize: 'clamp(1rem, 5vw, 2.5rem)',
+                                                    textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8)',
+                                                    display: 'flex',
+                                                    alignItems: 'flex-end',
+                                                    justifyContent: 'center',
+                                                }}
+                                            >
+                                              {splitJoke(joke.joke).bottom}
+                                            </div>
+                                          </>
+                                        )}
                                     </MemeDisplayCard>
                                 ) : (
                                     <>
@@ -1027,7 +1039,7 @@ export default function LaughFactoryPage() {
                                             </DropdownMenu>
                                             <Button onClick={handleGenerateNew} disabled={isLoading}>
                                                 {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileImage className="mr-2 h-5 w-5" />}
-                                                Generate New
+                                                New Blank Meme
                                             </Button>
                                         </div>
                                         <Button onClick={handleSubmit} disabled={isSubmitting || !user}>
@@ -1053,7 +1065,7 @@ export default function LaughFactoryPage() {
                     )}
                 </div>
 
-                 <div className="w-full flex justify-center p-2 sm:p-4">
+                 <div className="w-full flex flex-col items-center justify-center p-2 sm:p-4 gap-4">
                      <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-xl">
                         {mode !== 'leaderboard' && !isMemeReady && (
                         <Button onClick={async () => {
@@ -1098,9 +1110,27 @@ export default function LaughFactoryPage() {
                         </Button>
                         )}
                         {isMemeReady && (
-                            <p className="text-sm text-muted-foreground">Happy with your creation? Use the buttons above to submit or try again.</p>
+                            <div className="flex items-center space-x-2 bg-card border rounded-full px-4 py-2">
+                                <MessageSquareOff className="h-5 w-5 text-muted-foreground" />
+                                <Label htmlFor="show-caption-switch" className="text-sm font-medium">
+                                    Remove generated text
+                                </Label>
+                                <Switch
+                                    id="show-caption-switch"
+                                    checked={!showCaption}
+                                    onCheckedChange={(checked) => setShowCaption(!checked)}
+                                />
+                            </div>
                         )}
                      </div>
+
+                     {mode !== 'leaderboard' && (
+                        <div className="w-full max-w-3xl p-4 bg-card/80 border-l-4 border-primary/50 rounded-lg shadow-sm">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
+                                <strong>Note:</strong> If you don’t upload your own image, the generator will find one for you — but some of those may already have text baked in. If that happens, you can click <strong>"Regenerate Image"</strong> until you find a clean one, or use the <strong>"Remove Caption"</strong> option if you like the image as-is.
+                            </p>
+                        </div>
+                     )}
                 </div>
             </main>
         </div>
