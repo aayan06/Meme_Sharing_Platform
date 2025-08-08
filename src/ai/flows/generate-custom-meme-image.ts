@@ -38,13 +38,8 @@ const generateCustomMemeImageFlow = ai.defineFlow(
   async (topic) => {
     
     const prompt = `
-      You are an AI assistant that generates a single, high-quality background image for a meme based on this topic: "${topic}".
-      
-      **CRITICAL RULES FOR THE IMAGE:**
-      1.  **NO TEXT AT ALL**: The image MUST be a clean background with ABSOLUTELY NO text, letters, captions, subtitles, signs, or watermarks. It is a blank template. Any image containing any form of text is a failure and is unacceptable, as the user will add their own text later.
-      2.  **RELEVANCE**: The image content and emotion MUST directly relate to the topic.
-      3.  **HIGH QUALITY**: The image must be clear, high-resolution, and suitable for adding text on top.
-      4.  **DO NOT CREATE A FINISHED MEME**: Your job is to create the background ONLY. Do not create a complete meme.
+      **Critical rule: The generated image MUST NOT contain any text, letters, or numbers.**
+      The image should be a visual representation of this topic: "${topic}"
     `;
 
     const {media} = await ai.generate({
