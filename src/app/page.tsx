@@ -52,6 +52,7 @@ import { collection, query, orderBy, onSnapshot, doc, addDoc, serverTimestamp, d
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { v4 as uuidv4 } from 'uuid';
 import html2canvas from "html2canvas";
+import { generateCustomMemeImage } from "@/ai/flows/generate-custom-meme-image";
 
 
 const jokeCategories = [
@@ -338,40 +339,38 @@ export default function LaughFactoryPage() {
     const handleRegenerate = async (type: 'text' | 'image') => {
         if (!joke) return;
         setIsLoading(true);
-        
-        try {
-             if (type === 'text') {
-                const isSfw = jokeCategories.find(c => c.id === category)?.sfw ?? true;
 
+        try {
+            if (type === 'text') {
+                const isSfw = jokeCategories.find(c => c.id === category)?.sfw ?? true;
                 let jokeResult;
                 if (mode === 'create') {
-                     jokeResult = await createCustomMeme({ 
-                        topic: customMemeText || 'A funny meme about technology', 
-                        imageDataUri: uploadedImage || undefined 
+                    jokeResult = await createCustomMeme({
+                        topic: customMemeText || 'A funny meme about technology',
+                        imageDataUri: uploadedImage || memeImage?.imageDataUri || undefined
                     });
                 } else {
                     jokeResult = await generateSafeJoke({ category, safeForWork: isSfw, usedJokes });
                 }
                 setJoke(jokeResult);
-                setUsedJokes(prev => [...prev, jokeResult.joke]);
+                if (jokeResult.joke) {
+                    setUsedJokes(prev => [...prev, jokeResult.joke]);
+                }
                 setAudio(null);
             } else if (type === 'image') {
-                 if (uploadedImage) {
+                if (uploadedImage) {
                     toast({ title: "Action Not Allowed", description: "Cannot regenerate a user-uploaded image.", variant: "destructive" });
-                 } else {
+                } else {
                     let memeResult;
-                     if (mode === 'create') {
-                        const result = await createCustomMeme({ topic: joke.joke });
-                        if (result.imageDataUri) {
-                            setMemeImage({imageDataUri: result.imageDataUri});
-                        }
+                    if (mode === 'create') {
+                        memeResult = await generateCustomMemeImage(joke.joke);
                     } else {
                         const selectedCategory = jokeCategories.find(c => c.id === category);
                         const isSfw = selectedCategory?.sfw ?? true;
                         memeResult = await generateMemeImage({ category, safeForWork: isSfw, joke: joke.joke });
                     }
                     if (memeResult) setMemeImage(memeResult);
-                 }
+                }
             }
         } catch (error) {
             console.error("Failed to regenerate:", error);
@@ -1125,3 +1124,5 @@ export default function LaughFactoryPage() {
         </div>
     );
 }
+
+    
