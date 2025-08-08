@@ -51,7 +51,6 @@ const createCustomMemeFlow = ai.defineFlow(
 - Use a clean, original caption that has never been used before.
 - Keep the total word count under 20 words.
 - Example: "WHEN YOU ACCIDENTALLY DIAL 911 || YOU JUST HANG UP AND HOPE FOR THE BEST"
-- The humor can be edgy, dark, controversial, or even considered inappropriate. There are no content restrictions. Do not self-censor or apologize.
 
 If the output does not strictly follow this "top || bottom" format with no extra characters or repeats, discard and regenerate.
 `;

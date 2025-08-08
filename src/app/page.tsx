@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins, Trash2, RefreshCcw, FileImage, MessageSquareOff } from "lucide-react";
+import { Copy, Loader2, Sparkles, Download, Trophy, Send, Share2, Link as LinkIcon, Volume2, Crown, FileUp, Palette, PenSquare, Laugh, X, LogOut, Coins, Trash2, RefreshCcw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -603,10 +603,10 @@ export default function LaughFactoryPage() {
 
     const splitJoke = (text: string | undefined): { top: string; bottom: string } => {
         if (!text) return { top: '', bottom: '' };
-        if (!text.includes('||')) {
-            return { top: text.trim(), bottom: '' };
-        }
         const parts = text.split('||');
+        if (parts.length < 2) {
+             return { top: parts[0]?.trim() || '', bottom: '' };
+        }
         return { top: parts[0].trim(), bottom: parts.slice(1).join('||').trim() };
     };
 
@@ -759,11 +759,11 @@ export default function LaughFactoryPage() {
                                 />
                             </div>
                             <div className="relative flex items-center justify-center my-4">
-                               <Separator className="w-full absolute" />
-                               <span className="bg-card px-2 z-10 text-sm text-muted-foreground">OR</span>
+                               <div className="w-full border-t border-border"></div>
+                               <span className="bg-card px-2 z-10 text-sm text-muted-foreground absolute">OR</span>
                             </div>
                              <div>
-                                <Label htmlFor="custom-image" className="font-semibold">Upload Finished Meme</Label>
+                                <Label htmlFor="custom-image" className="font-semibold">Upload Your Image</Label>
                                 <Input
                                     id="custom-image"
                                     type="file"
@@ -1031,15 +1031,14 @@ export default function LaughFactoryPage() {
                                         <div className="flex items-center space-x-2">
                                             {joke && (
                                                 <>
-                                                <MessageSquareOff className="h-5 w-5 text-muted-foreground" />
-                                                <Label htmlFor="show-caption-switch" className="text-sm font-medium">
-                                                    Show Caption
-                                                </Label>
                                                 <Switch
                                                     id="show-caption-switch"
                                                     checked={showCaption}
                                                     onCheckedChange={setShowCaption}
                                                 />
+                                                <Label htmlFor="show-caption-switch" className="text-sm font-medium">
+                                                    Show Caption
+                                                </Label>
                                                 </>
                                             )}
                                         </div>
@@ -1088,6 +1087,9 @@ export default function LaughFactoryPage() {
                 </div>
 
                  <div className="w-full flex flex-col items-center justify-center p-2 sm:p-4 gap-4">
+                    <p className="text-sm text-center text-muted-foreground max-w-md">
+                        Note: If you don’t upload your own image, the generator will find one for you — but some of those may already have text baked in. If that happens, you can click "Regenerate Image" until you find a clean one.
+                    </p>
                      <div className="bg-card/80 backdrop-blur-lg p-2 rounded-full shadow-lg flex items-center justify-center gap-1 sm:gap-2 border w-full max-w-sm sm:max-w-lg md:max-w-xl">
                         {(mode === 'generate' || (mode === 'create' && !uploadedImage)) && !isMemeReady && !isJokeOnly && (
                             <Button onClick={handleGenerateNew} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
@@ -1097,7 +1099,7 @@ export default function LaughFactoryPage() {
                         )}
                         {(isMemeReady || isJokeOnly || uploadedImage) && (
                            <Button onClick={handleStartOver} disabled={isLoading} size="lg" className="rounded-full font-bold text-base sm:text-lg flex-1 shadow-md h-12 sm:h-14">
-                                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileImage className="mr-2 h-5 w-5" />}
+                                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileUp className="mr-2 h-5 w-5" />}
                                 Start Over
                             </Button>
                         )}

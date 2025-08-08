@@ -55,7 +55,11 @@ If the output does not strictly follow this "top || bottom" format with no extra
 None yet.
 {{/if}}
 
-**Content Filter**: "Degen Mode" is ON. The joke can be edgy, use dark humor, or contain satire. There are no content restrictions. The humor can be offensive, dark, political, religious, sexual, or otherwise sensitive. Do not self-censor or apologize.
+{{#if safeForWork}}
+**Content Filter**: "Safe-for-Work" mode is ON. The joke must be appropriate for all audiences. Avoid any offensive, dark, political, religious, sexual, or otherwise sensitive topics.
+{{else}}
+**Content Filter**: "Safe-for-Work" mode is OFF. The humor can be edgy, use dark humor, or contain satire.
+{{/if}}
 `,
   config: {
     temperature: 1,
