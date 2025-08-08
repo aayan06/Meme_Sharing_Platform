@@ -575,11 +575,11 @@ export default function LaughFactoryPage() {
 
     const splitJoke = (text: string | undefined): { top: string; bottom: string } => {
         if (!text) return { top: '', bottom: '' };
-        const parts = text.split('||');
-        if (parts.length >= 2) {
-            return { top: parts[0].trim(), bottom: parts.slice(1).join('||').trim() };
+        if (!text.includes('||')) {
+            return { top: text.trim(), bottom: '' };
         }
-        return { top: text.trim(), bottom: '' };
+        const parts = text.split('||');
+        return { top: parts[0].trim(), bottom: parts.slice(1).join('||').trim() };
     };
 
 

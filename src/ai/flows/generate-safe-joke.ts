@@ -43,7 +43,7 @@ const generateJokePrompt = ai.definePrompt({
 - Keep the joke under 25 words total.
 - Use meme-style humor: sarcastic, ironic, observational, or relatable.
 - DO NOT return both a top caption and a rendered version — just the formatted meme caption.
-- Output ONLY the joke text.
+- Output ONLY the joke text. This text will be drawn on a clean image later.
 
 **Category**: {{{category}}}
 
