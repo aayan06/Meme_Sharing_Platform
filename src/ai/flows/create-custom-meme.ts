@@ -32,8 +32,8 @@ const CreateCustomMemeOutputSchema = z.object({
         bottom: z.object({
             x: z.number().describe("X coordinate for bottom text block (percentage)."),
             y: z.number().describe("Y coordinate for bottom text block (percentage)."),
-            width: z.number().describe("Width of the top text block (percentage)."),
-            height: z.number().describe("Height of the top text block (percentage)."),
+            width: z.number().describe("Width of the bottom text block (percentage)."),
+            height: z.number().describe("Height of the bottom text block (percentage)."),
         }),
     }).describe("Coordinates for placing the text on the image to avoid key features.").optional(),
 });
