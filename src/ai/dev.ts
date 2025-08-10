@@ -10,3 +10,4 @@ import '@/ai/flows/vote-on-meme.ts';
 import '@/ai/flows/delete-all-memes.ts';
 import '@/ai/flows/tip-meme-creator.ts';
 import '@/ai/flows/generate-custom-meme-image.ts';
+import '@/ai/flows/reward-daily-winner.ts';
