@@ -10,4 +10,4 @@ runConfig:
   # These variables are securely stored and not visible in your code repository.
   env:
     - variable: CRON_SECRET
-      value: "replace-this-with-your-real-secret-password"
+      value: "FreePalestine123!"
