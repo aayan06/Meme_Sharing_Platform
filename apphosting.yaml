@@ -10,4 +10,8 @@ runConfig:
   # These variables are securely stored and not visible in your code repository.
   env:
     - variable: CRON_SECRET
-      value: "FreePalestine123!"
+      secret: DAILY_REWARD_SECRET
+
+# Defines secrets that can be used by environment variables.
+secretEnv:
+  - name: DAILY_REWARD_SECRET

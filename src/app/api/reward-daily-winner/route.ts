@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 
 // This endpoint is designed to be called by a secure scheduler (like Google Cloud Scheduler).
 export async function POST(req: Request) {
+  // In App Hosting, secrets are exposed as environment variables.
   const secret = process.env.CRON_SECRET;
   
   // The 'authorization' header should be in the format: 'Bearer your-secret-goes-here'
@@ -15,11 +16,13 @@ export async function POST(req: Request) {
   // 1. Check if the CRON_SECRET is configured on the server.
   if (!secret) {
     console.error("CRON_SECRET is not set in the environment variables.");
-    return new NextResponse("Internal Server Error: Secret not configured", { status: 500 });
+    // Don't expose the reason for the failure to the outside world.
+    return new NextResponse("Unauthorized", { status: 401 });
   }
 
   // 2. Check if the incoming request's secret matches the one on the server.
   if (requestSecret !== secret) {
+    console.warn(`Unauthorized cron attempt. Provided: ${requestSecret}, Expected: ${secret.substring(0, 3)}...`);
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
