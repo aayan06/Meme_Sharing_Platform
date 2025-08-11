@@ -6,8 +6,7 @@ runConfig:
   # more instances in response to increased traffic.
   maxInstances: 1
   # Add environment variables here.
-  # IMPORTANT: Replace the placeholder with your actual secret.
-  # These variables are securely stored and not visible in your code repository.
+  # IMPORTANT: The value for CRON_SECRET is stored securely.
   env:
     - variable: CRON_SECRET
       secret: DAILY_REWARD_SECRET
