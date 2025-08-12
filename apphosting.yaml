@@ -17,3 +17,6 @@ runConfig:
 secretEnv:
   - name: DAILY_REWARD_SECRET
   - name: FIREBASE_PRIVATE_KEY
+env:
+  - variable: ADMIN_PRIVATE_KEY
+    secret: ADMIN_PRIVATE_KEY
