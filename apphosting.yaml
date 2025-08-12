@@ -6,11 +6,14 @@ runConfig:
   # more instances in response to increased traffic.
   maxInstances: 1
   # Add environment variables here.
-  # IMPORTANT: The value for CRON_SECRET is stored securely.
+  # IMPORTANT: The values for secrets are stored securely and not in this file.
   env:
     - variable: CRON_SECRET
       secret: DAILY_REWARD_SECRET
+    - variable: FIREBASE_PRIVATE_KEY
+      secret: FIREBASE_PRIVATE_KEY
 
 # Defines secrets that can be used by environment variables.
 secretEnv:
   - name: DAILY_REWARD_SECRET
+  - name: FIREBASE_PRIVATE_KEY
